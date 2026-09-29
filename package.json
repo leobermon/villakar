@@ -1,0 +1,14 @@
+{
+  "name": "cancun-transfers",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d mysql",
+    "db:down": "docker compose down",
+    "dev:backend": "npm run start:dev -w backend"
+  }
+}

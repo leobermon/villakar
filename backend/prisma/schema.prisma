@@ -1,0 +1,427 @@
+// Modelo Prisma que refleja prisma/migrations/0001_init/migration.sql.
+//
+// Las columnas espaciales (zones.boundary, places.location) se declaran como
+// Unsupported: Prisma no maneja tipos geométricos, así que se leen y escriben
+// con $queryRaw / $executeRaw. Los índices SPATIAL y el SRID viven solo en el
+// SQL de la migración. Por eso NO usar `prisma migrate dev` para generar
+// migraciones automáticamente: crear cada migración con `--create-only`,
+// revisarla, y aplicar con `prisma migrate deploy`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+}
+
+enum PlaceType {
+  AIRPORT
+  HOTEL
+  OTHER
+}
+
+enum VehicleStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum TripType {
+  ONE_WAY
+  ROUND_TRIP
+}
+
+enum RouteType {
+  AIRPORT_HOTEL
+  HOTEL_AIRPORT
+  HOTEL_HOTEL
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+}
+
+enum ReservationSource {
+  WEB
+  ADMIN
+  PHONE
+  AGENCY
+}
+
+enum LegStatus {
+  SCHEDULED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  CASH
+  TRANSFER
+}
+
+enum PaymentType {
+  CHARGE
+  REFUND
+}
+
+enum PaymentRecordStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum WebhookProvider {
+  STRIPE
+  PAYPAL
+}
+
+enum ContactRequestStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
+model User {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name          String    @db.VarChar(120)
+  email         String    @unique(map: "uq_users_email") @db.VarChar(190)
+  passwordHash  String    @map("password_hash") @db.VarChar(255)
+  role          UserRole  @default(OPERATOR)
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLoginAt   DateTime? @map("last_login_at") @db.DateTime(0)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  zonesUpdated     Zone[]
+  zoneRatesUpdated ZoneRate[]
+  vehicleBlocks    VehicleBlock[]
+  statusChanges    ReservationStatusHistory[]
+
+  @@map("users")
+}
+
+model Customer {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  firstName   String   @map("first_name") @db.VarChar(80)
+  lastName    String   @map("last_name") @db.VarChar(80)
+  email       String   @db.VarChar(190)
+  phone       String?  @db.VarChar(30)
+  countryCode String?  @map("country_code") @db.Char(2)
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  reservations Reservation[]
+
+  @@index([email], map: "idx_customers_email")
+  @@map("customers")
+}
+
+model VehicleType {
+  id            Int      @id @default(autoincrement()) @db.UnsignedSmallInt
+  code          String   @unique(map: "uq_vehicle_types_code") @db.VarChar(30)
+  name          String   @db.VarChar(80)
+  description   String?  @db.VarChar(255)
+  maxPassengers Int      @map("max_passengers") @db.UnsignedTinyInt
+  maxLuggage    Int      @default(0) @map("max_luggage") @db.UnsignedTinyInt
+  imageUrl      String?  @map("image_url") @db.VarChar(255)
+  sortOrder     Int      @default(0) @map("sort_order") @db.SmallInt
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  vehicles     Vehicle[]
+  zoneRates    ZoneRate[]
+  reservations Reservation[]
+
+  @@map("vehicle_types")
+}
+
+model Vehicle {
+  id            BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  vehicleTypeId Int           @map("vehicle_type_id") @db.UnsignedSmallInt
+  unitNumber    String        @unique(map: "uq_vehicles_unit") @map("unit_number") @db.VarChar(20)
+  plate         String        @unique(map: "uq_vehicles_plate") @db.VarChar(20)
+  brand         String?       @db.VarChar(60)
+  model         String?       @db.VarChar(60)
+  year          Int?          @db.SmallInt
+  status        VehicleStatus @default(ACTIVE)
+  notes         String?       @db.VarChar(255)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  vehicleType VehicleType      @relation(fields: [vehicleTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "fk_vehicles_type")
+  blocks      VehicleBlock[]
+  legs        ReservationLeg[]
+
+  @@index([vehicleTypeId, status], map: "idx_vehicles_type_status")
+  @@map("vehicles")
+}
+
+model VehicleBlock {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  vehicleId BigInt   @map("vehicle_id") @db.UnsignedBigInt
+  startsAt  DateTime @map("starts_at") @db.DateTime(0)
+  endsAt    DateTime @map("ends_at") @db.DateTime(0)
+  reason    String?  @db.VarChar(255)
+  createdBy BigInt?  @map("created_by") @db.UnsignedBigInt
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade, map: "fk_vblocks_vehicle")
+  author  User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull, map: "fk_vblocks_user")
+
+  @@index([vehicleId, startsAt, endsAt], map: "idx_vblocks_range")
+  @@index([createdBy], map: "idx_vblocks_user")
+  @@map("vehicle_blocks")
+}
+
+model Zone {
+  id        Int                        @id @default(autoincrement()) @db.UnsignedSmallInt
+  name      String                     @db.VarChar(100)
+  slug      String                     @unique(map: "uq_zones_slug") @db.VarChar(100)
+  boundary  Unsupported("polygon")
+  color     String                     @default("#3B82F6") @db.Char(7)
+  priority  Int                        @default(0) @db.SmallInt
+  isAirport Boolean                    @default(false) @map("is_airport")
+  isActive  Boolean                    @default(true) @map("is_active")
+  sortOrder Int                        @default(0) @map("sort_order") @db.SmallInt
+  updatedBy BigInt?                    @map("updated_by") @db.UnsignedBigInt
+  createdAt DateTime                   @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime                   @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  editor             User?            @relation(fields: [updatedBy], references: [id], onDelete: SetNull, map: "fk_zones_user")
+  ratesAsOrigin      ZoneRate[]       @relation("ZoneRateOrigin")
+  ratesAsDestination ZoneRate[]       @relation("ZoneRateDestination")
+  legsAsOrigin       ReservationLeg[] @relation("LegOriginZone")
+  legsAsDestination  ReservationLeg[] @relation("LegDestinationZone")
+
+  @@index([updatedBy], map: "idx_zones_user")
+  @@map("zones")
+}
+
+model ZoneRate {
+  id                BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  originZoneId      Int       @map("origin_zone_id") @db.UnsignedSmallInt
+  destinationZoneId Int       @map("destination_zone_id") @db.UnsignedSmallInt
+  vehicleTypeId     Int       @map("vehicle_type_id") @db.UnsignedSmallInt
+  minPax            Int       @default(1) @map("min_pax") @db.UnsignedTinyInt
+  maxPax            Int       @map("max_pax") @db.UnsignedTinyInt
+  priceOneWay       Decimal   @map("price_one_way") @db.Decimal(10, 2)
+  priceRoundTrip    Decimal   @map("price_round_trip") @db.Decimal(10, 2)
+  isBidirectional   Boolean   @default(true) @map("is_bidirectional")
+  validFrom         DateTime  @map("valid_from") @db.Date
+  validTo           DateTime? @map("valid_to") @db.Date
+  isActive          Boolean   @default(true) @map("is_active")
+  updatedBy         BigInt?   @map("updated_by") @db.UnsignedBigInt
+  createdAt         DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  originZone      Zone          @relation("ZoneRateOrigin", fields: [originZoneId], references: [id], onDelete: Restrict, map: "fk_zr_origin")
+  destinationZone Zone          @relation("ZoneRateDestination", fields: [destinationZoneId], references: [id], onDelete: Restrict, map: "fk_zr_dest")
+  vehicleType     VehicleType   @relation(fields: [vehicleTypeId], references: [id], onDelete: Restrict, map: "fk_zr_vtype")
+  editor          User?         @relation(fields: [updatedBy], references: [id], onDelete: SetNull, map: "fk_zr_user")
+  reservations    Reservation[]
+
+  @@unique([originZoneId, destinationZoneId, vehicleTypeId, minPax, validFrom], map: "uq_zone_rates")
+  @@index([originZoneId, destinationZoneId, isActive, validFrom], map: "idx_zone_rates_lookup")
+  @@index([destinationZoneId], map: "idx_zone_rates_dest")
+  @@index([vehicleTypeId], map: "idx_zone_rates_vtype")
+  @@index([updatedBy], map: "idx_zone_rates_user")
+  @@map("zone_rates")
+}
+
+model Place {
+  id               BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
+  googlePlaceId    String?               @unique(map: "uq_places_google") @map("google_place_id") @db.VarChar(255)
+  code             String?               @unique(map: "uq_places_code") @db.VarChar(10)
+  placeType       PlaceType             @default(HOTEL) @map("place_type")
+  name             String                @db.VarChar(190)
+  formattedAddress String?               @map("formatted_address") @db.VarChar(255)
+  location         Unsupported("point")
+  googleTypes      Json?                 @map("google_types")
+  isFeatured       Boolean               @default(false) @map("is_featured")
+  lastSyncedAt     DateTime?             @map("last_synced_at") @db.DateTime(0)
+  createdAt        DateTime              @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  legsAsOrigin      ReservationLeg[] @relation("LegOriginPlace")
+  legsAsDestination ReservationLeg[] @relation("LegDestinationPlace")
+
+  @@index([placeType], map: "idx_places_type")
+  @@map("places")
+}
+
+model Reservation {
+  id              BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  code            String            @unique(map: "uq_reservations_code") @db.VarChar(12)
+  customerId      BigInt            @map("customer_id") @db.UnsignedBigInt
+  tripType        TripType          @map("trip_type")
+  routeType       RouteType         @map("route_type")
+  vehicleTypeId   Int               @map("vehicle_type_id") @db.UnsignedSmallInt
+  zoneRateId      BigInt?           @map("zone_rate_id") @db.UnsignedBigInt
+  adults          Int               @default(1) @db.UnsignedTinyInt
+  children        Int               @default(0) @db.UnsignedTinyInt
+  infants         Int               @default(0) @db.UnsignedTinyInt
+  subtotal        Decimal           @db.Decimal(10, 2)
+  discount        Decimal           @default(0.00) @db.Decimal(10, 2)
+  total           Decimal           @db.Decimal(10, 2)
+  status          ReservationStatus @default(PENDING)
+  paymentStatus   PaymentStatus     @default(UNPAID) @map("payment_status")
+  specialRequests String?           @map("special_requests") @db.Text
+  internalNotes   String?           @map("internal_notes") @db.Text
+  source          ReservationSource @default(WEB)
+  expiresAt       DateTime?         @map("expires_at") @db.DateTime(0)
+  createdAt       DateTime          @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  customer      Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict, map: "fk_res_customer")
+  vehicleType   VehicleType                @relation(fields: [vehicleTypeId], references: [id], onDelete: Restrict, map: "fk_res_vtype")
+  zoneRate      ZoneRate?                  @relation(fields: [zoneRateId], references: [id], onDelete: SetNull, map: "fk_res_rate")
+  legs          ReservationLeg[]
+  payments      Payment[]
+  statusHistory ReservationStatusHistory[]
+
+  @@index([status, createdAt], map: "idx_res_status")
+  @@index([customerId], map: "idx_res_customer")
+  @@index([vehicleTypeId], map: "idx_res_vtype")
+  @@index([zoneRateId], map: "idx_res_rate")
+  @@map("reservations")
+}
+
+model ReservationLeg {
+  id                 BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  reservationId      BigInt    @map("reservation_id") @db.UnsignedBigInt
+  legNumber          Int       @map("leg_number") @db.UnsignedTinyInt
+  originPlaceId      BigInt    @map("origin_place_id") @db.UnsignedBigInt
+  originZoneId       Int       @map("origin_zone_id") @db.UnsignedSmallInt
+  originName         String    @map("origin_name") @db.VarChar(190)
+  destinationPlaceId BigInt    @map("destination_place_id") @db.UnsignedBigInt
+  destinationZoneId  Int       @map("destination_zone_id") @db.UnsignedSmallInt
+  destinationName    String    @map("destination_name") @db.VarChar(190)
+  pickupAt           DateTime  @map("pickup_at") @db.DateTime(0)
+  estimatedEndAt     DateTime? @map("estimated_end_at") @db.DateTime(0)
+  flightNumber       String?   @map("flight_number") @db.VarChar(15)
+  airline            String?   @db.VarChar(60)
+  terminal           String?   @db.VarChar(5)
+  flightTime         DateTime? @map("flight_time") @db.DateTime(0)
+  vehicleId          BigInt?   @map("vehicle_id") @db.UnsignedBigInt
+  driverName         String?   @map("driver_name") @db.VarChar(120)
+  driverPhone        String?   @map("driver_phone") @db.VarChar(30)
+  status             LegStatus @default(SCHEDULED)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  reservation      Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade, map: "fk_legs_res")
+  originPlace      Place       @relation("LegOriginPlace", fields: [originPlaceId], references: [id], onDelete: Restrict, map: "fk_legs_oplace")
+  destinationPlace Place       @relation("LegDestinationPlace", fields: [destinationPlaceId], references: [id], onDelete: Restrict, map: "fk_legs_dplace")
+  originZone       Zone        @relation("LegOriginZone", fields: [originZoneId], references: [id], onDelete: Restrict, map: "fk_legs_ozone")
+  destinationZone  Zone        @relation("LegDestinationZone", fields: [destinationZoneId], references: [id], onDelete: Restrict, map: "fk_legs_dzone")
+  vehicle          Vehicle?    @relation(fields: [vehicleId], references: [id], onDelete: SetNull, map: "fk_legs_vehicle")
+
+  @@unique([reservationId, legNumber], map: "uq_leg")
+  @@index([pickupAt], map: "idx_legs_pickup")
+  @@index([vehicleId, pickupAt, estimatedEndAt], map: "idx_legs_vehicle_time")
+  @@index([originPlaceId], map: "idx_legs_oplace")
+  @@index([destinationPlaceId], map: "idx_legs_dplace")
+  @@index([originZoneId], map: "idx_legs_ozone")
+  @@index([destinationZoneId], map: "idx_legs_dzone")
+  @@map("reservation_legs")
+}
+
+model Payment {
+  id                BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  reservationId     BigInt              @map("reservation_id") @db.UnsignedBigInt
+  provider          PaymentProvider
+  providerPaymentId String?             @map("provider_payment_id") @db.VarChar(191)
+  type              PaymentType         @default(CHARGE)
+  amount            Decimal             @db.Decimal(10, 2)
+  currency          String              @default("USD") @db.Char(3)
+  status            PaymentRecordStatus @default(PENDING)
+  failureReason     String?             @map("failure_reason") @db.VarChar(255)
+  providerPayload   Json?               @map("provider_payload")
+  paidAt            DateTime?           @map("paid_at") @db.DateTime(0)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt         DateTime            @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict, map: "fk_payments_res")
+
+  @@unique([provider, providerPaymentId, type], map: "uq_payments_provider")
+  @@index([reservationId], map: "idx_payments_res")
+  @@map("payments")
+}
+
+model PaymentWebhookEvent {
+  id          BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  provider    WebhookProvider
+  eventId     String          @map("event_id") @db.VarChar(191)
+  eventType   String          @map("event_type") @db.VarChar(100)
+  payload     Json
+  processedAt DateTime?       @map("processed_at") @db.DateTime(0)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.DateTime(0)
+
+  @@unique([provider, eventId], map: "uq_webhook_event")
+  @@map("payment_webhook_events")
+}
+
+model ReservationStatusHistory {
+  id            BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  reservationId BigInt   @map("reservation_id") @db.UnsignedBigInt
+  fromStatus    String?  @map("from_status") @db.VarChar(20)
+  toStatus      String   @map("to_status") @db.VarChar(20)
+  changedBy     BigInt?  @map("changed_by") @db.UnsignedBigInt
+  comment       String?  @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade, map: "fk_rsh_res")
+  author      User?       @relation(fields: [changedBy], references: [id], onDelete: SetNull, map: "fk_rsh_user")
+
+  @@index([reservationId, createdAt], map: "idx_rsh_res")
+  @@index([changedBy], map: "idx_rsh_user")
+  @@map("reservation_status_history")
+}
+
+model ContactRequest {
+  id            BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  name          String               @db.VarChar(120)
+  email         String               @db.VarChar(190)
+  phone         String?              @db.VarChar(30)
+  hotelName     String               @map("hotel_name") @db.VarChar(190)
+  googlePlaceId String?              @map("google_place_id") @db.VarChar(255)
+  arrivalDate   DateTime?            @map("arrival_date") @db.Date
+  passengers    Int?                 @db.UnsignedTinyInt
+  message       String?              @db.Text
+  status        ContactRequestStatus @default(NEW)
+  internalNotes String?              @map("internal_notes") @db.Text
+  createdAt     DateTime             @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime             @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([status, createdAt], map: "idx_contact_status")
+  @@map("contact_requests")
+}

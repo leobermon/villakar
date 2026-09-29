@@ -1,0 +1,357 @@
+import { randomInt } from 'node:crypto';
+import { BadRequestException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import {
+  PaymentProvider,
+  PaymentRecordStatus,
+  PaymentStatus,
+  PaymentType,
+  Prisma,
+  ReservationSource,
+  ReservationStatus,
+  RouteType,
+  TripType,
+} from '@prisma/client';
+import { formatLocalDateTime, localDateTime, nowInCancun } from '../../common/utils/time';
+import { PrismaService } from '../../prisma/prisma.service';
+import { PricingService } from '../pricing/pricing.service';
+import { CreateReservationDto, LegDetailsDto } from './dto/create-reservation.dto';
+import { ReservationAccessDto } from './dto/lookup-reservation.dto';
+
+const HOUR_MS = 60 * 60 * 1000;
+/** Ventana máxima entre la recogida en el hotel y la salida del vuelo. */
+const MAX_PICKUP_BEFORE_FLIGHT_MS = 8 * HOUR_MS;
+// Sin 0/O ni 1/I/L para que el código se pueda dictar por teléfono sin confusiones.
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+type LegKind = 'ARRIVAL' | 'DEPARTURE' | 'TRANSFER';
+
+const reservationInclude = {
+  customer: true,
+  vehicleType: true,
+  legs: { orderBy: { legNumber: 'asc' } },
+  payments: {
+    where: { provider: PaymentProvider.CASH, type: PaymentType.CHARGE, status: PaymentRecordStatus.PENDING },
+    select: { id: true },
+  },
+} satisfies Prisma.ReservationInclude;
+
+type ReservationWithDetails = Prisma.ReservationGetPayload<{ include: typeof reservationInclude }>;
+
+export interface ReservationSummary {
+  code: string;
+  status: ReservationStatus;
+  paymentStatus: PaymentStatus;
+  tripType: TripType;
+  routeType: RouteType;
+  vehicleName: string;
+  passengers: number;
+  total: number;
+  currency: 'USD';
+  customer: { firstName: string; lastName: string; email: string; phone: string | null };
+  legs: Array<{
+    legNumber: number;
+    originName: string;
+    destinationName: string;
+    /** Hora local de Cancún, 'YYYY-MM-DDTHH:MM'. */
+    pickupAt: string;
+    flightNumber: string | null;
+    airline: string | null;
+    flightTime: string | null;
+    terminal: string | null;
+  }>;
+  specialRequests: string | null;
+  /** Límite para pagar (instante UTC en ISO). Null si ya no aplica. */
+  expiresAt: string | null;
+  /** true si aún se puede pagar en línea. */
+  canPay: boolean;
+  /** true si el cliente eligió pagar en efectivo al chofer después del servicio. */
+  payInCash: boolean;
+}
+
+/** Reserva lista para cobrarse: la usan los proveedores de pago. */
+export interface PayableReservation {
+  id: bigint;
+  code: string;
+  total: Prisma.Decimal;
+  vehicleName: string;
+  tripType: TripType;
+  customerEmail: string;
+}
+
+@Injectable()
+export class ReservationsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricing: PricingService,
+    private readonly config: ConfigService,
+  ) {}
+
+  async create(dto: CreateReservationDto): Promise<ReservationSummary> {
+    const trip = await this.pricing.priceTrip(dto);
+    if (!trip.serviceable) {
+      throw new UnprocessableEntityException('This route cannot be booked online. Please contact us for a quote.');
+    }
+    const rate = trip.rates.find((candidate) => candidate.vehicleTypeId === dto.vehicleTypeId);
+    if (!rate) {
+      throw new UnprocessableEntityException('The selected vehicle is no longer available for this trip. Please search again.');
+    }
+
+    const expectedLegs = dto.tripType === TripType.ROUND_TRIP ? 2 : 1;
+    if (dto.legs.length !== expectedLegs) {
+      throw new BadRequestException(`legs must contain ${expectedLegs} item(s) for this trip type`);
+    }
+
+    // Ida: origen → destino en `date`. Regreso: destino → origen en `returnDate`.
+    const outbound = { from: trip.origin, fromZone: trip.originZone, to: trip.destination, toZone: trip.destinationZone };
+    const segments = [
+      { ...outbound, date: dto.date, kind: legKind(trip.routeType) },
+      ...(expectedLegs === 2
+        ? [
+            {
+              from: trip.destination,
+              fromZone: trip.destinationZone,
+              to: trip.origin,
+              toZone: trip.originZone,
+              date: dto.returnDate!,
+              kind: legKind(reverseRoute(trip.routeType)),
+            },
+          ]
+        : []),
+    ];
+
+    const legs = segments.map((segment, index) => ({
+      segment,
+      times: resolveLegTimes(segment.kind, segment.date, dto.legs[index], index),
+      details: dto.legs[index],
+    }));
+    this.validateSchedule(legs.map(({ times }) => times.pickupAt));
+
+    const price = dto.tripType === TripType.ROUND_TRIP ? rate.priceRoundTrip : rate.priceOneWay;
+    const holdMinutes = this.config.getOrThrow<number>('BOOKING_HOLD_MINUTES');
+    const specialRequests = dto.specialRequests?.trim() || null;
+
+    const reservation = await this.withUniqueCode((code) =>
+      this.prisma.reservation.create({
+        data: {
+          code,
+          customer: {
+            create: {
+              firstName: dto.customer.firstName.trim(),
+              lastName: dto.customer.lastName.trim(),
+              email: normalizeEmail(dto.customer.email),
+              phone: dto.customer.phone.trim(),
+            },
+          },
+          tripType: dto.tripType,
+          routeType: trip.routeType,
+          vehicleType: { connect: { id: rate.vehicleTypeId } },
+          zoneRate: { connect: { id: rate.id } },
+          adults: dto.passengers,
+          subtotal: price,
+          total: price,
+          source: ReservationSource.WEB,
+          specialRequests,
+          expiresAt: new Date(Date.now() + holdMinutes * 60_000),
+          legs: {
+            create: legs.map(({ segment, times, details }, index) => ({
+              legNumber: index + 1,
+              originPlace: { connect: { id: segment.from.id } },
+              originZone: { connect: { id: segment.fromZone.id } },
+              originName: segment.from.name,
+              destinationPlace: { connect: { id: segment.to.id } },
+              destinationZone: { connect: { id: segment.toZone.id } },
+              destinationName: segment.to.name,
+              pickupAt: times.pickupAt,
+              flightTime: times.flightAt,
+              flightNumber: segment.kind === 'TRANSFER' ? null : normalizeFlightNumber(details.flightNumber!),
+              airline: segment.kind === 'TRANSFER' ? null : details.airline!.trim(),
+              terminal: segment.kind === 'TRANSFER' ? null : (details.terminal ?? null),
+            })),
+          },
+          statusHistory: { create: { toStatus: ReservationStatus.PENDING, comment: 'Created on website' } },
+        },
+        include: reservationInclude,
+      }),
+    );
+
+    return toSummary(reservation);
+  }
+
+  /** Consulta pública: exige código y el email con el que se reservó. */
+  async lookup({ code, email }: ReservationAccessDto): Promise<ReservationSummary> {
+    return toSummary(await this.findByAccess(code, email));
+  }
+
+  /**
+   * Reserva que todavía se puede pagar en línea. Lanza un error legible si ya
+   * está pagada, cancelada o expiró.
+   */
+  async findPayable({ code, email }: ReservationAccessDto): Promise<PayableReservation> {
+    const reservation = await this.findByAccess(code, email);
+    if (reservation.paymentStatus === PaymentStatus.PAID) {
+      throw new UnprocessableEntityException('This reservation is already paid.');
+    }
+    if (reservation.status === ReservationStatus.CONFIRMED) {
+      throw new UnprocessableEntityException('This reservation is already confirmed.');
+    }
+    if (!isPayable(reservation)) {
+      throw new UnprocessableEntityException('This reservation can no longer be paid online. Please make a new booking.');
+    }
+    return {
+      id: reservation.id,
+      code: reservation.code,
+      total: reservation.total,
+      vehicleName: reservation.vehicleType.name,
+      tripType: reservation.tripType,
+      customerEmail: reservation.customer.email,
+    };
+  }
+
+  private async findByAccess(code: string, email: string): Promise<ReservationWithDetails> {
+    const reservation = await this.prisma.reservation.findUnique({ where: { code }, include: reservationInclude });
+    // Mismo error si no existe o si el email no coincide: no revela qué códigos existen.
+    if (!reservation || reservation.customer.email !== normalizeEmail(email)) {
+      throw new NotFoundException('We could not find a reservation with that code and email.');
+    }
+    return reservation;
+  }
+
+  private validateSchedule(pickups: Date[]): void {
+    const noticeHours = this.config.getOrThrow<number>('BOOKING_MIN_NOTICE_HOURS');
+    const earliest = new Date(nowInCancun().getTime() + noticeHours * HOUR_MS);
+    if (pickups[0] < earliest) {
+      throw new BadRequestException(
+        `Online bookings need at least ${noticeHours} hours of notice. For sooner pickups, please contact us.`,
+      );
+    }
+    if (pickups[1] && pickups[1] <= pickups[0]) {
+      throw new BadRequestException('The return pickup must be after the first pickup.');
+    }
+  }
+
+  /** Genera el código de reserva; reintenta en el caso (muy raro) de que ya exista. */
+  private async withUniqueCode<T>(create: (code: string) => Promise<T>): Promise<T> {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        return await create(generateCode());
+      } catch (error) {
+        const isCodeCollision =
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002' &&
+          String(error.meta?.target ?? '').includes('code');
+        if (!isCodeCollision) throw error;
+      }
+    }
+    throw new Error('Could not generate a unique reservation code');
+  }
+}
+
+export function isPayable(reservation: {
+  status: ReservationStatus;
+  paymentStatus: PaymentStatus;
+  expiresAt: Date | null;
+}): boolean {
+  return (
+    reservation.status === ReservationStatus.PENDING &&
+    reservation.paymentStatus === PaymentStatus.UNPAID &&
+    (!reservation.expiresAt || reservation.expiresAt > new Date())
+  );
+}
+
+function legKind(route: RouteType): LegKind {
+  if (route === RouteType.AIRPORT_HOTEL) return 'ARRIVAL';
+  if (route === RouteType.HOTEL_AIRPORT) return 'DEPARTURE';
+  return 'TRANSFER';
+}
+
+function reverseRoute(route: RouteType): RouteType {
+  if (route === RouteType.AIRPORT_HOTEL) return RouteType.HOTEL_AIRPORT;
+  if (route === RouteType.HOTEL_AIRPORT) return RouteType.AIRPORT_HOTEL;
+  return RouteType.HOTEL_HOTEL;
+}
+
+/**
+ * Horas de un tramo (locales de Cancún):
+ * - Llegada: el chofer espera a la hora de aterrizaje; pickup = hora del vuelo.
+ * - Salida: pickup en el hotel antes del vuelo. Si la hora de pickup es mayor
+ *   que la del vuelo, es del día anterior (vuelo de madrugada).
+ * - Hotel → hotel: solo hora de pickup.
+ */
+function resolveLegTimes(
+  kind: LegKind,
+  date: string,
+  details: LegDetailsDto,
+  index: number,
+): { pickupAt: Date; flightAt: Date | null } {
+  const label = index === 0 ? 'first transfer' : 'return transfer';
+  const require = (value: string | undefined, field: string): string => {
+    if (!value?.trim()) throw new BadRequestException(`${field} is required for the ${label}`);
+    return value;
+  };
+
+  if (kind === 'TRANSFER') {
+    return { pickupAt: localDateTime(date, require(details.pickupTime, 'Pickup time')), flightAt: null };
+  }
+
+  require(details.flightNumber, 'Flight number');
+  require(details.airline, 'Airline');
+  const flightAt = localDateTime(date, require(details.flightTime, 'Flight time'));
+  if (kind === 'ARRIVAL') return { pickupAt: flightAt, flightAt };
+
+  let pickupAt = localDateTime(date, require(details.pickupTime, 'Pickup time'));
+  if (pickupAt >= flightAt) pickupAt = new Date(pickupAt.getTime() - 24 * HOUR_MS);
+  if (flightAt.getTime() - pickupAt.getTime() > MAX_PICKUP_BEFORE_FLIGHT_MS) {
+    throw new BadRequestException(`Pickup time must be within 8 hours before your flight (${label})`);
+  }
+  return { pickupAt, flightAt };
+}
+
+function generateCode(): string {
+  let code = 'VC';
+  for (let i = 0; i < 8; i++) code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
+  return code;
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function normalizeFlightNumber(value: string): string {
+  return value.replace(/\s+/g, '').toUpperCase();
+}
+
+function toSummary(reservation: ReservationWithDetails): ReservationSummary {
+  const payable = isPayable(reservation);
+  return {
+    code: reservation.code,
+    status: reservation.status,
+    paymentStatus: reservation.paymentStatus,
+    tripType: reservation.tripType,
+    routeType: reservation.routeType,
+    vehicleName: reservation.vehicleType.name,
+    passengers: reservation.adults + reservation.children + reservation.infants,
+    total: reservation.total.toNumber(),
+    currency: 'USD',
+    customer: {
+      firstName: reservation.customer.firstName,
+      lastName: reservation.customer.lastName,
+      email: reservation.customer.email,
+      phone: reservation.customer.phone,
+    },
+    legs: reservation.legs.map((leg) => ({
+      legNumber: leg.legNumber,
+      originName: leg.originName,
+      destinationName: leg.destinationName,
+      pickupAt: formatLocalDateTime(leg.pickupAt),
+      flightNumber: leg.flightNumber,
+      airline: leg.airline,
+      flightTime: leg.flightTime ? formatLocalDateTime(leg.flightTime) : null,
+      terminal: leg.terminal,
+    })),
+    specialRequests: reservation.specialRequests,
+    expiresAt: payable && reservation.expiresAt ? reservation.expiresAt.toISOString() : null,
+    canPay: payable,
+    payInCash: reservation.paymentStatus === PaymentStatus.UNPAID && reservation.payments.length > 0,
+  };
+}
