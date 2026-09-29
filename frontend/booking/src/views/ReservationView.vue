@@ -169,7 +169,7 @@ const inputClass =
           <template v-else>
             <h1 class="font-display text-3xl font-semibold">This reservation is no longer active</h1>
             <p class="mt-2 text-sm text-brand-900/70">It was not paid in time. Please search again to book your transfer.</p>
-            <RouterLink :to="{ name: 'home' }" class="mt-4 inline-block rounded-xl bg-accent-500 px-6 py-3 text-sm font-bold text-white hover:bg-accent-600">
+            <RouterLink :to="{ name: 'home' }" class="mt-4 inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white hover:bg-brand-700">
               New search
             </RouterLink>
           </template>

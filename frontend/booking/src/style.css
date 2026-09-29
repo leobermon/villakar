@@ -5,33 +5,39 @@
   --font-display: "Fraunces", ui-serif, Georgia, serif;
 
   /*
-   * Paleta tomada del logo VillaKar. El azul manda: texto, selección, enlaces y
-   * el encabezado. El rojo es la señal: solo el botón de la acción principal de
-   * cada pantalla y los mensajes de error, para que la página no se sienta roja.
+   * Paleta tomada del logo VillaKar. El azul manda: texto, selección, enlaces,
+   * iconos y el encabezado. El rojo coral es la señal: solo el botón final de
+   * reserva/pago y los mensajes de error, para que la página no se sienta roja.
    */
 
-  /* Azul: del cielo (#00A8F0 del logo) al rey (#0060C0) y a un marino para texto. */
-  --color-brand-50: #eff6fe;
-  --color-brand-100: #dcebfc;
-  --color-brand-200: #bddafa;
-  --color-brand-300: #8cc2f5;
-  --color-brand-400: #4ea2ec;
-  --color-brand-500: #1f84de;
-  --color-brand-600: #0e69c2;
-  --color-brand-700: #0b549d;
-  --color-brand-800: #0d4580;
-  --color-brand-900: #0f3461;
-  --color-brand-950: #0a1f3d;
+  /*
+   * Azul: el vibrante del logo (#0077B6) en 600 (iconos, selección, enlaces) y el
+   * navy profundo (#023E8A) en 950 (texto principal).
+   */
+  --color-brand-50: #eaf5fb;
+  --color-brand-100: #d2eaf6;
+  --color-brand-200: #a8d4ee;
+  --color-brand-300: #6db6df;
+  --color-brand-400: #2e95cc;
+  --color-brand-500: #0a84c1;
+  --color-brand-600: #0077b6;
+  --color-brand-700: #03629e;
+  --color-brand-800: #03508f;
+  --color-brand-900: #02458c;
+  --color-brand-950: #023e8a;
 
-  /* Gris frío: el plateado de "TRANSFERS", para fondos. */
-  --color-mist-50: #f4f7fb;
-  --color-mist-100: #e8eef5;
-  --color-mist-200: #d5dfea;
+  /* Fondos de playa: blanco crema (#FDFCF5) y arena muy pálida (#F1F1E6). */
+  --color-mist-50: #fdfcf5;
+  --color-mist-100: #f1f1e6;
+  --color-mist-200: #e3e3d3;
 
-  /* Rojo del logo (#F00000), un poco más profundo para no deslumbrar. */
-  --color-accent-400: #ec5a50;
-  --color-accent-500: #d8322a;
-  --color-accent-600: #b8261f;
+  /* Gris niebla (#EDF2F4): neutro de apoyo para paneles y fondos secundarios. */
+  --color-fog-100: #edf2f4;
+
+  /* Rojo coral (#E53E3E): el rojo del logo, un poco más tropical. */
+  --color-accent-400: #f06a6a;
+  --color-accent-500: #e53e3e;
+  --color-accent-600: #c53030;
 }
 
 @layer base {

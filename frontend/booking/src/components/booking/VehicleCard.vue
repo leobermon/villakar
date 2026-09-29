@@ -17,7 +17,7 @@ const emit = defineEmits<{ select: [rateId: number] }>();
     class="flex flex-col overflow-hidden rounded-2xl border bg-white transition"
     :class="props.selected ? 'border-brand-500 ring-4 ring-brand-300/30' : 'border-brand-100 hover:border-brand-300'"
   >
-    <div class="grid h-24 place-items-center bg-gradient-to-br from-brand-50 to-mist-100 px-4">
+    <div class="grid h-24 place-items-center bg-fog-100 px-4">
       <img
         v-if="props.option.vehicleType.imageUrl"
         :src="props.option.vehicleType.imageUrl"

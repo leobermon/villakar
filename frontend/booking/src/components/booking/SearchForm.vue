@@ -190,7 +190,7 @@ function goToContact(query: string) {
       <div class="flex items-end md:col-span-2 lg:order-6 lg:col-span-4">
         <button
           type="submit"
-          class="h-12 w-full rounded-xl bg-accent-500 px-6 text-[15px] font-bold text-white shadow-sm transition hover:bg-accent-600 disabled:cursor-wait disabled:opacity-70"
+          class="h-12 w-full rounded-xl bg-brand-600 px-6 text-[15px] font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-wait disabled:opacity-70"
           :disabled="store.loading"
         >
           {{ store.loading ? 'Checking prices…' : 'See prices' }}
