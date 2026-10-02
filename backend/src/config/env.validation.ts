@@ -1,5 +1,5 @@
 import { plainToInstance, Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, Max, Min, validateSync } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, MinLength, IsNotEmpty, IsOptional, IsString, IsUrl, Max, Min, validateSync } from 'class-validator';
 
 class EnvironmentVariables {
   @IsString()
@@ -63,9 +63,54 @@ class EnvironmentVariables {
 
   /** Permite reservar y pagar en efectivo al chofer después del servicio. */
   // Sin la variable queda activado; con ella, solo 'true' lo activa.
-  @Transform(({ value }) => value === undefined || value === true || value === 'true')
+  @Transform(({ obj, key }) => envFlag(obj[key], true))
   @IsBoolean()
   CASH_PAYMENTS_ENABLED: boolean = true;
+
+  // Correo saliente (SMTP). Vacío = correos desactivados. En desarrollo: Mailpit.
+  @IsOptional()
+  @IsString()
+  SMTP_HOST?: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  SMTP_PORT: number = 1025;
+
+  /** true para TLS directo (puerto 465); false para STARTTLS o sin cifrar (587 / 1025). */
+  @Transform(({ obj, key }) => envFlag(obj[key], false))
+  @IsBoolean()
+  SMTP_SECURE: boolean = false;
+
+  @IsOptional()
+  @IsString()
+  SMTP_USER?: string;
+
+  @IsOptional()
+  @IsString()
+  SMTP_PASS?: string;
+
+  // Panel de administración.
+  /** Secreto para firmar la sesión del panel (mínimo 32 caracteres aleatorios). */
+  @IsString()
+  @MinLength(32)
+  ADMIN_JWT_SECRET: string;
+
+  /** Horas que dura una sesión del panel. */
+  @IsInt()
+  @Min(1)
+  @Max(72)
+  ADMIN_SESSION_HOURS: number = 12;
+
+  /** true en producción (https): la cookie de sesión solo viaja cifrada. */
+  @Transform(({ obj, key }) => envFlag(obj[key], false))
+  @IsBoolean()
+  COOKIE_SECURE: boolean = false;
+
+  /** Remitente de los correos, p. ej. "VillaKar Transfers <reservations@tudominio.com>". */
+  @IsString()
+  @IsNotEmpty()
+  MAIL_FROM: string = 'VillaKar Transfers <no-reply@villakar.test>';
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
@@ -75,4 +120,13 @@ export function validateEnv(config: Record<string, unknown>): EnvironmentVariabl
     throw new Error(`Variables de entorno inválidas:\n${errors.map((e) => e.toString()).join('\n')}`);
   }
   return validated;
+}
+
+/**
+ * Lee una variable booleana desde el texto original del .env. Se usa `obj[key]`
+ * y no `value` porque la conversión implícita convierte "false" en true.
+ */
+function envFlag(raw: unknown, fallback: boolean): boolean {
+  if (raw === undefined || raw === '') return fallback;
+  return raw === true || String(raw).trim().toLowerCase() === 'true';
 }

@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /*
+   * Misma paleta que el sitio de reservas (frontend/booking/src/style.css).
+   * En el panel el rojo se reserva para errores y acciones destructivas.
+   */
+  --color-brand-50: #eaf5fb;
+  --color-brand-100: #d2eaf6;
+  --color-brand-200: #a8d4ee;
+  --color-brand-300: #6db6df;
+  --color-brand-400: #2e95cc;
+  --color-brand-500: #0a84c1;
+  --color-brand-600: #0077b6;
+  --color-brand-700: #03629e;
+  --color-brand-800: #03508f;
+  --color-brand-900: #02458c;
+  --color-brand-950: #023e8a;
+
+  /* Gris niebla: fondo del panel y superficies secundarias. */
+  --color-fog-50: #f6f8f9;
+  --color-fog-100: #edf2f4;
+  --color-fog-200: #dde5e9;
+
+  --color-accent-50: #fdeeee;
+  --color-accent-500: #e53e3e;
+  --color-accent-600: #c53030;
+
+  /* Barra lateral: azul marino más profundo que el texto para separar el menú del contenido. */
+  --color-sidebar: #0b2a55;
+}
+
+@layer base {
+  body {
+    @apply bg-fog-50 font-sans text-brand-950 antialiased;
+  }
+}

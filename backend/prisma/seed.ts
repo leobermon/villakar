@@ -1,11 +1,38 @@
 import { PrismaClient } from '@prisma/client';
+import { hashPassword } from '../src/modules/auth/password';
 
 const prisma = new PrismaClient();
 
+// imageUrl: rutas del sitio de reservas (frontend/booking/public/vehicles), todas
+// con el mismo lienzo 800x400 y el vehículo centrado.
 const VEHICLE_TYPES = [
-  { code: 'SEDAN', name: 'Sedan', maxPassengers: 2, maxLuggage: 2, sortOrder: 1 },
-  { code: 'CARRITO', name: 'Carrito', maxPassengers: 4, maxLuggage: 4, sortOrder: 2 },
-  { code: 'TRANSPORTER', name: 'Transporter', maxPassengers: 7, maxLuggage: 7, sortOrder: 3 },
+  {
+    code: 'SEDAN',
+    name: 'Sedan',
+    description: 'Volkswagen Jetta or similar',
+    maxPassengers: 2,
+    maxLuggage: 2,
+    imageUrl: '/vehicles/sedan.webp',
+    sortOrder: 1,
+  },
+  {
+    code: 'CARRITO',
+    name: 'Carrito',
+    description: 'Volkswagen Teramont or similar',
+    maxPassengers: 4,
+    maxLuggage: 4,
+    imageUrl: '/vehicles/carrito.webp',
+    sortOrder: 2,
+  },
+  {
+    code: 'TRANSPORTER',
+    name: 'Transporter',
+    description: 'Ford Transit or similar',
+    maxPassengers: 7,
+    maxLuggage: 7,
+    imageUrl: '/vehicles/transporter.webp',
+    sortOrder: 3,
+  },
 ];
 
 type BBox = [minLng: number, minLat: number, maxLng: number, maxLat: number];
@@ -44,6 +71,12 @@ function bboxToWkt([minLng, minLat, maxLng, maxLat]: BBox): string {
 async function main() {
   for (const vt of VEHICLE_TYPES) {
     await prisma.vehicleType.upsert({ where: { code: vt.code }, update: {}, create: vt });
+    // Imagen y descripción solo si aún no tienen: no pisa lo que se edite en el panel.
+    await prisma.vehicleType.updateMany({ where: { code: vt.code, imageUrl: null }, data: { imageUrl: vt.imageUrl } });
+    await prisma.vehicleType.updateMany({
+      where: { code: vt.code, description: null },
+      data: { description: vt.description },
+    });
   }
 
   // INSERT IGNORE: no sobreescribe zonas que ya se hayan editado en el panel.
@@ -61,7 +94,37 @@ async function main() {
             ST_GeomFromText(${`POINT(${AIRPORT.lng} ${AIRPORT.lat})`}, 4326, 'axis-order=long-lat'),
             1)`;
 
+  await seedFirstAdmin();
+
   console.log('Seed completado: tipos de vehículo, zonas de ejemplo y aeropuerto CUN.');
+}
+
+/**
+ * Primer usuario del panel, desde ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD del .env
+ * (la contraseña nunca va en el código). Si el correo ya existe no lo toca.
+ */
+async function seedFirstAdmin() {
+  const email = process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_SEED_PASSWORD;
+  if (!email || !password) {
+    console.log('Sin ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD: no se crea usuario del panel.');
+    return;
+  }
+  if (password.length < 12) throw new Error('ADMIN_SEED_PASSWORD debe tener al menos 12 caracteres.');
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    console.log(`El usuario del panel ${email} ya existe; no se modifica.`);
+    return;
+  }
+  await prisma.user.create({
+    data: {
+      email,
+      name: process.env.ADMIN_SEED_NAME?.trim() || 'Administrador',
+      passwordHash: await hashPassword(password),
+      role: 'SUPER_ADMIN',
+    },
+  });
+  console.log(`Usuario del panel creado: ${email} (SUPER_ADMIN).`);
 }
 
 main()

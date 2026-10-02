@@ -66,6 +66,20 @@ export interface ContactRequestPayload {
   message?: string;
 }
 
+export interface FleetVehicle {
+  code: string;
+  name: string;
+  description: string | null;
+  maxPassengers: number;
+  maxLuggage: number;
+  imageUrl: string | null;
+}
+
+/** Flota activa para la portada (sin precios: dependen de la ruta). */
+export function fetchFleet(): Promise<FleetVehicle[]> {
+  return apiRequest('/vehicle-types');
+}
+
 export function fetchPlaceSuggestions(
   input: string,
   sessionToken: string,
@@ -132,6 +146,8 @@ export interface ReservationSummary {
   canPay: boolean;
   /** El cliente pagará en efectivo al chofer después del servicio. */
   payInCash: boolean;
+  /** Ya se envió el correo de confirmación al cliente. */
+  confirmationEmailSent: boolean;
 }
 
 export interface ReservationAccess {

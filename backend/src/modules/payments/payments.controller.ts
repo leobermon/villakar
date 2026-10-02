@@ -9,11 +9,11 @@ import {
   Req,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { ReservationAccessDto } from '../reservations/dto/lookup-reservation.dto';
 import { ReservationsService } from '../reservations/reservations.service';
+import { SettingsService } from '../settings/settings.service';
 import { PaymentLedgerService } from './payment-ledger.service';
 import { PaypalCaptureDto, StripeConfirmDto } from './dto/payment-return.dto';
 import { PaypalService } from './paypal.service';
@@ -26,16 +26,17 @@ export class PaymentsController {
     private readonly paypal: PaypalService,
     private readonly ledger: PaymentLedgerService,
     private readonly reservations: ReservationsService,
-    private readonly config: ConfigService,
+    private readonly settings: SettingsService,
   ) {}
 
   /** Métodos de pago disponibles: el sitio muestra solo los configurados. */
   @Get('methods')
-  methods(): { card: boolean; paypal: boolean; cash: boolean } {
+  async methods(): Promise<{ card: boolean; paypal: boolean; cash: boolean }> {
+    const enabled = await this.settings.get('payments');
     return {
-      card: this.stripe.isConfigured,
-      paypal: this.paypal.isConfigured,
-      cash: this.config.getOrThrow<boolean>('CASH_PAYMENTS_ENABLED'),
+      card: enabled.cardEnabled && this.stripe.isConfigured,
+      paypal: enabled.paypalEnabled && this.paypal.isConfigured,
+      cash: enabled.cashEnabled,
     };
   }
 
@@ -44,16 +45,15 @@ export class PaymentsController {
   @HttpCode(200)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   async payInCash(@Body() dto: ReservationAccessDto): Promise<{ confirmed: true }> {
-    if (!this.config.getOrThrow<boolean>('CASH_PAYMENTS_ENABLED')) {
-      throw new ServiceUnavailableException('Cash payment is not available.');
-    }
+    await this.requireMethod('cash');
     await this.ledger.recordCashOnService(await this.reservations.findPayable(dto));
     return { confirmed: true };
   }
 
   @Post('stripe/checkout-session')
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  createStripeSession(@Body() dto: ReservationAccessDto): Promise<{ url: string }> {
+  async createStripeSession(@Body() dto: ReservationAccessDto): Promise<{ url: string }> {
+    await this.requireMethod('card');
     return this.stripe.createCheckoutSession(dto);
   }
 
@@ -77,7 +77,8 @@ export class PaymentsController {
 
   @Post('paypal/orders')
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  createPaypalOrder(@Body() dto: ReservationAccessDto): Promise<{ approveUrl: string }> {
+  async createPaypalOrder(@Body() dto: ReservationAccessDto): Promise<{ approveUrl: string }> {
+    await this.requireMethod('paypal');
     return this.paypal.createOrder(dto);
   }
 
@@ -85,5 +86,11 @@ export class PaymentsController {
   @HttpCode(200)
   capturePaypal(@Body() dto: PaypalCaptureDto): Promise<{ code: string; paid: boolean; message?: string }> {
     return this.paypal.captureOrder(dto.orderId);
+  }
+
+  /** Rechaza iniciar un pago con un método apagado desde el panel (Configuración). */
+  private async requireMethod(method: 'card' | 'paypal' | 'cash'): Promise<void> {
+    const available = await this.methods();
+    if (!available[method]) throw new ServiceUnavailableException('This payment method is not available.');
   }
 }

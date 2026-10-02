@@ -1,18 +1,8 @@
 <script setup lang="ts">
 import SearchForm from '@/components/booking/SearchForm.vue';
+import CoverageSection from '@/components/home/CoverageSection.vue';
+import FleetSection from '@/components/home/FleetSection.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
-
-const DESTINATIONS = [
-  'Cancun',
-  'Puerto Juarez',
-  'Playa Mujeres',
-  'Costa Mujeres',
-  'Puerto Morelos',
-  'Playa del Carmen',
-  'Puerto Aventuras',
-  'Akumal',
-  'Tulum',
-];
 
 const HIGHLIGHTS = [
   { title: 'Private transfers only', text: 'Your group travels alone. No shared shuttles and no stops at other hotels.' },
@@ -55,31 +45,16 @@ const HIGHLIGHTS = [
       <SearchForm />
     </div>
 
+    <CoverageSection />
+
+    <FleetSection />
+
     <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
       <div class="grid gap-6 md:grid-cols-3">
         <div v-for="item in HIGHLIGHTS" :key="item.title" class="rounded-2xl bg-white p-6 shadow-sm">
           <h2 class="font-display text-lg font-semibold text-brand-900">{{ item.title }}</h2>
           <p class="mt-2 text-sm text-brand-900/70">{{ item.text }}</p>
         </div>
-      </div>
-
-      <div class="mt-14">
-        <h2 class="font-display text-2xl font-semibold">Where we go</h2>
-        <ul class="mt-5 flex flex-wrap gap-2">
-          <li
-            v-for="destination in DESTINATIONS"
-            :key="destination"
-            class="rounded-full border border-brand-200 bg-white px-4 py-2 text-sm font-medium text-brand-800"
-          >
-            {{ destination }}
-          </li>
-        </ul>
-        <p class="mt-4 text-sm text-brand-900/60">
-          Going somewhere else?
-          <RouterLink :to="{ name: 'contact' }" class="font-semibold text-brand-700 underline underline-offset-2">
-            Ask us for a quote
-          </RouterLink>
-        </p>
       </div>
     </section>
   </div>

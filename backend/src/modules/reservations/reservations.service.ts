@@ -1,6 +1,5 @@
 import { randomInt } from 'node:crypto';
 import { BadRequestException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   PaymentProvider,
   PaymentRecordStatus,
@@ -15,6 +14,7 @@ import {
 import { formatLocalDateTime, localDateTime, nowInCancun } from '../../common/utils/time';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
+import { SettingsService } from '../settings/settings.service';
 import { CreateReservationDto, LegDetailsDto } from './dto/create-reservation.dto';
 import { ReservationAccessDto } from './dto/lookup-reservation.dto';
 
@@ -67,6 +67,8 @@ export interface ReservationSummary {
   canPay: boolean;
   /** true si el cliente eligió pagar en efectivo al chofer después del servicio. */
   payInCash: boolean;
+  /** true si ya se le envió al cliente el correo de confirmación. */
+  confirmationEmailSent: boolean;
 }
 
 /** Reserva lista para cobrarse: la usan los proveedores de pago. */
@@ -84,7 +86,7 @@ export class ReservationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricing: PricingService,
-    private readonly config: ConfigService,
+    private readonly settings: SettingsService,
   ) {}
 
   async create(dto: CreateReservationDto): Promise<ReservationSummary> {
@@ -125,10 +127,11 @@ export class ReservationsService {
       times: resolveLegTimes(segment.kind, segment.date, dto.legs[index], index),
       details: dto.legs[index],
     }));
-    this.validateSchedule(legs.map(({ times }) => times.pickupAt));
+    const booking = await this.settings.get('booking');
+    this.validateSchedule(legs.map(({ times }) => times.pickupAt), booking.minNoticeHours);
 
     const price = dto.tripType === TripType.ROUND_TRIP ? rate.priceRoundTrip : rate.priceOneWay;
-    const holdMinutes = this.config.getOrThrow<number>('BOOKING_HOLD_MINUTES');
+    const holdMinutes = booking.holdMinutes;
     const specialRequests = dto.specialRequests?.trim() || null;
 
     const reservation = await this.withUniqueCode((code) =>
@@ -178,6 +181,12 @@ export class ReservationsService {
     return toSummary(reservation);
   }
 
+  /** Uso interno (p. ej. correos): la reserva por id, sin verificar email. */
+  async findSummaryById(id: bigint): Promise<ReservationSummary> {
+    const reservation = await this.prisma.reservation.findUniqueOrThrow({ where: { id }, include: reservationInclude });
+    return toSummary(reservation);
+  }
+
   /** Consulta pública: exige código y el email con el que se reservó. */
   async lookup({ code, email }: ReservationAccessDto): Promise<ReservationSummary> {
     return toSummary(await this.findByAccess(code, email));
@@ -217,8 +226,7 @@ export class ReservationsService {
     return reservation;
   }
 
-  private validateSchedule(pickups: Date[]): void {
-    const noticeHours = this.config.getOrThrow<number>('BOOKING_MIN_NOTICE_HOURS');
+  private validateSchedule(pickups: Date[], noticeHours: number): void {
     const earliest = new Date(nowInCancun().getTime() + noticeHours * HOUR_MS);
     if (pickups[0] < earliest) {
       throw new BadRequestException(
@@ -353,5 +361,6 @@ function toSummary(reservation: ReservationWithDetails): ReservationSummary {
     expiresAt: payable && reservation.expiresAt ? reservation.expiresAt.toISOString() : null,
     canPay: payable,
     payInCash: reservation.paymentStatus === PaymentStatus.UNPAID && reservation.payments.length > 0,
+    confirmationEmailSent: reservation.confirmationEmailSentAt !== null,
   };
 }

@@ -17,12 +17,16 @@ const emit = defineEmits<{ select: [rateId: number] }>();
     class="flex flex-col overflow-hidden rounded-2xl border bg-white transition"
     :class="props.selected ? 'border-brand-500 ring-4 ring-brand-300/30' : 'border-brand-100 hover:border-brand-300'"
   >
-    <div class="grid h-24 place-items-center bg-fog-100 px-4">
+    <!-- Las fotos comparten lienzo 2:1 con el vehículo centrado, así todas se ven del mismo tamaño. -->
+    <div class="grid aspect-[2/1] place-items-center bg-fog-100 px-2">
       <img
         v-if="props.option.vehicleType.imageUrl"
         :src="props.option.vehicleType.imageUrl"
-        :alt="props.option.vehicleType.name"
-        class="h-16 w-full object-contain"
+        :alt="props.option.vehicleType.description ?? props.option.vehicleType.name"
+        width="800"
+        height="400"
+        loading="lazy"
+        class="h-full w-full object-contain"
       />
       <svg v-else viewBox="0 0 120 56" class="h-14 w-full text-brand-600" fill="none" aria-hidden="true">
         <path
@@ -48,14 +52,14 @@ const emit = defineEmits<{ select: [rateId: number] }>();
         <li class="rounded-full bg-brand-50 px-2 py-0.5">{{ props.option.vehicleType.maxLuggage }} suitcases</li>
       </ul>
 
-      <div class="mt-auto pt-4">
+      <div class="mt-auto pt-3">
         <p class="text-[11px] text-brand-900/60">{{ props.tripType === 'ROUND_TRIP' ? 'Round trip total' : 'One way' }}</p>
-        <p class="font-display text-2xl font-bold text-brand-950">
-          {{ formatUsd(props.option.price) }} <span class="font-sans text-xs font-medium text-brand-900/60">USD</span>
+        <p class="font-display text-lg font-bold text-brand-950">
+          {{ formatUsd(props.option.price) }} <span class="font-sans text-[11px] font-medium text-brand-900/60">USD</span>
         </p>
         <button
           type="button"
-          class="mt-3 h-10 w-full rounded-xl text-sm font-bold transition"
+          class="mt-2 h-8 w-full rounded-lg text-xs font-bold transition"
           :class="
             props.selected
               ? 'bg-brand-600 text-white'

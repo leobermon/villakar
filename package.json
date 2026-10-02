@@ -9,6 +9,8 @@
   "scripts": {
     "db:up": "docker compose up -d mysql",
     "db:down": "docker compose down",
-    "dev:backend": "npm run start:dev -w backend"
+    "dev:backend": "npm run start:dev -w backend",
+    "dev:booking": "npm run dev -w @cancun-transfers/booking",
+    "dev:admin": "npm run dev -w @cancun-transfers/admin"
   }
 }

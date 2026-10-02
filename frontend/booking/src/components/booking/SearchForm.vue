@@ -5,6 +5,7 @@ import type { RouteType } from '@/api/booking';
 import { SITE } from '@/config';
 import { useBookingStore } from '@/stores/booking';
 import { todayInCancun } from '@/utils/format';
+import { openNativePicker } from '@/utils/picker';
 import PassengerStepper from './PassengerStepper.vue';
 import PlaceAutocomplete from './PlaceAutocomplete.vue';
 
@@ -44,6 +45,15 @@ watch(() => search.secondHotel, () => (errors.secondHotel = null));
 watch(() => search.date, () => (errors.date = null));
 watch(() => search.returnDate, () => (errors.returnDate = null));
 
+// Quien sale de un hotel casi siempre necesita un solo traslado: al elegir
+// Hotel → Airport u Hotel → Hotel se propone "One way" (se puede volver a cambiar).
+watch(
+  () => search.route,
+  (route) => {
+    if (route === 'HOTEL_AIRPORT' || route === 'HOTEL_HOTEL') search.tripType = 'ONE_WAY';
+  },
+);
+
 // Si la fecha de ida pasa a ser posterior al regreso, se limpia el regreso.
 watch(
   () => search.date,
@@ -77,7 +87,7 @@ function goToContact(query: string) {
 </script>
 
 <template>
-  <form class="rounded-3xl bg-white p-5 shadow-2xl shadow-brand-950/15 sm:p-7" novalidate @submit.prevent="submit">
+  <form id="booking-form" class="scroll-mt-6 rounded-3xl bg-white p-5 shadow-2xl shadow-brand-950/15 sm:p-7" novalidate @submit.prevent="submit">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="grid grid-cols-3 gap-1 rounded-2xl bg-brand-50 p-1" role="radiogroup" aria-label="Route">
         <button
@@ -166,7 +176,8 @@ function goToContact(query: string) {
           v-model="search.date"
           type="date"
           :min="minDate"
-          class="h-12 w-full rounded-xl border bg-white px-3 text-[15px] shadow-sm outline-none focus:ring-4"
+          class="h-12 w-full cursor-pointer rounded-xl border bg-white px-3 text-[15px] shadow-sm outline-none focus:ring-4"
+          @click="openNativePicker"
           :class="errors.date ? 'border-accent-500 focus:ring-accent-400/25' : 'border-brand-100 focus:border-brand-400 focus:ring-brand-300/30'"
         />
         <p v-if="errors.date" class="mt-1 text-xs font-medium text-accent-600">{{ errors.date }}</p>
@@ -181,7 +192,8 @@ function goToContact(query: string) {
           v-model="search.returnDate"
           type="date"
           :min="search.date || minDate"
-          class="h-12 w-full rounded-xl border bg-white px-3 text-[15px] shadow-sm outline-none focus:ring-4"
+          class="h-12 w-full cursor-pointer rounded-xl border bg-white px-3 text-[15px] shadow-sm outline-none focus:ring-4"
+          @click="openNativePicker"
           :class="errors.returnDate ? 'border-accent-500 focus:ring-accent-400/25' : 'border-brand-100 focus:border-brand-400 focus:ring-brand-300/30'"
         />
         <p v-if="errors.returnDate" class="mt-1 text-xs font-medium text-accent-600">{{ errors.returnDate }}</p>

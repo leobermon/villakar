@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 // Prisma devuelve las columnas BIGINT como bigint, que JSON.stringify no soporta.
@@ -15,6 +16,8 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
+  // Lee la cookie de sesión del panel de administración.
+  app.use(cookieParser());
   app.enableCors({
     origin: config
       .getOrThrow<string>('CORS_ORIGINS')

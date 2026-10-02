@@ -16,5 +16,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  # Buzón de prueba: atrapa todos los correos que envía el backend en desarrollo.
+  # Ver los correos en http://localhost:8025 (no sale nada a internet).
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: cancun-transfers-mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Buzón web
+
 volumes:
   mysql_data:

@@ -147,35 +147,45 @@ const inputClass =
       </section>
 
       <template v-else>
+        <!-- Encabezado compacto: estado a la izquierda, código a la derecha, para que el detalle quede a la vista. -->
         <section
-          class="rounded-3xl p-6 text-center sm:p-8"
+          class="flex flex-col gap-3 rounded-2xl px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5"
           :class="isConfirmed ? 'bg-brand-700 text-white' : reservation.canPay ? 'border border-brand-100 bg-white' : 'border border-accent-400/40 bg-white'"
           role="status"
         >
-          <template v-if="isConfirmed">
-            <div class="mx-auto grid size-14 place-items-center rounded-full bg-white/15 text-2xl">✓</div>
-            <h1 class="mt-4 font-display text-3xl font-semibold">Your transfer is confirmed</h1>
-            <p class="mt-2 text-sm text-white/80">
-              Thanks, {{ reservation.customer.firstName }}. Keep your reservation code handy in case you need to contact us.
-            </p>
-            <p v-if="!isPaid" class="mx-auto mt-4 max-w-md rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium">
-              Please pay {{ formatUsd(reservation.total) }} USD in cash to your driver after the service.
-            </p>
-          </template>
-          <template v-else-if="reservation.canPay">
-            <h1 class="font-display text-3xl font-semibold">Complete your booking</h1>
-            <p class="mt-2 text-sm text-brand-900/70">Your reservation is saved but not confirmed until you choose how to pay.</p>
-          </template>
-          <template v-else>
-            <h1 class="font-display text-3xl font-semibold">This reservation is no longer active</h1>
-            <p class="mt-2 text-sm text-brand-900/70">It was not paid in time. Please search again to book your transfer.</p>
-            <RouterLink :to="{ name: 'home' }" class="mt-4 inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white hover:bg-brand-700">
-              New search
-            </RouterLink>
-          </template>
-          <p class="mt-5 text-xs tracking-wide uppercase" :class="isConfirmed ? 'text-white/70' : 'text-brand-600'">Reservation code</p>
-          <p class="font-display text-2xl font-bold tracking-widest">{{ reservation.code }}</p>
+          <div class="flex items-start gap-3">
+            <div v-if="isConfirmed" class="grid size-9 shrink-0 place-items-center rounded-full bg-white/15 text-lg" aria-hidden="true">✓</div>
+            <div>
+              <template v-if="isConfirmed">
+                <h1 class="font-display text-xl font-semibold">Your transfer is confirmed</h1>
+                <p class="text-sm text-white/80">
+                  Thanks, {{ reservation.customer.firstName }}.
+                  {{ reservation.confirmationEmailSent ? 'We sent your booking details to' : 'Your booking details will be sent to' }}
+                  <strong class="font-semibold break-all text-white">{{ reservation.customer.email }}</strong>.
+                </p>
+              </template>
+              <template v-else-if="reservation.canPay">
+                <h1 class="font-display text-xl font-semibold">Complete your booking</h1>
+                <p class="text-sm text-brand-900/70">Your reservation is saved but not confirmed until you choose how to pay.</p>
+              </template>
+              <template v-else>
+                <h1 class="font-display text-xl font-semibold">This reservation is no longer active</h1>
+                <p class="text-sm text-brand-900/70">It was not paid in time. Please search again to book your transfer.</p>
+                <RouterLink :to="{ name: 'home' }" class="mt-2 inline-block rounded-lg bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700">
+                  New search
+                </RouterLink>
+              </template>
+            </div>
+          </div>
+          <div class="shrink-0 sm:text-right">
+            <p class="text-[11px]" :class="isConfirmed ? 'text-white/70' : 'text-brand-600'">Reservation code</p>
+            <p class="font-display text-lg font-bold tracking-widest">{{ reservation.code }}</p>
+          </div>
         </section>
+
+        <p v-if="isConfirmed && !isPaid" class="mt-3 rounded-xl bg-mist-100 px-4 py-2.5 text-sm font-medium text-brand-900">
+          Please pay {{ formatUsd(reservation.total) }} USD in cash to your driver after the service.
+        </p>
 
         <p v-if="notice" role="status" class="mt-6 rounded-xl bg-mist-100 px-4 py-3 text-sm text-brand-900">{{ notice }}</p>
 

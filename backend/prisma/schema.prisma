@@ -103,6 +103,12 @@ enum WebhookProvider {
   PAYPAL
 }
 
+enum PaymentLinkStatus {
+  ACTIVE
+  PAID
+  CANCELLED
+}
+
 enum ContactRequestStatus {
   NEW
   CONTACTED
@@ -110,20 +116,23 @@ enum ContactRequestStatus {
 }
 
 model User {
-  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  name          String    @db.VarChar(120)
-  email         String    @unique(map: "uq_users_email") @db.VarChar(190)
-  passwordHash  String    @map("password_hash") @db.VarChar(255)
-  role          UserRole  @default(OPERATOR)
-  isActive      Boolean   @default(true) @map("is_active")
-  lastLoginAt   DateTime? @map("last_login_at") @db.DateTime(0)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name         String    @db.VarChar(120)
+  email        String    @unique(map: "uq_users_email") @db.VarChar(190)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         UserRole  @default(OPERATOR)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at") @db.DateTime(0)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
 
   zonesUpdated     Zone[]
   zoneRatesUpdated ZoneRate[]
   vehicleBlocks    VehicleBlock[]
   statusChanges    ReservationStatusHistory[]
+  paymentsRecorded Payment[]
+  paymentLinks     PaymentLink[]
+  settingsUpdated  AppSetting[]
 
   @@map("users")
 }
@@ -203,18 +212,18 @@ model VehicleBlock {
 }
 
 model Zone {
-  id        Int                        @id @default(autoincrement()) @db.UnsignedSmallInt
-  name      String                     @db.VarChar(100)
-  slug      String                     @unique(map: "uq_zones_slug") @db.VarChar(100)
+  id        Int                    @id @default(autoincrement()) @db.UnsignedSmallInt
+  name      String                 @db.VarChar(100)
+  slug      String                 @unique(map: "uq_zones_slug") @db.VarChar(100)
   boundary  Unsupported("polygon")
-  color     String                     @default("#3B82F6") @db.Char(7)
-  priority  Int                        @default(0) @db.SmallInt
-  isAirport Boolean                    @default(false) @map("is_airport")
-  isActive  Boolean                    @default(true) @map("is_active")
-  sortOrder Int                        @default(0) @map("sort_order") @db.SmallInt
-  updatedBy BigInt?                    @map("updated_by") @db.UnsignedBigInt
-  createdAt DateTime                   @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt DateTime                   @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  color     String                 @default("#3B82F6") @db.Char(7)
+  priority  Int                    @default(0) @db.SmallInt
+  isAirport Boolean                @default(false) @map("is_airport")
+  isActive  Boolean                @default(true) @map("is_active")
+  sortOrder Int                    @default(0) @map("sort_order") @db.SmallInt
+  updatedBy BigInt?                @map("updated_by") @db.UnsignedBigInt
+  createdAt DateTime               @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime               @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
 
   editor             User?            @relation(fields: [updatedBy], references: [id], onDelete: SetNull, map: "fk_zones_user")
   ratesAsOrigin      ZoneRate[]       @relation("ZoneRateOrigin")
@@ -258,18 +267,18 @@ model ZoneRate {
 }
 
 model Place {
-  id               BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
-  googlePlaceId    String?               @unique(map: "uq_places_google") @map("google_place_id") @db.VarChar(255)
-  code             String?               @unique(map: "uq_places_code") @db.VarChar(10)
-  placeType       PlaceType             @default(HOTEL) @map("place_type")
-  name             String                @db.VarChar(190)
-  formattedAddress String?               @map("formatted_address") @db.VarChar(255)
+  id               BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  googlePlaceId    String?              @unique(map: "uq_places_google") @map("google_place_id") @db.VarChar(255)
+  code             String?              @unique(map: "uq_places_code") @db.VarChar(10)
+  placeType        PlaceType            @default(HOTEL) @map("place_type")
+  name             String               @db.VarChar(190)
+  formattedAddress String?              @map("formatted_address") @db.VarChar(255)
   location         Unsupported("point")
-  googleTypes      Json?                 @map("google_types")
-  isFeatured       Boolean               @default(false) @map("is_featured")
-  lastSyncedAt     DateTime?             @map("last_synced_at") @db.DateTime(0)
-  createdAt        DateTime              @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  googleTypes      Json?                @map("google_types")
+  isFeatured       Boolean              @default(false) @map("is_featured")
+  lastSyncedAt     DateTime?            @map("last_synced_at") @db.DateTime(0)
+  createdAt        DateTime             @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt        DateTime             @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
 
   legsAsOrigin      ReservationLeg[] @relation("LegOriginPlace")
   legsAsDestination ReservationLeg[] @relation("LegDestinationPlace")
@@ -279,27 +288,28 @@ model Place {
 }
 
 model Reservation {
-  id              BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
-  code            String            @unique(map: "uq_reservations_code") @db.VarChar(12)
-  customerId      BigInt            @map("customer_id") @db.UnsignedBigInt
-  tripType        TripType          @map("trip_type")
-  routeType       RouteType         @map("route_type")
-  vehicleTypeId   Int               @map("vehicle_type_id") @db.UnsignedSmallInt
-  zoneRateId      BigInt?           @map("zone_rate_id") @db.UnsignedBigInt
-  adults          Int               @default(1) @db.UnsignedTinyInt
-  children        Int               @default(0) @db.UnsignedTinyInt
-  infants         Int               @default(0) @db.UnsignedTinyInt
-  subtotal        Decimal           @db.Decimal(10, 2)
-  discount        Decimal           @default(0.00) @db.Decimal(10, 2)
-  total           Decimal           @db.Decimal(10, 2)
-  status          ReservationStatus @default(PENDING)
-  paymentStatus   PaymentStatus     @default(UNPAID) @map("payment_status")
-  specialRequests String?           @map("special_requests") @db.Text
-  internalNotes   String?           @map("internal_notes") @db.Text
-  source          ReservationSource @default(WEB)
-  expiresAt       DateTime?         @map("expires_at") @db.DateTime(0)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  id                      BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  code                    String            @unique(map: "uq_reservations_code") @db.VarChar(12)
+  customerId              BigInt            @map("customer_id") @db.UnsignedBigInt
+  tripType                TripType          @map("trip_type")
+  routeType               RouteType         @map("route_type")
+  vehicleTypeId           Int               @map("vehicle_type_id") @db.UnsignedSmallInt
+  zoneRateId              BigInt?           @map("zone_rate_id") @db.UnsignedBigInt
+  adults                  Int               @default(1) @db.UnsignedTinyInt
+  children                Int               @default(0) @db.UnsignedTinyInt
+  infants                 Int               @default(0) @db.UnsignedTinyInt
+  subtotal                Decimal           @db.Decimal(10, 2)
+  discount                Decimal           @default(0.00) @db.Decimal(10, 2)
+  total                   Decimal           @db.Decimal(10, 2)
+  status                  ReservationStatus @default(PENDING)
+  paymentStatus           PaymentStatus     @default(UNPAID) @map("payment_status")
+  specialRequests         String?           @map("special_requests") @db.Text
+  internalNotes           String?           @map("internal_notes") @db.Text
+  source                  ReservationSource @default(WEB)
+  expiresAt               DateTime?         @map("expires_at") @db.DateTime(0)
+  confirmationEmailSentAt DateTime?         @map("confirmation_email_sent_at") @db.DateTime(0)
+  createdAt               DateTime          @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt               DateTime          @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
 
   customer      Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict, map: "fk_res_customer")
   vehicleType   VehicleType                @relation(fields: [vehicleTypeId], references: [id], onDelete: Restrict, map: "fk_res_vtype")
@@ -307,6 +317,7 @@ model Reservation {
   legs          ReservationLeg[]
   payments      Payment[]
   statusHistory ReservationStatusHistory[]
+  paymentLinks  PaymentLink[]
 
   @@index([status, createdAt], map: "idx_res_status")
   @@index([customerId], map: "idx_res_customer")
@@ -360,21 +371,67 @@ model Payment {
   reservationId     BigInt              @map("reservation_id") @db.UnsignedBigInt
   provider          PaymentProvider
   providerPaymentId String?             @map("provider_payment_id") @db.VarChar(191)
+  /// Referencia bancaria o folio capturado por el equipo.
+  reference         String?             @db.VarChar(120)
+  /// Quién recibió el dinero (chofer u oficina) en cobros manuales.
+  receivedBy        String?             @map("received_by") @db.VarChar(120)
   type              PaymentType         @default(CHARGE)
   amount            Decimal             @db.Decimal(10, 2)
   currency          String              @default("USD") @db.Char(3)
   status            PaymentRecordStatus @default(PENDING)
   failureReason     String?             @map("failure_reason") @db.VarChar(255)
+  note              String?             @db.VarChar(255)
+  recordedBy        BigInt?             @map("recorded_by") @db.UnsignedBigInt
   providerPayload   Json?               @map("provider_payload")
   paidAt            DateTime?           @map("paid_at") @db.DateTime(0)
   createdAt         DateTime            @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt         DateTime            @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
 
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict, map: "fk_payments_res")
+  recorder    User?       @relation(fields: [recordedBy], references: [id], onDelete: SetNull, map: "fk_payments_user")
 
   @@unique([provider, providerPaymentId, type], map: "uq_payments_provider")
   @@index([reservationId], map: "idx_payments_res")
+  @@index([recordedBy], map: "idx_payments_user")
   @@map("payments")
+}
+
+model PaymentLink {
+  id            BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  token         String            @unique(map: "uq_payment_links_token") @db.VarChar(32)
+  reservationId BigInt?           @map("reservation_id") @db.UnsignedBigInt
+  customerName  String            @map("customer_name") @db.VarChar(160)
+  customerEmail String?           @map("customer_email") @db.VarChar(190)
+  customerPhone String?           @map("customer_phone") @db.VarChar(30)
+  description   String            @db.VarChar(255)
+  amount        Decimal           @db.Decimal(10, 2)
+  currency      String            @default("USD") @db.Char(3)
+  status        PaymentLinkStatus @default(ACTIVE)
+  expiresAt     DateTime          @map("expires_at") @db.DateTime(0)
+  paidAt        DateTime?         @map("paid_at") @db.DateTime(0)
+  createdBy     BigInt?           @map("created_by") @db.UnsignedBigInt
+  createdAt     DateTime          @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime          @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull, map: "fk_payment_links_res")
+  author      User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull, map: "fk_payment_links_user")
+
+  @@index([reservationId], map: "idx_payment_links_res")
+  @@index([createdBy], map: "idx_payment_links_user")
+  @@map("payment_links")
+}
+
+/// Configuración editable desde el panel: una fila por sección, valores en JSON.
+model AppSetting {
+  key       String   @id @map("setting_key") @db.VarChar(40)
+  value     Json
+  updatedBy BigInt?  @map("updated_by") @db.UnsignedBigInt
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  editor User? @relation(fields: [updatedBy], references: [id], onDelete: SetNull, map: "fk_app_settings_user")
+
+  @@index([updatedBy], map: "idx_app_settings_user")
+  @@map("app_settings")
 }
 
 model PaymentWebhookEvent {

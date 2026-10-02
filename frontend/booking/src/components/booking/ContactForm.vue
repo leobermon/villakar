@@ -3,6 +3,7 @@ import { reactive, ref, useId } from 'vue';
 import { sendContactRequest, type ContactRequestPayload } from '@/api/booking';
 import { ApiError } from '@/api/client';
 import { todayInCancun } from '@/utils/format';
+import { openNativePicker } from '@/utils/picker';
 
 const props = defineProps<{
   title: string;
@@ -89,7 +90,7 @@ async function submit() {
         </div>
         <div>
           <label :for="ids.date" :class="labelClass">Travel date <span class="normal-case opacity-60">(optional)</span></label>
-          <input :id="ids.date" v-model="form.arrivalDate" type="date" :min="todayInCancun()" :class="inputClass" />
+          <input :id="ids.date" v-model="form.arrivalDate" type="date" :min="todayInCancun()" :class="[inputClass, 'cursor-pointer']" @click="openNativePicker" />
         </div>
         <div>
           <label :for="ids.pax" :class="labelClass">Passengers</label>

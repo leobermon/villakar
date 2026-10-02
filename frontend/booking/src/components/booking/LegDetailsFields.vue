@@ -2,6 +2,7 @@
 import { useId, watch } from 'vue';
 import type { LegDetails } from '@/api/booking';
 import { formatDateOnly } from '@/utils/format';
+import { openNativePicker } from '@/utils/picker';
 
 export type LegKind = 'ARRIVAL' | 'DEPARTURE' | 'TRANSFER';
 
@@ -78,7 +79,7 @@ watch(
           <label :for="ids.flightTime" :class="labelClass">
             {{ props.kind === 'ARRIVAL' ? 'Landing time' : 'Departure time' }}
           </label>
-          <input :id="ids.flightTime" v-model="details.flightTime" type="time" required :class="inputClass" />
+          <input :id="ids.flightTime" v-model="details.flightTime" type="time" required :class="[inputClass, 'cursor-pointer']" @click="openNativePicker" />
         </div>
         <div>
           <label :for="ids.terminal" :class="labelClass">Terminal</label>
@@ -93,7 +94,7 @@ watch(
 
       <div v-if="props.kind !== 'ARRIVAL'">
         <label :for="ids.pickup" :class="labelClass">Pickup time at hotel</label>
-        <input :id="ids.pickup" v-model="details.pickupTime" type="time" required :class="inputClass" />
+        <input :id="ids.pickup" v-model="details.pickupTime" type="time" required :class="[inputClass, 'cursor-pointer']" @click="openNativePicker" />
       </div>
     </div>
 

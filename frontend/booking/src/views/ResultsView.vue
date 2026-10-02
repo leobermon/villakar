@@ -36,21 +36,22 @@ const contactCopy = computed(() =>
   <div>
     <SiteHeader />
     <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-      <TripSummary :quote="quote" :search="store.search" />
+      <!-- Elección de vehículo, datos del pasajero y pago en una sola página; el resumen del viaje va en la columna del total. -->
+      <BookingForm v-if="quote.serviceable && store.selectedOption" />
 
-      <!-- Elección de vehículo, datos del pasajero y pago en una sola página. -->
-      <BookingForm v-if="quote.serviceable && store.selectedOption" class="mt-6" />
-
-      <ContactForm
-        v-else
-        class="mt-8"
-        :title="contactCopy.title"
-        :intro="contactCopy.intro"
-        :hotel-name="unservedHotel.name"
-        :google-place-id="unservedHotel.googlePlaceId"
-        :arrival-date="store.search.date"
-        :passengers="quote.passengers"
-      />
+      <template v-else>
+        <!-- Sin precio en línea: el resumen arriba explica qué lugar quedó fuera de zona. -->
+        <TripSummary :quote="quote" :search="store.search" />
+        <ContactForm
+          class="mt-8"
+          :title="contactCopy.title"
+          :intro="contactCopy.intro"
+          :hotel-name="unservedHotel.name"
+          :google-place-id="unservedHotel.googlePlaceId"
+          :arrival-date="store.search.date"
+          :passengers="quote.passengers"
+        />
+      </template>
     </main>
   </div>
 </template>

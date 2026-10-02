@@ -97,6 +97,20 @@ function onKeydown(event: KeyboardEvent) {
   }
 }
 
+const inputRef = ref<HTMLInputElement | null>(null);
+
+/** Botón X: borra lo escrito y el hotel elegido, y deja el cursor listo para escribir otro. */
+function clear() {
+  clearTimeout(debounceTimer);
+  inFlight?.abort();
+  query.value = '';
+  model.value = null;
+  suggestions.value = [];
+  activeIndex.value = -1;
+  searchError.value = null;
+  inputRef.value?.focus();
+}
+
 function onBlur() {
   // Espera un momento para que el clic en una sugerencia se registre.
   setTimeout(() => (open.value = false), 150);
@@ -127,6 +141,7 @@ onBeforeUnmount(() => {
       </svg>
       <input
         :id="inputId"
+        ref="inputRef"
         v-model="query"
         type="text"
         autocomplete="off"
@@ -136,17 +151,31 @@ onBeforeUnmount(() => {
         :aria-activedescendant="activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined"
         :aria-invalid="Boolean(props.error)"
         :placeholder="props.placeholder ?? 'Search your hotel or address'"
-        class="h-12 w-full rounded-xl border bg-white pr-3 pl-11 text-[15px] shadow-sm transition outline-none placeholder:text-brand-900/40 focus:ring-4"
-        :class="
+        class="h-12 w-full rounded-xl border bg-white pl-11 text-[15px] shadow-sm transition outline-none placeholder:text-brand-900/40 focus:ring-4"
+        :class="[
           props.error
             ? 'border-accent-500 focus:ring-accent-400/25'
-            : 'border-brand-100 focus:border-brand-400 focus:ring-brand-300/30'
-        "
+            : 'border-brand-100 focus:border-brand-400 focus:ring-brand-300/30',
+          query ? 'pr-11' : 'pr-3',
+        ]"
         @input="onInput"
         @focus="open = true"
         @blur="onBlur"
         @keydown="onKeydown"
       />
+      <!-- mousedown.prevent: el input no pierde el foco, así no se cierra/abre el panel de golpe. -->
+      <button
+        v-if="query"
+        type="button"
+        class="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-lg text-brand-900/50 transition hover:bg-brand-50 hover:text-brand-900 focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+        :aria-label="`Clear ${props.label.toLowerCase()}`"
+        @mousedown.prevent
+        @click="clear"
+      >
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
     </div>
     <p v-if="props.error" class="mt-1 text-xs font-medium text-accent-600">{{ props.error }}</p>
 

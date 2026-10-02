@@ -9,6 +9,7 @@ import {
   WebhookProvider,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { PayableReservation } from '../reservations/reservations.service';
 
 export interface ProviderCharge {
@@ -29,7 +30,10 @@ export interface ProviderCharge {
 export class PaymentLedgerService {
   private readonly logger = new Logger(PaymentLedgerService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emails: ReservationEmailsService,
+  ) {}
 
   async recordAttempt(
     reservation: PayableReservation,
@@ -54,13 +58,13 @@ export class PaymentLedgerService {
    * registre como cobrado.
    */
   async recordCashOnService(reservation: PayableReservation): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+    const confirmedNow = await this.prisma.$transaction(async (tx) => {
       // Reclamo atómico: solo una petición puede pasar la reserva de PENDING a CONFIRMED.
       const confirmed = await tx.reservation.updateMany({
         where: { id: reservation.id, status: ReservationStatus.PENDING, paymentStatus: PaymentStatus.UNPAID },
         data: { status: ReservationStatus.CONFIRMED, expiresAt: null },
       });
-      if (confirmed.count === 0) return;
+      if (confirmed.count === 0) return false;
 
       await tx.payment.create({
         data: {
@@ -79,11 +83,26 @@ export class PaymentLedgerService {
           comment: 'Customer will pay in cash after the service',
         },
       });
+      return true;
     });
+
+    // Fuera de la transacción: el correo solo sale si la confirmación ya quedó guardada.
+    if (confirmedNow) await this.emails.sendConfirmation(reservation.id);
   }
 
-  /** Marca el cobro como exitoso y confirma la reserva. Devuelve el código de la reserva. */
+  /** Marca el cobro como exitoso, confirma la reserva y envía el correo. Devuelve el código de la reserva. */
   async markSucceeded(provider: PaymentProvider, providerPaymentId: string, charge: ProviderCharge): Promise<string> {
+    const { code, paidNow } = await this.applySucceededCharge(provider, providerPaymentId, charge);
+    if (paidNow !== null) await this.emails.sendConfirmation(paidNow);
+    return code;
+  }
+
+  /** `paidNow` es el id de la reserva si este cobro fue el que la dejó pagada. */
+  private applySucceededCharge(
+    provider: PaymentProvider,
+    providerPaymentId: string,
+    charge: ProviderCharge,
+  ): Promise<{ code: string; paidNow: bigint | null }> {
     return this.prisma.$transaction(async (tx) => {
       const payment = await tx.payment.findFirst({
         where: { provider, providerPaymentId, type: PaymentType.CHARGE },
@@ -102,7 +121,7 @@ export class PaymentLedgerService {
           providerPayload: charge.payload,
         },
       });
-      if (claimed.count === 0) return reservation.code;
+      if (claimed.count === 0) return { code: reservation.code, paidNow: null };
 
       if (!charge.amount.equals(payment.amount) || charge.currency.toUpperCase() !== payment.currency) {
         this.logger.error(
@@ -122,7 +141,7 @@ export class PaymentLedgerService {
             ),
           },
         });
-        return reservation.code;
+        return { code: reservation.code, paidNow: null };
       }
 
       const nextStatus =
@@ -153,7 +172,7 @@ export class PaymentLedgerService {
           },
         });
       }
-      return reservation.code;
+      return { code: reservation.code, paidNow: reservation.id };
     });
   }
 

@@ -17,7 +17,7 @@ import LegDetailsFields, { type LegKind } from '@/components/booking/LegDetailsF
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import VehicleCard from '@/components/booking/VehicleCard.vue';
 import { useBookingStore } from '@/stores/booking';
-import { formatUsd } from '@/utils/format';
+import { formatDateOnly, formatUsd } from '@/utils/format';
 import { rememberReservationEmail } from '@/utils/reservationAccess';
 
 const store = useBookingStore();
@@ -223,18 +223,58 @@ async function submit() {
       <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" />
     </div>
 
-    <aside class="rounded-2xl border border-brand-100 bg-white p-5 sm:p-6 lg:sticky lg:top-6">
-      <p class="text-xs font-semibold tracking-wide text-brand-600 uppercase">Your vehicle</p>
-      <p class="font-display text-xl font-semibold">{{ option.vehicleType.name }}</p>
-      <p class="text-sm text-brand-900/70">
-        {{ quote.tripType === 'ROUND_TRIP' ? 'Round trip' : 'One way' }} · {{ quote.passengers }}
-        {{ quote.passengers === 1 ? 'passenger' : 'passengers' }}
-      </p>
-      <div class="mt-5 flex items-baseline justify-between border-t border-brand-100 pt-4">
+    <!-- Resumen de lo que se va a pagar: ruta, fechas, pasajeros y vehículo, junto al total. -->
+    <aside class="rounded-2xl border border-brand-100 bg-white p-5 lg:sticky lg:top-6">
+      <div class="flex items-baseline justify-between gap-3">
+        <h2 class="font-display text-lg font-semibold">Your trip</h2>
+        <RouterLink :to="{ name: 'home' }" class="text-xs font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800">
+          Edit search
+        </RouterLink>
+      </div>
+
+      <!-- Ruta: origen y destino unidos por una línea. -->
+      <ol class="mt-3 space-y-3">
+        <li v-for="(endpoint, index) in [quote.origin, quote.destination]" :key="index" class="relative flex gap-3">
+          <span
+            class="mt-1.5 size-2.5 shrink-0 rounded-full border-2 border-brand-600"
+            :class="index === 1 ? 'bg-brand-600' : 'bg-white'"
+            aria-hidden="true"
+          />
+          <span
+            v-if="index === 0"
+            class="absolute top-4 left-[4px] h-[calc(100%+0.25rem)] w-0.5 bg-brand-100"
+            aria-hidden="true"
+          />
+          <div class="min-w-0">
+            <p class="text-[11px] text-brand-900/60">{{ index === 0 ? 'From' : 'To' }}</p>
+            <p class="text-sm leading-snug font-semibold">{{ endpoint.name }}</p>
+            <p v-if="endpoint.zone" class="text-[11px] text-brand-900/60">{{ endpoint.zone.name }}</p>
+          </div>
+        </li>
+      </ol>
+
+      <dl class="mt-4 space-y-1.5 border-t border-brand-100 pt-3 text-sm">
+        <div v-for="(leg, index) in legs" :key="index" class="flex justify-between gap-3">
+          <dt class="text-brand-900/60">{{ legs.length > 1 ? (index === 0 ? 'Outbound' : 'Return') : 'Date' }}</dt>
+          <dd class="text-right font-medium">{{ formatDateOnly(leg.date) }}</dd>
+        </div>
+        <div class="flex justify-between gap-3">
+          <dt class="text-brand-900/60">Passengers</dt>
+          <dd class="font-medium">{{ quote.passengers }}</dd>
+        </div>
+        <div class="flex justify-between gap-3">
+          <dt class="text-brand-900/60">Vehicle</dt>
+          <dd class="text-right font-medium">{{ option.vehicleType.name }}</dd>
+        </div>
+      </dl>
+
+      <div class="mt-4 flex items-baseline justify-between border-t border-brand-100 pt-3">
         <span class="text-sm font-semibold">Total</span>
         <span class="font-display text-3xl font-bold">{{ formatUsd(option.price) }}</span>
       </div>
-      <p class="text-right text-xs text-brand-900/60">USD · per vehicle</p>
+      <p class="text-right text-xs text-brand-900/60">
+        USD · {{ quote.tripType === 'ROUND_TRIP' ? 'round trip' : 'one way' }}, per vehicle
+      </p>
 
       <p v-if="error" role="alert" class="mt-4 rounded-xl bg-accent-400/10 px-4 py-3 text-sm font-medium text-accent-600">
         {{ error }}
