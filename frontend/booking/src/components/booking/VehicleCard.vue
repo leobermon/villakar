@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { QuoteOption, TripType } from '@/api/booking';
+import LuggageIcon from '@/components/icons/LuggageIcon.vue';
+import PassengerIcon from '@/components/icons/PassengerIcon.vue';
 import { formatUsd } from '@/utils/format';
 
 const props = defineProps<{
@@ -17,8 +19,8 @@ const emit = defineEmits<{ select: [rateId: number] }>();
     class="flex flex-col overflow-hidden rounded-2xl border bg-white transition"
     :class="props.selected ? 'border-brand-500 ring-4 ring-brand-300/30' : 'border-brand-100 hover:border-brand-300'"
   >
-    <!-- Las fotos comparten lienzo 2:1 con el vehículo centrado, así todas se ven del mismo tamaño. -->
-    <div class="grid aspect-[2/1] place-items-center bg-fog-100 px-2">
+    <!-- Las fotos comparten lienzo 2:1 con el vehículo centrado; el recuadro 5:2 solo recorta margen vacío. -->
+    <div class="grid aspect-[5/2] place-items-center overflow-hidden bg-fog-100 px-2">
       <img
         v-if="props.option.vehicleType.imageUrl"
         :src="props.option.vehicleType.imageUrl"
@@ -26,7 +28,7 @@ const emit = defineEmits<{ select: [rateId: number] }>();
         width="800"
         height="400"
         loading="lazy"
-        class="h-full w-full object-contain"
+        class="h-[115%] w-full object-contain"
       />
       <svg v-else viewBox="0 0 120 56" class="h-14 w-full text-brand-600" fill="none" aria-hidden="true">
         <path
@@ -42,24 +44,38 @@ const emit = defineEmits<{ select: [rateId: number] }>();
       </svg>
     </div>
 
-    <div class="flex flex-1 flex-col p-4">
+    <div class="flex flex-1 flex-col px-4 pt-3 pb-3.5">
       <h3 class="font-display text-lg font-semibold text-brand-950">{{ props.option.vehicleType.name }}</h3>
       <p v-if="props.option.vehicleType.description" class="mt-0.5 text-xs text-brand-900/70">
         {{ props.option.vehicleType.description }}
       </p>
-      <ul class="mt-2 flex flex-wrap gap-1.5 text-[11px] font-medium text-brand-800">
-        <li class="rounded-full bg-brand-50 px-2 py-0.5">{{ props.option.vehicleType.maxPassengers }} passengers</li>
-        <li class="rounded-full bg-brand-50 px-2 py-0.5">{{ props.option.vehicleType.maxLuggage }} suitcases</li>
+      <ul class="mt-2 flex flex-wrap gap-1.5 text-xs font-semibold text-brand-800">
+        <li
+          class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5"
+          :title="`Up to ${props.option.vehicleType.maxPassengers} passengers`"
+        >
+          <PassengerIcon class="size-3.5" />
+          {{ props.option.vehicleType.maxPassengers }}
+          <span class="sr-only">passengers</span>
+        </li>
+        <li
+          class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5"
+          :title="`Up to ${props.option.vehicleType.maxLuggage} suitcases`"
+        >
+          <LuggageIcon class="size-3.5" />
+          {{ props.option.vehicleType.maxLuggage }}
+          <span class="sr-only">suitcases</span>
+        </li>
       </ul>
 
-      <div class="mt-auto pt-3">
+      <div class="mt-auto pt-2">
         <p class="text-[11px] text-brand-900/60">{{ props.tripType === 'ROUND_TRIP' ? 'Round trip total' : 'One way' }}</p>
         <p class="font-display text-lg font-bold text-brand-950">
           {{ formatUsd(props.option.price) }} <span class="font-sans text-[11px] font-medium text-brand-900/60">USD</span>
         </p>
         <button
           type="button"
-          class="mt-2 h-8 w-full rounded-lg text-xs font-bold transition"
+          class="mt-1.5 h-8 w-full rounded-lg text-xs font-bold transition"
           :class="
             props.selected
               ? 'bg-brand-600 text-white'

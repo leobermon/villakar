@@ -9,6 +9,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { IsInternationalPhone } from '../../../common/validators/phone';
 
 export class CreateContactRequestDto {
   @IsString()
@@ -20,9 +21,9 @@ export class CreateContactRequestDto {
   @MaxLength(190)
   email: string;
 
+  /** Formato internacional E.164: +529981234567. */
   @IsOptional()
-  @IsString()
-  @MaxLength(30)
+  @IsInternationalPhone()
   phone?: string;
 
   @IsString()

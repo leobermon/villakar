@@ -7,7 +7,7 @@ import LoadErrorBanner from '@/components/ui/LoadErrorBanner.vue';
 import DataTable from '@/components/ui/DataTable.vue';
 import type { DataTableColumn, DataTableSort } from '@/components/ui/dataTable';
 import StatusBadge from '@/components/ui/StatusBadge.vue';
-import { ORDER_STATUS, ORDER_STATUS_ORDER, ROUTE_LABEL, paymentSummary } from '@/config/orders';
+import { ORDER_STATUS, ORDER_STATUS_ORDER, ROUTE_CODE, ROUTE_LABEL, paymentSummary } from '@/config/orders';
 import { useOrdersStore } from '@/stores/orders';
 import type { Order } from '@/types/order';
 import { formatLocalDate, formatLocalTime, formatUsd } from '@/utils/format';
@@ -90,8 +90,10 @@ function closeDetail() {
       @row-click="(order) => (selectedId = order.id)"
     >
       <template #cell-code="{ row }">
-        <p class="font-bold tracking-wide text-brand-950">{{ row.code }}</p>
-        <p class="text-xs text-brand-900/55">{{ ROUTE_LABEL[row.routeType] }}</p>
+        <p class="text-xs font-bold tracking-wide text-brand-950">{{ row.code }}</p>
+        <p class="text-xs font-semibold text-brand-900/55" :title="ROUTE_LABEL[row.routeType]">
+          {{ ROUTE_CODE[row.routeType] }}<span class="sr-only"> · {{ ROUTE_LABEL[row.routeType] }}</span>
+        </p>
       </template>
 
       <template #cell-customer="{ row }">

@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/stores/settings';
 import type { PaymentLink } from '@/types/payment';
 import { formatInstant, formatUsd } from '@/utils/format';
 import { paymentLinkEmailUrl, paymentLinkWhatsappUrl } from '@/utils/paymentLinkShare';
+import { formatPhone, isInternationalPhone } from '@/utils/phone';
 
 const props = defineProps<{ open: boolean; presetOrderId?: number | null }>();
 const emit = defineEmits<{ close: [] }>();
@@ -60,7 +61,7 @@ function prefillFromOrder() {
   if (!current) return;
   form.customerName = `${current.customer.firstName} ${current.customer.lastName}`;
   form.customerEmail = current.customer.email;
-  form.customerPhone = current.customer.phone;
+  form.customerPhone = formatPhone(current.customer.phone);
   form.description = `Private transfer ${current.code}`;
   form.amount = payments.balanceOf(current.id).toFixed(2);
 }
@@ -95,6 +96,9 @@ function validate(): boolean {
     errors.amount = `No puede ser mayor al saldo de la orden (${formatUsd(payments.balanceOf(order.value.id))}).`;
   }
   if (form.customerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) errors.customerEmail = 'Email no válido.';
+  if (form.customerPhone.trim() && !isInternationalPhone(form.customerPhone)) {
+    errors.customerPhone = 'Número no válido. Escríbelo con la clave de país: +52 998 123 4567.';
+  }
   return Object.values(errors).every((message) => !message);
 }
 
@@ -220,7 +224,8 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
         </div>
         <div>
           <label :for="ids.phone" :class="labelClass">WhatsApp <span class="font-normal">(opcional)</span></label>
-          <input :id="ids.phone" v-model="form.customerPhone" type="tel" maxlength="30" placeholder="+1 555 123 4567" :class="inputClass()" />
+          <input :id="ids.phone" v-model="form.customerPhone" type="tel" maxlength="30" placeholder="+52 998 123 4567" :class="inputClass(errors.customerPhone)" />
+          <p v-if="errors.customerPhone" class="mt-1 text-xs font-medium text-accent-600">{{ errors.customerPhone }}</p>
         </div>
         <div class="sm:col-span-2">
           <label :for="ids.description" :class="labelClass">Concepto <span class="font-normal">(lo ve el cliente)</span></label>

@@ -14,6 +14,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { IsInternationalPhone, PHONE_COUNTRIES } from '../../../common/validators/phone';
 import { QuoteDto } from '../../pricing/dto/quote.dto';
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -36,8 +37,13 @@ export class CustomerDto {
   @MaxLength(190)
   email: string;
 
-  @Matches(/^\+?[0-9 ()-]{6,30}$/, { message: 'phone must be a valid phone number' })
+  /** Formato internacional E.164: +529981234567. */
+  @IsInternationalPhone()
   phone: string;
+
+  /** País del teléfono (ISO, p. ej. MX); se guarda como país del cliente. */
+  @IsIn(PHONE_COUNTRIES, { message: 'phoneCountry must be a valid country code' })
+  phoneCountry: string;
 }
 
 /**

@@ -51,7 +51,7 @@ export const useBookingStore = defineStore('booking', () => {
     secondHotel: null,
     date: '',
     returnDate: '',
-    passengers: 2,
+    passengers: 1,
   });
 
   const quote = ref<QuoteResult | null>(null);

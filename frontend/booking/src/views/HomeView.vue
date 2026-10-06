@@ -14,8 +14,18 @@ const HIGHLIGHTS = [
 <template>
   <div>
     <section class="relative overflow-hidden bg-brand-900 pb-40 text-white sm:pb-44">
+      <!-- Foto de fondo provisional (para cambiarla, reemplaza los archivos de public/hero). -->
+      <img
+        src="/hero/home-1920.webp"
+        srcset="/hero/home-960.webp 960w, /hero/home-1920.webp 1920w"
+        sizes="100vw"
+        alt=""
+        fetchpriority="high"
+        class="absolute inset-0 h-full w-full object-cover object-[70%_center]"
+      />
+      <!-- Degradado azul desde la izquierda: el texto blanco se lee sobre la foto. -->
       <div
-        class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--color-brand-500),transparent_60%),radial-gradient(ellipse_at_bottom_left,var(--color-brand-700),transparent_55%)] opacity-80"
+        class="absolute inset-0 bg-gradient-to-r from-brand-950/90 via-brand-900/60 to-brand-900/10"
         aria-hidden="true"
       />
       <svg

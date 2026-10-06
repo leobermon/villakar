@@ -33,7 +33,7 @@ export interface VehicleType {
   description: string | null;
   maxPassengers: number;
   maxLuggage: number;
-  /** Ruta del sitio público (p. ej. /vehicles/sedan.webp) o URL completa. */
+  /** Ruta del sitio público (p. ej. /vehicles/jetta.webp) o URL completa. */
   imageUrl: string | null;
   sortOrder: number;
   isActive: boolean;

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { fetchFleet, type FleetVehicle } from '@/api/booking';
+import LuggageIcon from '@/components/icons/LuggageIcon.vue';
+import PassengerIcon from '@/components/icons/PassengerIcon.vue';
 
 /**
  * Flota en la portada. Los datos salen de la base (tipos de vehículo activos),
@@ -79,8 +81,12 @@ onMounted(async () => {
           </div>
           <p v-if="vehicle.description" class="mt-0.5 text-sm text-brand-900/65">{{ vehicle.description }}</p>
           <ul class="mt-3 flex flex-wrap gap-1.5 text-xs font-medium text-brand-800">
-            <li class="rounded-full bg-brand-50 px-2.5 py-1">{{ vehicle.maxPassengers }} seats</li>
-            <li class="rounded-full bg-brand-50 px-2.5 py-1">{{ vehicle.maxLuggage }} suitcases</li>
+            <li class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1">
+              <PassengerIcon class="size-3.5" />{{ vehicle.maxPassengers }} seats
+            </li>
+            <li class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1">
+              <LuggageIcon class="size-3.5" />{{ vehicle.maxLuggage }} suitcases
+            </li>
             <li class="rounded-full bg-brand-50 px-2.5 py-1">Private service</li>
           </ul>
         </div>

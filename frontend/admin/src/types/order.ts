@@ -37,7 +37,8 @@ export interface Order {
   tripType: TripType;
   routeType: RouteType;
   source: OrderSource;
-  customer: { firstName: string; lastName: string; email: string; phone: string };
+  /** phone en formato internacional E.164 (+529981234567); countryCode es el país ISO del teléfono (MX). */
+  customer: { firstName: string; lastName: string; email: string; phone: string; countryCode: string | null };
   vehicle: { code: string; name: string };
   passengers: number;
   total: number;

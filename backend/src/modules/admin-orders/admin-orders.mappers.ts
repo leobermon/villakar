@@ -36,6 +36,7 @@ export function toOrder(row: OrderRow) {
       lastName: row.customer.lastName,
       email: row.customer.email,
       phone: row.customer.phone ?? '',
+      countryCode: row.customer.countryCode,
     },
     vehicle: { code: row.vehicleType.code, name: row.vehicleType.name },
     passengers: row.adults + row.children + row.infants,

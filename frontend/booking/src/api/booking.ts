@@ -58,6 +58,7 @@ export interface QuoteResult {
 export interface ContactRequestPayload {
   name: string;
   email: string;
+  /** Formato internacional E.164. */
   phone?: string;
   hotelName: string;
   googlePlaceId?: string;
@@ -114,7 +115,8 @@ export interface LegDetails {
 
 export interface CreateReservationRequest extends QuoteRequest {
   vehicleTypeId: number;
-  customer: { firstName: string; lastName: string; email: string; phone: string };
+  /** phone en formato internacional E.164 (+529981234567); phoneCountry es el país ISO (MX). */
+  customer: { firstName: string; lastName: string; email: string; phone: string; phoneCountry: string };
   legs: LegDetails[];
   specialRequests?: string;
 }

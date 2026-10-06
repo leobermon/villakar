@@ -12,6 +12,7 @@ import {
   TripType,
 } from '@prisma/client';
 import { formatLocalDateTime, localDateTime, nowInCancun } from '../../common/utils/time';
+import { phoneMatchesCountry } from '../../common/validators/phone';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
 import { SettingsService } from '../settings/settings.service';
@@ -90,6 +91,9 @@ export class ReservationsService {
   ) {}
 
   async create(dto: CreateReservationDto): Promise<ReservationSummary> {
+    if (!phoneMatchesCountry(dto.customer.phone, dto.customer.phoneCountry)) {
+      throw new BadRequestException('The phone number does not match the selected country code.');
+    }
     const trip = await this.pricing.priceTrip(dto);
     if (!trip.serviceable) {
       throw new UnprocessableEntityException('This route cannot be booked online. Please contact us for a quote.');
@@ -143,7 +147,8 @@ export class ReservationsService {
               firstName: dto.customer.firstName.trim(),
               lastName: dto.customer.lastName.trim(),
               email: normalizeEmail(dto.customer.email),
-              phone: dto.customer.phone.trim(),
+              phone: dto.customer.phone,
+              countryCode: dto.customer.phoneCountry,
             },
           },
           tripType: dto.tripType,

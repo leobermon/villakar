@@ -2,7 +2,9 @@
 import { reactive, ref, useId } from 'vue';
 import { sendContactRequest, type ContactRequestPayload } from '@/api/booking';
 import { ApiError } from '@/api/client';
+import PhoneField from '@/components/booking/PhoneField.vue';
 import { todayInCancun } from '@/utils/format';
+import { defaultCountry, toE164, type PhoneValue } from '@/utils/phone';
 import { openNativePicker } from '@/utils/picker';
 
 const props = defineProps<{
@@ -17,13 +19,13 @@ const props = defineProps<{
 const form = reactive({
   name: '',
   email: '',
-  phone: '',
   hotelName: props.hotelName ?? '',
   arrivalDate: props.arrivalDate ?? '',
-  passengers: props.passengers ?? 2,
+  passengers: props.passengers ?? 1,
   message: '',
 });
 
+const phone = ref<PhoneValue>({ country: defaultCountry(), number: '' });
 const sending = ref(false);
 const sent = ref(false);
 const error = ref<string | null>(null);
@@ -39,7 +41,7 @@ async function submit() {
   const payload: ContactRequestPayload = {
     name: form.name.trim(),
     email: form.email.trim(),
-    phone: form.phone.trim() || undefined,
+    phone: toE164(phone.value) ?? undefined,
     hotelName: form.hotelName.trim(),
     googlePlaceId: props.googlePlaceId,
     arrivalDate: form.arrivalDate || undefined,
@@ -82,7 +84,7 @@ async function submit() {
         </div>
         <div>
           <label :for="ids.phone" :class="labelClass">Phone / WhatsApp <span class="normal-case opacity-60">(optional)</span></label>
-          <input :id="ids.phone" v-model="form.phone" type="tel" maxlength="30" autocomplete="tel" :class="inputClass" />
+          <PhoneField :id="ids.phone" v-model="phone" :input-class="inputClass" />
         </div>
         <div>
           <label :for="ids.hotel" :class="labelClass">Hotel or address</label>

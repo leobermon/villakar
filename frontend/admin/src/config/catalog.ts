@@ -10,9 +10,9 @@ export const VEHICLE_STATUS: Record<VehicleStatus, { label: string; tone: BadgeT
 
 /** Fotos disponibles en el sitio público (frontend/booking/public/vehicles). */
 export const VEHICLE_IMAGES = [
-  { path: '/vehicles/sedan.webp', label: 'Volkswagen Jetta' },
-  { path: '/vehicles/carrito.webp', label: 'Volkswagen Teramont' },
-  { path: '/vehicles/transporter.webp', label: 'Ford Transit' },
+  { path: '/vehicles/jetta.webp', label: 'Volkswagen Jetta' },
+  { path: '/vehicles/vip.webp', label: 'Volkswagen Teramont' },
+  { path: '/vehicles/transit.webp', label: 'Ford Transit' },
 ];
 
 /** Las imágenes viven en el sitio público: rutas relativas se resuelven contra él. */

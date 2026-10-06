@@ -15,9 +15,11 @@ import {
 import { ApiError } from '@/api/client';
 import LegDetailsFields, { type LegKind } from '@/components/booking/LegDetailsFields.vue';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
+import PhoneField from '@/components/booking/PhoneField.vue';
 import VehicleCard from '@/components/booking/VehicleCard.vue';
 import { useBookingStore } from '@/stores/booking';
 import { formatDateOnly, formatUsd } from '@/utils/format';
+import { defaultCountry, toE164, type PhoneValue } from '@/utils/phone';
 import { rememberReservationEmail } from '@/utils/reservationAccess';
 
 const store = useBookingStore();
@@ -26,7 +28,8 @@ const router = useRouter();
 const quote = computed(() => store.quote!);
 const option = computed(() => store.selectedOption!);
 
-const customer = reactive({ firstName: '', lastName: '', email: '', phone: '' });
+const customer = reactive({ firstName: '', lastName: '', email: '' });
+const phone = ref<PhoneValue>({ country: defaultCountry(), number: '' });
 const specialRequests = ref('');
 const paymentMethod = ref<PaymentMethod | null>(null);
 const availableMethods = ref<PaymentMethodsAvailability | null>(null);
@@ -108,6 +111,13 @@ async function submit() {
 
   let code: string;
   const email = customer.email.trim();
+  // PhoneField ya bloquea el envío con un número inválido; esto es solo por seguridad.
+  const phoneE164 = toE164(phone.value);
+  if (!phoneE164) {
+    error.value = 'Please enter a valid phone number for the selected country.';
+    submitting.value = false;
+    return;
+  }
   try {
     const reservation = await createReservation({
       ...store.buildQuoteRequest(),
@@ -116,7 +126,8 @@ async function submit() {
         firstName: customer.firstName.trim(),
         lastName: customer.lastName.trim(),
         email,
-        phone: customer.phone.trim(),
+        phone: phoneE164,
+        phoneCountry: phone.value.country,
       },
       legs: legs.value.map((leg, index) => legPayload(leg.kind, legDetails[index])),
       specialRequests: specialRequests.value.trim() || undefined,
@@ -179,18 +190,7 @@ async function submit() {
           </div>
           <div>
             <label :for="ids.phone" :class="labelClass">Phone / WhatsApp</label>
-            <input
-              :id="ids.phone"
-              v-model="customer.phone"
-              type="tel"
-              required
-              maxlength="30"
-              pattern="\+?[0-9 ()\-]{6,30}"
-              title="Include your country code, e.g. +1 555 123 4567"
-              placeholder="+1 555 123 4567"
-              autocomplete="tel"
-              :class="inputClass"
-            />
+            <PhoneField :id="ids.phone" v-model="phone" required :input-class="inputClass" />
           </div>
         </div>
       </section>

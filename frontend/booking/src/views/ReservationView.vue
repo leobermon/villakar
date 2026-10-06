@@ -17,6 +17,7 @@ import { ApiError } from '@/api/client';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
 import { formatLocalDateTime, formatLocalTime, formatUsd } from '@/utils/format';
+import { formatInternational } from '@/utils/phone';
 import { recallReservationEmail, rememberReservationEmail } from '@/utils/reservationAccess';
 
 const route = useRoute();
@@ -246,7 +247,7 @@ const inputClass =
             <div class="sm:col-span-3">
               <dt class="text-xs text-brand-900/60">Lead passenger</dt>
               <dd class="font-medium">
-                {{ reservation.customer.firstName }} {{ reservation.customer.lastName }} · {{ reservation.customer.phone }}
+                {{ reservation.customer.firstName }} {{ reservation.customer.lastName }} · {{ formatInternational(reservation.customer.phone) }}
               </dd>
             </div>
             <div v-if="reservation.specialRequests" class="sm:col-span-3">

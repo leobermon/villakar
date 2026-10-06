@@ -12,7 +12,7 @@ const VEHICLE_TYPES = [
     description: 'Volkswagen Jetta or similar',
     maxPassengers: 2,
     maxLuggage: 2,
-    imageUrl: '/vehicles/sedan.webp',
+    imageUrl: '/vehicles/jetta.webp',
     sortOrder: 1,
   },
   {
@@ -21,7 +21,7 @@ const VEHICLE_TYPES = [
     description: 'Volkswagen Teramont or similar',
     maxPassengers: 4,
     maxLuggage: 4,
-    imageUrl: '/vehicles/carrito.webp',
+    imageUrl: '/vehicles/vip.webp',
     sortOrder: 2,
   },
   {
@@ -30,7 +30,7 @@ const VEHICLE_TYPES = [
     description: 'Ford Transit or similar',
     maxPassengers: 7,
     maxLuggage: 7,
-    imageUrl: '/vehicles/transporter.webp',
+    imageUrl: '/vehicles/transit.webp',
     sortOrder: 3,
   },
 ];

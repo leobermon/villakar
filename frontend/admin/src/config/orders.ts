@@ -62,6 +62,13 @@ export function paymentSummary(order: Order): { label: string; tone: BadgeTone }
   }
 }
 
+/** Abreviatura de la ruta en la tabla: LL llegada, SA salida, HH hotel a hotel. */
+export const ROUTE_CODE: Record<RouteType, string> = {
+  AIRPORT_HOTEL: 'LL',
+  HOTEL_AIRPORT: 'SA',
+  HOTEL_HOTEL: 'HH',
+};
+
 export const ROUTE_LABEL: Record<RouteType, string> = {
   AIRPORT_HOTEL: 'Aeropuerto → Hotel',
   HOTEL_AIRPORT: 'Hotel → Aeropuerto',

@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -17,6 +17,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { PaymentProvider, ReservationStatus } from '@prisma/client';
+import { IsInternationalPhone } from '../../common/validators/phone';
 
 // ---------- Órdenes ----------
 
@@ -125,9 +126,10 @@ export class CreatePaymentLinkDto {
   @MaxLength(190)
   customerEmail: string | null;
 
+  /** Se guarda en formato internacional E.164; se aceptan espacios, guiones y paréntesis al capturarlo. */
   @IsOptional()
-  @IsString()
-  @MaxLength(30)
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.replace(/[\s().-]/g, '') || null : value))
+  @IsInternationalPhone({ message: 'WhatsApp no válido. Escríbelo con la clave de país: +52 998 123 4567.' })
   customerPhone: string | null;
 
   @IsString()
