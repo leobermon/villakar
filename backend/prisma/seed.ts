@@ -69,6 +69,12 @@ function bboxToWkt([minLng, minLat, maxLng, maxLat]: BBox): string {
 }
 
 async function main() {
+  // En producción el catálogo se importa desde la base de desarrollo: solo se crea el usuario del panel.
+  if (process.env.SEED_ADMIN_ONLY === 'true') {
+    await seedFirstAdmin();
+    return;
+  }
+
   for (const vt of VEHICLE_TYPES) {
     await prisma.vehicleType.upsert({ where: { code: vt.code }, update: {}, create: vt });
     // Imagen y descripción solo si aún no tienen: no pisa lo que se edite en el panel.

@@ -1,0 +1,52 @@
+# Caddy: saca y renueva solo los certificados HTTPS (Let's Encrypt).
+# {$DOMAIN} y {$ACME_EMAIL} vienen del archivo .env del servidor.
+{
+	email {$ACME_EMAIL}
+}
+
+# Reglas comunes del sitio y del panel.
+(common) {
+	encode zstd gzip
+
+	# La API vive en el mismo dominio: /api/* va al backend (así la cookie del panel es del mismo sitio).
+	handle /api/* {
+		reverse_proxy backend:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Archivos con hash en el nombre: se pueden guardar en caché un año.
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+}
+
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+# Sitio de reservas.
+{$DOMAIN} {
+	import common
+	handle {
+		root * /srv/booking
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# Panel de administración.
+admin.{$DOMAIN} {
+	import common
+	header X-Frame-Options "DENY"
+	header X-Robots-Tag "noindex, nofollow"
+	handle {
+		root * /srv/admin
+		try_files {path} /index.html
+		file_server
+	}
+}

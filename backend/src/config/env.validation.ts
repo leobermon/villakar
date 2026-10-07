@@ -107,6 +107,14 @@ class EnvironmentVariables {
   @IsBoolean()
   COOKIE_SECURE: boolean = false;
 
+  /**
+   * true si el backend está detrás de un proxy (Caddy en producción): la IP del
+   * cliente se lee de X-Forwarded-For, para que el límite de intentos sea por cliente.
+   */
+  @Transform(({ obj, key }) => envFlag(obj[key], false))
+  @IsBoolean()
+  TRUST_PROXY: boolean = false;
+
   /** Remitente de los correos, p. ej. "VillaKar Transfers <reservations@tudominio.com>". */
   @IsString()
   @IsNotEmpty()

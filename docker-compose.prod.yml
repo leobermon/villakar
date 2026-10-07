@@ -1,0 +1,88 @@
+# Producción (VPS). Todo corre en Docker: MySQL, backend, sitio + panel (Caddy) y respaldos.
+# Uso: copiar .env.production.example a .env, llenarlo y correr `docker compose up -d --build`.
+# (COMPOSE_FILE en el .env hace que docker compose use este archivo.)
+# Guía completa: deploy/README.md
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-villakar}
+      MYSQL_USER: ${MYSQL_USER:-villakar}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Falta MYSQL_PASSWORD en .env}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # Sin puertos publicados: solo el backend la ve, por la red interna de Docker.
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-villakar}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-villakar}
+      PORT: 3000
+      PUBLIC_SITE_URL: https://${DOMAIN}
+      CORS_ORIGINS: https://${DOMAIN},https://admin.${DOMAIN}
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "true"
+      TZ: UTC
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web/Dockerfile
+      args:
+        PUBLIC_SITE_URL: https://${DOMAIN:?Falta DOMAIN en .env}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Falta ACME_EMAIL en .env}
+    volumes:
+      # Certificados HTTPS: se conservan entre reinicios (Let's Encrypt limita cuántos se piden).
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Respaldo diario de la base en ./backups (se guardan los últimos 14 días).
+  backup:
+    image: mysql:8.4
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-villakar}
+      MYSQL_USER: ${MYSQL_USER:-villakar}
+      MYSQL_PWD: ${MYSQL_PASSWORD}
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./deploy/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+
+volumes:
+  mysql_data:
+  caddy_data:
+  caddy_config:
