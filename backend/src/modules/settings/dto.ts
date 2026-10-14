@@ -32,6 +32,9 @@ export class CompanySettingsDto {
 
   @IsString() @MaxLength(255)
   address!: string;
+
+  @IsString() @MaxLength(120)
+  hours!: string;
 }
 
 export class BookingSettingsDto {

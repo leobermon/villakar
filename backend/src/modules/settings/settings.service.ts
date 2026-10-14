@@ -94,7 +94,7 @@ export class SettingsService {
   private defaults(): Settings {
     const sender = parseMailFrom(this.config.get<string>('MAIL_FROM') ?? '');
     return {
-      company: { name: 'VillaKar Transfers', phone: '', whatsapp: '', email: '', address: '' },
+      company: { name: 'VillaKar Transfers', phone: '', whatsapp: '', email: '', address: '', hours: '' },
       booking: {
         minNoticeHours: this.config.getOrThrow<number>('BOOKING_MIN_NOTICE_HOURS'),
         holdMinutes: this.config.getOrThrow<number>('BOOKING_HOLD_MINUTES'),

@@ -165,6 +165,21 @@ export function lookupReservation(access: ReservationAccess): Promise<Reservatio
   return apiRequest('/reservations/lookup', { method: 'POST', json: access });
 }
 
+/** Datos de la empresa editados en Configuración del panel. */
+export interface CompanyInfo {
+  name: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  address: string;
+  hours: string;
+}
+
+export async function fetchCompanyInfo(): Promise<CompanyInfo> {
+  const settings = await apiRequest<{ company: CompanyInfo }>('/site-settings');
+  return settings.company;
+}
+
 export function fetchPaymentMethods(): Promise<PaymentMethodsAvailability> {
   return apiRequest('/payments/methods');
 }

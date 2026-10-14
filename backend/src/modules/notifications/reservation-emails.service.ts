@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReservationsService, ReservationSummary } from '../reservations/reservations.service';
+import { SettingsService } from '../settings/settings.service';
+import type { CompanySettings } from '../settings/settings.types';
 import { MailService } from './mail.service';
 
 // Colores de la paleta del sitio (frontend/booking/src/style.css).
@@ -9,6 +12,7 @@ const NAVY = '#023e8a';
 const BLUE = '#0077b6';
 const CREAM = '#fdfcf5';
 const SAND = '#f1f1e6';
+const BORDER = '#e3eef7';
 const MUTED = '#5b6b86';
 
 @Injectable()
@@ -20,6 +24,7 @@ export class ReservationEmailsService {
     private readonly reservations: ReservationsService,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly settings: SettingsService,
   ) {}
 
   /**
@@ -37,11 +42,12 @@ export class ReservationEmailsService {
       if (claimed.count === 0) return;
 
       const summary = await this.reservations.findSummaryById(reservationId);
+      const company = await this.settings.get('company');
       const sent = await this.mail.send({
         to: summary.customer.email,
         subject: `Your transfer is confirmed · ${summary.code}`,
-        html: this.renderHtml(summary),
-        text: this.renderText(summary),
+        html: this.renderHtml(summary, company),
+        text: this.renderText(summary, company),
       });
       if (!sent) {
         await this.prisma.reservation.update({
@@ -54,69 +60,145 @@ export class ReservationEmailsService {
     }
   }
 
-  private reservationUrl(code: string): string {
-    return `${this.config.getOrThrow<string>('PUBLIC_SITE_URL').replace(/\/+$/, '')}/reservation/${code}`;
+  private siteUrl(): string {
+    return this.config.getOrThrow<string>('PUBLIC_SITE_URL').replace(/\/+$/, '');
   }
 
-  private renderText(r: ReservationSummary): string {
+  private reservationUrl(code: string): string {
+    return `${this.siteUrl()}/reservation/${code}`;
+  }
+
+  private renderText(r: ReservationSummary, company: CompanySettings): string {
+    const contact = contactLines(company);
     const lines = [
-      `Hi ${r.customer.firstName},`,
+      company.name,
       '',
-      `Your private transfer is confirmed. Reservation code: ${r.code}`,
+      'Your transfer is confirmed',
+      `Thanks, ${r.customer.firstName}.`,
+      `Reservation code: ${r.code}`,
+      ...(cashNote(r) ? ['', cashNote(r)!] : []),
       '',
       ...r.legs.flatMap((leg) => [
-        `${legLabel(r, leg.legNumber)}: ${leg.originName} → ${leg.destinationName}`,
+        `${legLabel(r, leg.legNumber).toUpperCase()}: ${leg.originName} → ${leg.destinationName}`,
         `  Pickup: ${formatLocal(leg.pickupAt)}`,
         ...(leg.flightNumber ? [`  Flight: ${flightLine(leg)}`] : []),
         '',
       ]),
-      `Vehicle: ${r.vehicleName} · ${r.passengers} ${r.passengers === 1 ? 'passenger' : 'passengers'}`,
-      paymentLine(r),
-      ...(r.specialRequests ? ['', `Special requests: ${r.specialRequests}`] : []),
+      `Vehicle: ${r.vehicleName}`,
+      `Passengers: ${r.passengers}`,
+      `${totalLabel(r)}: ${usd(r.total)} USD`,
+      `Lead passenger: ${leadPassenger(r)}`,
+      ...(r.specialRequests ? [`Special requests: ${r.specialRequests}`] : []),
       '',
       `View your reservation: ${this.reservationUrl(r.code)}`,
+      ...(contact.length ? ['', `Need help? Contact ${company.name}`, ...contact.map(([label, value]) => `${label}: ${value}`)] : []),
       '',
-      'VillaKar Transfers · Cancun & Riviera Maya',
+      `${company.name} · Cancun & Riviera Maya`,
     ];
     return lines.join('\n');
   }
 
-  private renderHtml(r: ReservationSummary): string {
+  /**
+   * Mismo orden que la página de confirmación (frontend/booking/src/views/ReservationView.vue):
+   * logo, aviso de confirmada con el código, efectivo, tramos, detalle y contacto.
+   * Tablas y estilos en línea para que se vea bien en Gmail y Outlook.
+   */
+  private renderHtml(r: ReservationSummary, company: CompanySettings): string {
+    const card = `background:#ffffff;border:1px solid ${BORDER};border-radius:16px;`;
+    const label = `font-size:12px;color:${MUTED};`;
+    const value = `font-size:14px;font-weight:600;color:${NAVY};margin-top:2px;`;
+    const spacer = '<tr><td style="height:16px;line-height:16px;font-size:0;">&nbsp;</td></tr>';
+
     const legs = r.legs
       .map(
         (leg) => `
-        <tr><td style="padding:16px 20px;border-top:1px solid ${SAND};">
-          <div style="font-size:12px;color:${BLUE};font-weight:600;">${esc(legLabel(r, leg.legNumber))}</div>
-          <div style="font-size:15px;font-weight:600;color:${NAVY};margin-top:2px;">${esc(leg.originName)} → ${esc(leg.destinationName)}</div>
-          <div style="font-size:14px;color:${NAVY};margin-top:6px;">Pickup: <strong>${esc(formatLocal(leg.pickupAt))}</strong></div>
-          ${leg.flightNumber ? `<div style="font-size:14px;color:${MUTED};margin-top:2px;">Flight: ${esc(flightLine(leg))}</div>` : ''}
-        </td></tr>`,
+        <tr><td style="${card}padding:20px;">
+          <div style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:${BLUE};">${esc(legLabel(r, leg.legNumber))}</div>
+          <div style="font-size:16px;font-weight:600;color:${NAVY};margin-top:4px;">${esc(leg.originName)} → ${esc(leg.destinationName)}</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;"><tr>
+            <td valign="top" style="padding-right:12px;">
+              <div style="${label}">Pickup</div>
+              <div style="${value}">${esc(formatLocal(leg.pickupAt))}</div>
+            </td>
+            ${
+              leg.flightNumber
+                ? `<td valign="top">
+              <div style="${label}">Flight</div>
+              <div style="${value}">${esc(flightLine(leg))}</div>
+            </td>`
+                : ''
+            }
+          </tr></table>
+        </td></tr>
+        ${spacer}`,
       )
       .join('');
+
+    const contact = contactLines(company);
+    const contactBlock = contact.length
+      ? `
+        ${spacer}
+        <tr><td style="${card}padding:20px;">
+          <div style="font-size:17px;font-weight:700;color:${NAVY};">Need help? Contact ${esc(company.name)}</div>
+          ${contact
+            .map(
+              ([title, text, href]) => `<div style="${label}margin-top:12px;">${esc(title)}</div>
+          <div style="${value}">${href ? `<a href="${esc(href)}" style="color:${NAVY};text-decoration:none;">${esc(text)}</a>` : esc(text)}</div>`,
+            )
+            .join('')}
+        </td></tr>`
+      : '';
+
+    const cash = cashNote(r);
 
     return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reservation ${esc(r.code)}</title></head>
 <body style="margin:0;background:${CREAM};font-family:Arial,Helvetica,sans-serif;color:${NAVY};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:24px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${SAND};">
-        <tr><td style="background:${NAVY};color:#ffffff;padding:20px;">
-          <div style="font-size:20px;font-weight:700;">Your transfer is confirmed</div>
-          <div style="font-size:14px;opacity:.85;margin-top:4px;">Hi ${esc(r.customer.firstName)}, here are your booking details.</div>
-          <div style="font-size:12px;opacity:.75;margin-top:14px;">Reservation code</div>
-          <div style="font-size:22px;font-weight:700;letter-spacing:3px;">${esc(r.code)}</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+        <tr><td style="padding-bottom:16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+            <td valign="middle"><img src="${esc(this.siteUrl())}/email/logo.png" width="148" height="40" alt="${esc(company.name)}" style="display:block;border:0;"></td>
+            <td valign="middle" style="padding-left:12px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;color:${NAVY};">${esc(company.name)}</td>
+          </tr></table>
         </td></tr>
+
+        <tr><td style="background:${BLUE};border-radius:16px;padding:16px 20px;color:#ffffff;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td valign="top" width="48" style="padding-right:12px;">
+              <div style="width:36px;height:36px;line-height:36px;border-radius:18px;background:#3392c5;color:#ffffff;text-align:center;font-size:18px;">&#10003;</div>
+            </td>
+            <td valign="top">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;">Your transfer is confirmed</div>
+              <div style="font-size:14px;color:#d9ebf5;margin-top:4px;">Thanks, ${esc(r.customer.firstName)}.</div>
+              <div style="font-size:11px;color:#bcdbee;margin-top:12px;">Reservation code</div>
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;letter-spacing:3px;">${esc(r.code)}</div>
+            </td>
+          </tr></table>
+        </td></tr>
+        ${spacer}
+        ${cash ? `<tr><td style="background:${SAND};border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;color:${NAVY};">${esc(cash)}</td></tr>${spacer}` : ''}
+
         ${legs}
-        <tr><td style="padding:16px 20px;border-top:1px solid ${SAND};font-size:14px;">
-          <div>Vehicle: <strong>${esc(r.vehicleName)}</strong> · ${r.passengers} ${r.passengers === 1 ? 'passenger' : 'passengers'}</div>
-          <div style="margin-top:6px;">${esc(paymentLine(r))}</div>
-          ${r.specialRequests ? `<div style="margin-top:6px;color:${MUTED};">Special requests: ${esc(r.specialRequests)}</div>` : ''}
+
+        <tr><td style="${card}padding:20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td valign="top" width="33%"><div style="${label}">Vehicle</div><div style="${value}">${esc(r.vehicleName)}</div></td>
+            <td valign="top" width="33%"><div style="${label}">Passengers</div><div style="${value}">${r.passengers}</div></td>
+            <td valign="top"><div style="${label}">${totalLabel(r)}</div><div style="${value}">${usd(r.total)} USD</div></td>
+          </tr></table>
+          <div style="${label}margin-top:14px;">Lead passenger</div>
+          <div style="${value}">${esc(leadPassenger(r))}</div>
+          ${r.specialRequests ? `<div style="${label}margin-top:14px;">Special requests</div><div style="font-size:14px;color:${NAVY};margin-top:2px;white-space:pre-line;">${esc(r.specialRequests)}</div>` : ''}
         </td></tr>
-        <tr><td style="padding:8px 20px 24px;">
-          <a href="${esc(this.reservationUrl(r.code))}" style="display:inline-block;background:${BLUE};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px;">View your reservation</a>
+        ${contactBlock}
+
+        <tr><td align="center" style="padding-top:24px;">
+          <a href="${esc(this.reservationUrl(r.code))}" style="display:inline-block;background:${BLUE};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:12px;">View your reservation</a>
         </td></tr>
+        <tr><td align="center" style="padding-top:20px;font-size:12px;color:${MUTED};">${esc(company.name)} · Cancun &amp; Riviera Maya</td></tr>
       </table>
-      <div style="font-size:12px;color:${MUTED};margin-top:16px;">VillaKar Transfers · Cancun &amp; Riviera Maya</div>
     </td></tr>
   </table>
 </body></html>`;
@@ -130,29 +212,66 @@ function legLabel(r: ReservationSummary, legNumber: number): string {
 
 function flightLine(leg: ReservationSummary['legs'][number]): string {
   const parts = [`${leg.airline ?? ''} ${leg.flightNumber ?? ''}`.trim()];
-  if (leg.flightTime) parts.push(formatLocal(leg.flightTime));
+  if (leg.flightTime) {
+    // Mismo día que la recogida: solo la hora, como en la página.
+    parts.push(leg.flightTime.slice(0, 10) === leg.pickupAt.slice(0, 10) ? formatLocalTime(leg.flightTime) : formatLocal(leg.flightTime));
+  }
   if (leg.terminal) parts.push(`Terminal ${leg.terminal.slice(1)}`);
   return parts.join(' · ');
 }
 
-function paymentLine(r: ReservationSummary): string {
-  const total = `$${r.total.toFixed(2)} USD`;
-  if (r.paymentStatus === 'PAID') return `Paid online: ${total}`;
-  if (r.payInCash) return `Pay ${total} in cash to your driver after the service.`;
-  return `Total: ${total}`;
+function usd(amount: number): string {
+  return `$${amount.toFixed(2)}`;
 }
+
+function totalLabel(r: ReservationSummary): string {
+  if (r.paymentStatus === 'PAID') return 'Paid';
+  return r.payInCash ? 'Pay in cash' : 'Total';
+}
+
+function cashNote(r: ReservationSummary): string | null {
+  if (r.paymentStatus === 'PAID' || !r.payInCash) return null;
+  return `Please pay ${usd(r.total)} USD in cash to your driver after the service.`;
+}
+
+function leadPassenger(r: ReservationSummary): string {
+  const name = `${r.customer.firstName} ${r.customer.lastName}`;
+  if (!r.customer.phone) return name;
+  const phone = parsePhoneNumberFromString(r.customer.phone)?.formatInternational() ?? r.customer.phone;
+  return `${name} · ${phone}`;
+}
+
+/** [título, texto, enlace] de cada dato de contacto capturado en Configuración → Empresa. */
+function contactLines(company: CompanySettings): [string, string, string | null][] {
+  const lines: [string, string, string | null][] = [];
+  if (company.phone) lines.push(['Phone', company.phone, `tel:${company.phone.replace(/[^+\d]/g, '')}`]);
+  if (company.whatsapp && company.whatsapp !== company.phone) {
+    lines.push(['WhatsApp', company.whatsapp, `https://wa.me/${company.whatsapp.replace(/\D/g, '')}`]);
+  }
+  if (company.email) lines.push(['Email', company.email, `mailto:${company.email}`]);
+  if (company.hours) lines.push(['Office hours', company.hours, null]);
+  return lines;
+}
+
+const DATE_TIME = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: 'UTC',
+});
+const TIME = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 
 /** 'YYYY-MM-DDTHH:MM' (hora local de Cancún) → "Tue, Oct 20, 2026, 11:05 AM". */
 function formatLocal(value: string): string {
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }).format(new Date(`${value}:00Z`));
+  return DATE_TIME.format(new Date(`${value}:00Z`));
+}
+
+/** 'YYYY-MM-DDTHH:MM' → "11:05 AM". */
+function formatLocalTime(value: string): string {
+  return TIME.format(new Date(`${value}:00Z`));
 }
 
 /** Escapa texto del cliente (nombres, hoteles, peticiones) antes de meterlo en HTML. */

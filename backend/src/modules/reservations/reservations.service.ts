@@ -304,20 +304,35 @@ function resolveLegTimes(
   };
 
   if (kind === 'TRANSFER') {
-    return { pickupAt: localDateTime(date, require(details.pickupTime, 'Pickup time')), flightAt: null };
+    return { pickupAt: localDateTime(date, withinServiceHours(require(details.pickupTime, 'Pickup time'), label)), flightAt: null };
   }
 
   require(details.flightNumber, 'Flight number');
   require(details.airline, 'Airline');
-  const flightAt = localDateTime(date, require(details.flightTime, 'Flight time'));
+  const flightTime = require(details.flightTime, 'Flight time');
+  // En llegadas el servicio empieza al aterrizar.
+  if (kind === 'ARRIVAL') withinServiceHours(flightTime, label);
+  const flightAt = localDateTime(date, flightTime);
   if (kind === 'ARRIVAL') return { pickupAt: flightAt, flightAt };
 
-  let pickupAt = localDateTime(date, require(details.pickupTime, 'Pickup time'));
+  let pickupAt = localDateTime(date, withinServiceHours(require(details.pickupTime, 'Pickup time'), label));
   if (pickupAt >= flightAt) pickupAt = new Date(pickupAt.getTime() - 24 * HOUR_MS);
   if (flightAt.getTime() - pickupAt.getTime() > MAX_PICKUP_BEFORE_FLIGHT_MS) {
     throw new BadRequestException(`Pickup time must be within 8 hours before your flight (${label})`);
   }
   return { pickupAt, flightAt };
+}
+
+/** Horario de servicio (hora local de Cancún, HH:MM): de 5:00 am a 8:00 pm, ambos incluidos. */
+export const SERVICE_HOURS = { start: '05:00', end: '20:00' } as const;
+
+function withinServiceHours(time: string, label: string): string {
+  if (time < SERVICE_HOURS.start || time > SERVICE_HOURS.end) {
+    throw new BadRequestException(
+      `Our service hours are 5:00 am to 8:00 pm (${label}). For other times, please contact us.`,
+    );
+  }
+  return time;
 }
 
 function generateCode(): string {

@@ -9,6 +9,8 @@ export interface CompanySettings {
   whatsapp: string;
   email: string;
   address: string;
+  /** Horario de atención, texto libre (p. ej. "Daily, 7:00 am – 10:00 pm"). */
+  hours: string;
 }
 
 export interface BookingSettings {

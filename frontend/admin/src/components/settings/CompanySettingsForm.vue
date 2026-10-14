@@ -33,6 +33,9 @@ defineExpose({ dirty });
       <FormField v-slot="{ id }" label="Dirección" optional>
         <input :id="id" v-model="form.address" maxlength="255" :class="inputClass()" />
       </FormField>
+      <FormField v-slot="{ id, describedBy }" label="Horario de atención" optional hint="Como lo verá el cliente, en inglés: Daily, 7:00 am – 10:00 pm" class="sm:col-span-2">
+        <input :id="id" v-model="form.hours" maxlength="120" :aria-describedby="describedBy" :class="inputClass()" />
+      </FormField>
     </div>
 
     <p v-if="!form.phone && !form.whatsapp && !form.email" class="rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-900">

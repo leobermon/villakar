@@ -23,6 +23,7 @@ export const router = createRouter({
       component: () => import('@/views/ReservationView.vue'),
     },
     { path: '/contact', name: 'contact', component: () => import('@/views/ContactView.vue') },
+    { path: '/terms', name: 'terms', component: () => import('@/views/TermsView.vue') },
     { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
   ],
 });

@@ -2,7 +2,11 @@
 import { useId, watch } from 'vue';
 import type { LegDetails } from '@/api/booking';
 import { formatDateOnly } from '@/utils/format';
+import TimeSelect from '@/components/booking/TimeSelect.vue';
+import { SITE } from '@/config';
 import { openNativePicker } from '@/utils/picker';
+
+const serviceHours = SITE.serviceHours;
 
 export type LegKind = 'ARRIVAL' | 'DEPARTURE' | 'TRANSFER';
 
@@ -25,7 +29,8 @@ const labelClass = 'mb-1.5 block text-xs font-semibold tracking-wide text-brand-
 /** Hora sugerida de recogida: 3 horas antes del vuelo. */
 function suggestPickup(flightTime: string): string {
   const [hours, minutes] = flightTime.split(':').map(Number);
-  const total = (hours * 60 + minutes - 180 + 24 * 60) % (24 * 60);
+  // Redondeada hacia abajo a 5 minutos, como los que ofrece el selector.
+  const total = Math.floor(((hours * 60 + minutes - 180 + 24 * 60) % (24 * 60)) / 5) * 5;
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
@@ -34,7 +39,9 @@ watch(
   () => details.value.flightTime,
   (flightTime) => {
     if (props.kind === 'DEPARTURE' && flightTime && !details.value.pickupTime) {
-      details.value.pickupTime = suggestPickup(flightTime);
+      const suggested = suggestPickup(flightTime);
+      // Solo se propone si cae dentro del horario de servicio.
+      if (suggested >= serviceHours.start && suggested <= serviceHours.end) details.value.pickupTime = suggested;
     }
   },
 );
@@ -79,7 +86,17 @@ watch(
           <label :for="ids.flightTime" :class="labelClass">
             {{ props.kind === 'ARRIVAL' ? 'Landing time' : 'Departure time' }}
           </label>
-          <input :id="ids.flightTime" v-model="details.flightTime" type="time" required :class="[inputClass, 'cursor-pointer']" @click="openNativePicker" />
+          <!-- En llegadas el servicio empieza al aterrizar: solo horas dentro del horario de servicio. -->
+          <TimeSelect
+            v-if="props.kind === 'ARRIVAL'"
+            :id="ids.flightTime"
+            v-model="details.flightTime"
+            required
+            :min="serviceHours.start"
+            :max="serviceHours.end"
+            :select-class="inputClass"
+          />
+          <input v-else :id="ids.flightTime" v-model="details.flightTime" type="time" required :class="[inputClass, 'cursor-pointer']" @click="openNativePicker" />
         </div>
         <div>
           <label :for="ids.terminal" :class="labelClass">Terminal</label>
@@ -94,16 +111,25 @@ watch(
 
       <div v-if="props.kind !== 'ARRIVAL'">
         <label :for="ids.pickup" :class="labelClass">Pickup time at hotel</label>
-        <input :id="ids.pickup" v-model="details.pickupTime" type="time" required :class="[inputClass, 'cursor-pointer']" @click="openNativePicker" />
+        <TimeSelect
+          :id="ids.pickup"
+          v-model="details.pickupTime"
+          required
+          :min="serviceHours.start"
+          :max="serviceHours.end"
+          :select-class="inputClass"
+        />
       </div>
     </div>
 
     <p v-if="props.kind === 'ARRIVAL'" class="mt-4 text-xs text-brand-900/60">
       Your driver tracks your flight and waits for you at the terminal exit with a sign with your name.
+      Service hours: {{ serviceHours.label }}, Cancun local time.
     </p>
     <p v-else-if="props.kind === 'DEPARTURE'" class="mt-4 text-xs text-brand-900/60">
-      We suggest a pickup 3 hours before international flights (2 hours for domestic). Times are Cancun local time.
+      We suggest a pickup 3 hours before international flights (2 hours for domestic). Pickups from
+      {{ serviceHours.label }}, Cancun local time.
     </p>
-    <p v-else class="mt-4 text-xs text-brand-900/60">Times are Cancun local time.</p>
+    <p v-else class="mt-4 text-xs text-brand-900/60">Pickups from {{ serviceHours.label }}, Cancun local time.</p>
   </fieldset>
 </template>

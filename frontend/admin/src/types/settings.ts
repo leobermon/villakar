@@ -10,6 +10,8 @@ export interface CompanySettings {
   whatsapp: string;
   email: string;
   address: string;
+  /** Horario de atención que ve el cliente (texto libre). */
+  hours: string;
 }
 
 export interface BookingSettings {

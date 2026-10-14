@@ -6,7 +6,9 @@ import {
   chooseCashPayment,
   confirmStripePayment,
   defaultPaymentMethod,
+  fetchCompanyInfo,
   fetchPaymentMethods,
+  type CompanyInfo,
   lookupReservation,
   startPayment,
   type PaymentMethod,
@@ -14,7 +16,10 @@ import {
   type ReservationSummary,
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
+import logoUrl from '@/assets/logo.webp';
+import { SITE } from '@/config';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
+import TermsCheckbox from '@/components/booking/TermsCheckbox.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
 import { formatLocalDateTime, formatLocalTime, formatUsd } from '@/utils/format';
 import { formatInternational } from '@/utils/phone';
@@ -34,8 +39,16 @@ const notice = ref<string | null>(null);
 
 const paymentMethod = ref<PaymentMethod | null>(null);
 const availableMethods = ref<PaymentMethodsAvailability | null>(null);
+const acceptedTerms = ref(false);
 const paying = ref(false);
 const emailId = useId();
+
+/** Datos de la empresa; mientras cargan (o si falla) se muestra solo el nombre del sitio. */
+const company = ref<CompanyInfo>({ name: SITE.name, phone: '', whatsapp: '', email: '', address: '', hours: '' });
+const hasContact = computed(() => Boolean(company.value.phone || company.value.whatsapp || company.value.email || company.value.hours));
+fetchCompanyInfo()
+  .then((info) => (company.value = info))
+  .catch(() => {});
 
 const isPaid = computed(() => reservation.value?.paymentStatus === 'PAID');
 /** Confirmada: pagada en línea, o con pago en efectivo pendiente y no cancelada. */
@@ -94,7 +107,7 @@ async function loadPaymentMethods(): Promise<void> {
 }
 
 async function pay(): Promise<void> {
-  if (!paymentMethod.value || paying.value) return;
+  if (!paymentMethod.value || paying.value || !acceptedTerms.value) return;
   paying.value = true;
   notice.value = null;
   const access = { code, email: email.value.trim() };
@@ -112,6 +125,10 @@ async function pay(): Promise<void> {
   }
 }
 
+function printConfirmation(): void {
+  window.print();
+}
+
 onMounted(async () => {
   await handlePaymentReturn();
   if (email.value) await load();
@@ -123,9 +140,9 @@ const inputClass =
 </script>
 
 <template>
-  <div>
-    <SiteHeader />
-    <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+  <div class="print:[print-color-adjust:exact]">
+    <SiteHeader class="print:hidden" />
+    <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 print:max-w-none print:p-0">
       <p v-if="loading" class="py-16 text-center text-sm text-brand-900/60" role="status">Loading your reservation…</p>
 
       <!-- Sin email en esta pestaña (p. ej. otro dispositivo): se pide para consultar. -->
@@ -148,6 +165,24 @@ const inputClass =
       </section>
 
       <template v-else>
+        <!-- Empresa: logo y nombre (también encabeza la hoja impresa). -->
+        <div class="mb-4 flex items-center gap-3">
+          <img :src="logoUrl" :alt="company.name" width="800" height="216" class="h-10 w-auto" />
+          <p class="font-display text-lg font-semibold text-brand-950">{{ company.name }}</p>
+          <button
+            v-if="isConfirmed"
+            type="button"
+            class="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-brand-200 bg-white px-3 text-sm font-bold text-brand-700 hover:bg-brand-50 sm:px-4 print:hidden"
+            aria-label="Print confirmation"
+            @click="printConfirmation"
+          >
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z" />
+            </svg>
+            <span class="hidden sm:inline">Print confirmation</span>
+          </button>
+        </div>
+
         <!-- Encabezado compacto: estado a la izquierda, código a la derecha, para que el detalle quede a la vista. -->
         <section
           class="flex flex-col gap-3 rounded-2xl px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5"
@@ -161,9 +196,10 @@ const inputClass =
                 <h1 class="font-display text-xl font-semibold">Your transfer is confirmed</h1>
                 <p class="text-sm text-white/80">
                   Thanks, {{ reservation.customer.firstName }}.
-                  {{ reservation.confirmationEmailSent ? 'We sent your booking details to' : 'Your booking details will be sent to' }}
-                  <strong class="font-semibold break-all text-white">{{ reservation.customer.email }}</strong>.
+                  {{ reservation.confirmationEmailSent ? 'We sent your booking details to:' : 'Your booking details will be sent to:' }}
                 </p>
+                <!-- Correo en su propio párrafo para que no se corte a media dirección. -->
+                <p class="mt-0.5 text-sm font-semibold [overflow-wrap:anywhere] text-white">{{ reservation.customer.email }}</p>
               </template>
               <template v-else-if="reservation.canPay">
                 <h1 class="font-display text-xl font-semibold">Complete your booking</h1>
@@ -192,6 +228,7 @@ const inputClass =
 
         <form v-if="reservation.canPay" class="mt-6 space-y-5 rounded-2xl border border-brand-100 bg-white p-5 sm:p-6" @submit.prevent="pay">
           <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" />
+          <TermsCheckbox v-model="acceptedTerms" />
           <button
             type="submit"
             class="h-12 w-full rounded-xl bg-accent-500 text-[15px] font-bold text-white shadow-sm transition hover:bg-accent-600 disabled:opacity-60"
@@ -256,6 +293,37 @@ const inputClass =
             </div>
           </dl>
         </section>
+
+        <!-- Contacto de la empresa (Configuración del panel); se omite si no hay ningún dato. -->
+        <section v-if="hasContact" class="mt-6 rounded-2xl border border-brand-100 bg-white p-5 sm:p-6">
+          <h2 class="font-display text-lg font-semibold">Need help? Contact {{ company.name }}</h2>
+          <dl class="mt-3 grid gap-4 text-sm sm:grid-cols-3">
+            <div v-if="company.phone || company.whatsapp">
+              <dt class="text-xs text-brand-900/60">Phone / WhatsApp</dt>
+              <dd class="font-medium">
+                <a v-if="company.phone" :href="`tel:${company.phone.replace(/[^+\d]/g, '')}`" class="block hover:text-brand-700">{{ company.phone }}</a>
+                <a
+                  v-if="company.whatsapp && company.whatsapp !== company.phone"
+                  :href="`https://wa.me/${company.whatsapp.replace(/\D/g, '')}`"
+                  target="_blank"
+                  rel="noopener"
+                  class="block hover:text-brand-700"
+                >WhatsApp {{ company.whatsapp }}</a>
+              </dd>
+            </div>
+            <div v-if="company.email">
+              <dt class="text-xs text-brand-900/60">Email</dt>
+              <dd class="font-medium [overflow-wrap:anywhere]">
+                <a :href="`mailto:${company.email}`" class="hover:text-brand-700">{{ company.email }}</a>
+              </dd>
+            </div>
+            <div v-if="company.hours">
+              <dt class="text-xs text-brand-900/60">Office hours</dt>
+              <dd class="font-medium">{{ company.hours }}</dd>
+            </div>
+          </dl>
+        </section>
+
       </template>
     </main>
   </div>

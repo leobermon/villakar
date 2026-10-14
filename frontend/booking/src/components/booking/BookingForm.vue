@@ -16,6 +16,7 @@ import { ApiError } from '@/api/client';
 import LegDetailsFields, { type LegKind } from '@/components/booking/LegDetailsFields.vue';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import PhoneField from '@/components/booking/PhoneField.vue';
+import TermsCheckbox from '@/components/booking/TermsCheckbox.vue';
 import VehicleCard from '@/components/booking/VehicleCard.vue';
 import { useBookingStore } from '@/stores/booking';
 import { formatDateOnly, formatUsd } from '@/utils/format';
@@ -33,6 +34,7 @@ const phone = ref<PhoneValue>({ country: defaultCountry(), number: '' });
 const specialRequests = ref('');
 const paymentMethod = ref<PaymentMethod | null>(null);
 const availableMethods = ref<PaymentMethodsAvailability | null>(null);
+const acceptedTerms = ref(false);
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
@@ -105,7 +107,7 @@ function legPayload(kind: LegKind, details: LegDetails): LegDetails {
 }
 
 async function submit() {
-  if (submitting.value || !paymentMethod.value) return;
+  if (submitting.value || !paymentMethod.value || !acceptedTerms.value) return;
   submitting.value = true;
   error.value = null;
 
@@ -280,9 +282,11 @@ async function submit() {
         {{ error }}
       </p>
 
+      <TermsCheckbox v-model="acceptedTerms" class="mt-5" />
+
       <button
         type="submit"
-        class="mt-5 h-12 w-full rounded-xl bg-accent-500 text-[15px] font-bold text-white shadow-sm transition hover:bg-accent-600 disabled:opacity-60"
+        class="mt-4 h-12 w-full rounded-xl bg-accent-500 text-[15px] font-bold text-white shadow-sm transition hover:bg-accent-600 disabled:opacity-60"
         :disabled="submitting || !paymentMethod"
       >
         <template v-if="paymentMethod === 'cash'">{{ submitting ? 'Confirming…' : 'Confirm booking' }}</template>
