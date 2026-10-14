@@ -19,7 +19,8 @@ import PhoneField from '@/components/booking/PhoneField.vue';
 import TermsCheckbox from '@/components/booking/TermsCheckbox.vue';
 import VehicleCard from '@/components/booking/VehicleCard.vue';
 import { useBookingStore } from '@/stores/booking';
-import { formatDateOnly, formatUsd } from '@/utils/format';
+import { SITE } from '@/config';
+import { formatDateOnly, formatUsd, hoursUntilCancun } from '@/utils/format';
 import { defaultCountry, toE164, type PhoneValue } from '@/utils/phone';
 import { rememberReservationEmail } from '@/utils/reservationAccess';
 
@@ -74,6 +75,25 @@ const legs = computed(() => {
 });
 
 const legDetails = reactive<LegDetails[]>(legs.value.map(() => ({ terminal: undefined })));
+
+/**
+ * Primer servicio a menos de 8 horas: solo pago en línea. Llegadas: hora de
+ * aterrizaje; salidas y traslados: recogida (en salidas de madrugada, del día
+ * anterior, igual que el backend). El backend vuelve a validarlo.
+ */
+const lastMinute = computed(() => {
+  const first = legs.value[0]!;
+  const details = legDetails[0]!;
+  const time = first.kind === 'ARRIVAL' ? details.flightTime : details.pickupTime;
+  if (!first.date || !time) return false;
+  let date = first.date;
+  if (first.kind === 'DEPARTURE' && details.flightTime && time >= details.flightTime) {
+    const previous = new Date(`${date}T00:00:00Z`);
+    previous.setUTCDate(previous.getUTCDate() - 1);
+    date = previous.toISOString().slice(0, 10);
+  }
+  return hoursUntilCancun(`${date}T${time}`) < SITE.cashMinNoticeHours;
+});
 
 // Si el cliente vuelve con "Atrás" desde Stripe / PayPal, el navegador puede
 // restaurar la página congelada con el botón deshabilitado.
@@ -222,7 +242,7 @@ async function submit() {
         </div>
       </section>
 
-      <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" />
+      <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" :last-minute="lastMinute" />
     </div>
 
     <!-- Resumen de lo que se va a pagar: ruta, fechas, pasajeros y vehículo, junto al total. -->

@@ -171,6 +171,15 @@ export class AdminCatalogService {
     return zone!;
   }
 
+  /**
+   * Borra una tarifa. Las reservas que la usaron conservan su precio guardado;
+   * su referencia a la tarifa queda en NULL (fk_res_rate ON DELETE SET NULL).
+   */
+  async deleteRate(id: number) {
+    const deleted = await this.prisma.zoneRate.deleteMany({ where: { id } });
+    if (deleted.count === 0) throw new NotFoundException('La tarifa ya no existe.');
+  }
+
   /** Solo zonas sin tarifas ni traslados; con historial se desactivan. */
   async deleteZone(id: number) {
     const [rates, legs] = await Promise.all([

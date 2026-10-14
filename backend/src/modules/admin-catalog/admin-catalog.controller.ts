@@ -31,6 +31,13 @@ export class AdminCatalogController {
     return this.catalog.createRate(dto, user.id);
   }
 
+  @Delete('rates/:id')
+  @HttpCode(204)
+  @Roles(UserRole.ADMIN)
+  deleteRate(@Param('id', ParseIntPipe) id: number) {
+    return this.catalog.deleteRate(id);
+  }
+
   @Post('zones')
   @Roles(UserRole.ADMIN)
   createZone(@Body() dto: ZoneDto, @CurrentAdmin() user: AdminUser) {

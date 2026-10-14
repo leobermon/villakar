@@ -83,7 +83,7 @@ function goToSearch() {
 </script>
 
 <template>
-  <section class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="coverage-title">
+  <section class="mx-auto max-w-7xl px-4 pt-16 sm:px-6" aria-labelledby="coverage-title">
     <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
       <div class="max-w-2xl">
         <!-- Las tres franjas del ala del logo: el único acento rojo de la sección. -->

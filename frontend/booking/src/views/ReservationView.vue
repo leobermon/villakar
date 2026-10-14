@@ -186,7 +186,7 @@ const inputClass =
         <!-- Encabezado compacto: estado a la izquierda, código a la derecha, para que el detalle quede a la vista. -->
         <section
           class="flex flex-col gap-3 rounded-2xl px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5"
-          :class="isConfirmed ? 'bg-brand-700 text-white' : reservation.canPay ? 'border border-brand-100 bg-white' : 'border border-accent-400/40 bg-white'"
+          :class="isConfirmed ? 'bg-emerald-600 text-white' : reservation.canPay ? 'border border-brand-100 bg-white' : 'border border-accent-400/40 bg-white'"
           role="status"
         >
           <div class="flex items-start gap-3">
@@ -227,7 +227,7 @@ const inputClass =
         <p v-if="notice" role="status" class="mt-6 rounded-xl bg-mist-100 px-4 py-3 text-sm text-brand-900">{{ notice }}</p>
 
         <form v-if="reservation.canPay" class="mt-6 space-y-5 rounded-2xl border border-brand-100 bg-white p-5 sm:p-6" @submit.prevent="pay">
-          <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" />
+          <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" :last-minute="reservation.lastMinute" />
           <TermsCheckbox v-model="acceptedTerms" />
           <button
             type="submit"

@@ -148,6 +148,8 @@ export interface ReservationSummary {
   canPay: boolean;
   /** El cliente pagará en efectivo al chofer después del servicio. */
   payInCash: boolean;
+  /** Servicio dentro de las próximas 8 horas: solo pago en línea. */
+  lastMinute: boolean;
   /** Ya se envió el correo de confirmación al cliente. */
   confirmationEmailSent: boolean;
 }

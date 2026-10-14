@@ -8,6 +8,7 @@ import {
   RawBodyRequest,
   Req,
   ServiceUnavailableException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
@@ -46,7 +47,13 @@ export class PaymentsController {
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   async payInCash(@Body() dto: ReservationAccessDto): Promise<{ confirmed: true }> {
     await this.requireMethod('cash');
-    await this.ledger.recordCashOnService(await this.reservations.findPayable(dto));
+    const reservation = await this.reservations.findPayable(dto);
+    if (reservation.lastMinute) {
+      throw new UnprocessableEntityException(
+        'This is a last-minute service: please pay online by card or PayPal to guarantee your reservation.',
+      );
+    }
+    await this.ledger.recordCashOnService(reservation);
     return { confirmed: true };
   }
 

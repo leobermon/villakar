@@ -161,6 +161,31 @@ function applyBulk(changes: Array<{ id: number; priceOneWay: number; priceRoundT
   }
 }
 
+// ---- Borrar tarifa ----
+const deletingId = ref<number | null>(null);
+const deleteError = ref<string | null>(null);
+
+async function removeRate(row: RateRow) {
+  const vehicle = catalog.vehicleTypeById.get(row.rate.vehicleTypeId)?.name;
+  const label = `${row.other.name} · ${vehicle} ${row.rate.minPax}–${row.rate.maxPax} pax`;
+  const ok = window.confirm(
+    `¿Eliminar la tarifa ${label}?\n\nNo se puede deshacer. Las reservas que ya la usaron conservan su precio.\nSi solo quieres dejar de venderla por un tiempo, mejor desactívala.`,
+  );
+  if (!ok) return;
+  deletingId.value = row.rate.id;
+  deleteError.value = null;
+  savedMessage.value = null;
+  try {
+    await catalog.deleteRate(row.rate.id);
+    drafts.delete(row.rate.id);
+    savedMessage.value = `Tarifa eliminada: ${label}.`;
+  } catch (e) {
+    deleteError.value = e instanceof CatalogError ? e.message : 'No se pudo eliminar la tarifa.';
+  } finally {
+    deletingId.value = null;
+  }
+}
+
 function openCreate(preset?: Partial<RatePreset>) {
   createPreset.value = { originZoneId: originZoneId.value, ...preset };
 }
@@ -241,6 +266,7 @@ const priceInputClass = (changed: boolean, invalid: boolean) =>
     </div>
 
     <p v-if="savedMessage" role="status" class="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{{ savedMessage }}</p>
+    <p v-if="deleteError" role="alert" class="rounded-lg bg-accent-50 px-3 py-2 text-sm font-medium text-accent-600">{{ deleteError }}</p>
 
     <div class="overflow-hidden rounded-xl border border-fog-200 bg-white">
       <div class="overflow-x-auto">
@@ -255,11 +281,12 @@ const priceInputClass = (changed: boolean, invalid: boolean) =>
               <th scope="col" class="px-4 py-3 text-right">Redondo</th>
               <th scope="col" class="hidden px-4 py-3 lg:table-cell">Vigente desde</th>
               <th scope="col" class="px-4 py-3 text-center">Activa</th>
+              <th scope="col" class="px-2 py-3"><span class="sr-only">Eliminar</span></th>
             </tr>
           </thead>
           <tbody v-if="catalog.loading">
             <tr v-for="n in 6" :key="n" class="border-b border-fog-100">
-              <td v-for="c in 7" :key="c" class="px-4 py-3.5"><span class="block h-4 animate-pulse rounded bg-fog-100 motion-reduce:animate-none" /></td>
+              <td v-for="c in 8" :key="c" class="px-4 py-3.5"><span class="block h-4 animate-pulse rounded bg-fog-100 motion-reduce:animate-none" /></td>
             </tr>
           </tbody>
           <tbody v-for="group in groups" v-else :key="group.zone.id" class="border-b border-fog-200 last:border-0">
@@ -321,6 +348,20 @@ const priceInputClass = (changed: boolean, invalid: boolean) =>
                   :label="`Tarifa activa: ${group.zone.name} ${catalog.vehicleTypeById.get(row.rate.vehicleTypeId)?.name}`"
                   @update:model-value="(value) => setValue(row.rate, 'isActive', value)"
                 />
+              </td>
+              <td class="px-2 py-2.5 text-center">
+                <button
+                  type="button"
+                  class="grid size-8 place-items-center rounded-lg text-brand-900/45 transition hover:bg-accent-50 hover:text-accent-600 disabled:opacity-40"
+                  :disabled="deletingId === row.rate.id"
+                  :aria-label="`Eliminar tarifa ${group.zone.name} ${catalog.vehicleTypeById.get(row.rate.vehicleTypeId)?.name} ${row.rate.minPax}–${row.rate.maxPax} pasajeros`"
+                  title="Eliminar tarifa"
+                  @click="removeRate(row)"
+                >
+                  <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+                  </svg>
+                </button>
               </td>
             </tr>
           </tbody>

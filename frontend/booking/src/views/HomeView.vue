@@ -40,7 +40,7 @@ const HIGHLIGHTS = [
 
       <SiteHeader transparent />
 
-      <div class="relative mx-auto max-w-6xl px-4 pt-28 sm:px-6 sm:pt-36">
+      <div class="relative mx-auto max-w-7xl px-4 pt-28 sm:px-6 sm:pt-36">
         <p class="text-sm font-semibold tracking-[0.2em] text-brand-200 uppercase">Cancun · Riviera Maya</p>
         <h1 class="mt-3 max-w-2xl font-display text-4xl leading-tight font-bold sm:text-5xl">
           Private airport transfers, booked in minutes
@@ -51,7 +51,7 @@ const HIGHLIGHTS = [
       </div>
     </section>
 
-    <div class="relative z-10 mx-auto -mt-32 max-w-6xl px-4 sm:px-6">
+    <div class="relative z-10 mx-auto -mt-32 max-w-7xl px-4 sm:px-6">
       <SearchForm />
     </div>
 
@@ -59,7 +59,7 @@ const HIGHLIGHTS = [
 
     <FleetSection />
 
-    <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <div class="grid gap-6 md:grid-cols-3">
         <div v-for="item in HIGHLIGHTS" :key="item.title" class="rounded-2xl bg-white p-6 shadow-sm">
           <h2 class="font-display text-lg font-semibold text-brand-900">{{ item.title }}</h2>

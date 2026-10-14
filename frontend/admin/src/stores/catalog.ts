@@ -74,6 +74,11 @@ export const useCatalogStore = defineStore('catalog', () => {
     zones.value = zones.value.filter((zone) => zone.id !== id);
   }
 
+  async function deleteRate(id: number) {
+    await call<void>(`/admin/catalog/rates/${id}`, 'DELETE');
+    rates.value = rates.value.filter((rate) => rate.id !== id);
+  }
+
   function ratesForZone(zoneId: number): ZoneRate[] {
     return rates.value.filter((rate) => rate.originZoneId === zoneId || rate.destinationZoneId === zoneId);
   }
@@ -152,6 +157,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     load,
     saveZone,
     deleteZone,
+    deleteRate,
     ratesForZone,
     saveVehicleType,
     saveVehicle,

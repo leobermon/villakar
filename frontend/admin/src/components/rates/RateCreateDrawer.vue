@@ -4,6 +4,7 @@ import BaseDrawer from '@/components/ui/BaseDrawer.vue';
 import FormField from '@/components/ui/FormField.vue';
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue';
 import { CatalogError, useCatalogStore } from '@/stores/catalog';
+import { useSettingsStore } from '@/stores/settings';
 import type { RatePreset } from '@/types/catalog';
 import { ghostButton, inputClass, primaryButton } from '@/utils/formStyles';
 
@@ -12,7 +13,10 @@ const props = defineProps<{ preset: RatePreset | null }>();
 const emit = defineEmits<{ close: []; created: [] }>();
 
 const catalog = useCatalogStore();
-const ROUND_TRIP_FACTOR = 1.85;
+const settings = useSettingsStore();
+void settings.load();
+/** Factor de Configuración → Reservas; 1.85 si aún no carga (o el usuario no puede leerla). */
+const roundTripFactor = computed(() => settings.settings?.booking.roundTripFactor ?? 1.85);
 
 const form = reactive({
   originZoneId: 0,
@@ -56,11 +60,11 @@ watch(
 // Al cambiar de vehículo, el máximo de pasajeros se ajusta a su capacidad.
 watch(() => form.vehicleTypeId, () => (form.maxPax = vehicle.value?.maxPassengers ?? form.maxPax));
 
-// Redondo sugerido = sencillo × 1.85 (como las tarifas actuales), hasta que se escriba a mano.
+// Redondo sugerido = sencillo × factor de Configuración, hasta que se escriba a mano.
 watch(
   () => form.priceOneWay,
   (oneWay) => {
-    if (!roundTripTouched.value && oneWay !== '') form.priceRoundTrip = Math.round(Number(oneWay) * ROUND_TRIP_FACTOR);
+    if (!roundTripTouched.value && oneWay !== '') form.priceRoundTrip = Math.round(Number(oneWay) * roundTripFactor.value);
   },
 );
 
@@ -131,7 +135,7 @@ async function save() {
         <FormField v-slot="{ id }" label="Sencillo (USD)">
           <input :id="id" v-model.number="form.priceOneWay" type="number" min="1" step="1" inputmode="decimal" :class="inputClass()" />
         </FormField>
-        <FormField v-slot="{ id, describedBy }" label="Redondo (USD)" :hint="roundTripTouched ? undefined : 'Sugerido: sencillo × 1.85'">
+        <FormField v-slot="{ id, describedBy }" label="Redondo (USD)" :hint="roundTripTouched ? undefined : `Sugerido: sencillo × ${roundTripFactor}`">
           <input
             :id="id"
             v-model.number="form.priceRoundTrip"

@@ -68,6 +68,8 @@ export interface ReservationSummary {
   canPay: boolean;
   /** true si el cliente eligió pagar en efectivo al chofer después del servicio. */
   payInCash: boolean;
+  /** true si el primer servicio es dentro de CASH_MIN_NOTICE_HOURS: solo se acepta pago en línea. */
+  lastMinute: boolean;
   /** true si ya se le envió al cliente el correo de confirmación. */
   confirmationEmailSent: boolean;
 }
@@ -80,6 +82,8 @@ export interface PayableReservation {
   vehicleName: string;
   tripType: TripType;
   customerEmail: string;
+  /** Primer servicio a menos de CASH_MIN_NOTICE_HOURS: no se acepta efectivo. */
+  lastMinute: boolean;
 }
 
 @Injectable()
@@ -219,6 +223,7 @@ export class ReservationsService {
       vehicleName: reservation.vehicleType.name,
       tripType: reservation.tripType,
       customerEmail: reservation.customer.email,
+      lastMinute: isLastMinute(reservation.legs[0]!.pickupAt),
     };
   }
 
@@ -323,6 +328,14 @@ function resolveLegTimes(
   return { pickupAt, flightAt };
 }
 
+/** Servicios que empiezan dentro de estas horas son "last minute": solo pago en línea. */
+export const CASH_MIN_NOTICE_HOURS = 8;
+
+/** pickupAt es un Date "de pared" de Cancún (ver localDateTime). */
+function isLastMinute(firstPickupAt: Date): boolean {
+  return firstPickupAt.getTime() - nowInCancun().getTime() < CASH_MIN_NOTICE_HOURS * HOUR_MS;
+}
+
 /** Horario de servicio (hora local de Cancún, HH:MM): de 5:00 am a 8:00 pm, ambos incluidos. */
 export const SERVICE_HOURS = { start: '05:00', end: '20:00' } as const;
 
@@ -381,6 +394,7 @@ function toSummary(reservation: ReservationWithDetails): ReservationSummary {
     expiresAt: payable && reservation.expiresAt ? reservation.expiresAt.toISOString() : null,
     canPay: payable,
     payInCash: reservation.paymentStatus === PaymentStatus.UNPAID && reservation.payments.length > 0,
+    lastMinute: isLastMinute(reservation.legs[0]!.pickupAt),
     confirmationEmailSent: reservation.confirmationEmailSentAt !== null,
   };
 }

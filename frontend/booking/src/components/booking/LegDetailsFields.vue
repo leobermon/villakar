@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useId, watch } from 'vue';
+import { computed, onUnmounted, ref, useId, watch } from 'vue';
 import type { LegDetails } from '@/api/booking';
-import { formatDateOnly } from '@/utils/format';
+import { formatDateOnly, nextTimeSlotInCancun, todayInCancun } from '@/utils/format';
 import TimeSelect from '@/components/booking/TimeSelect.vue';
 import { SITE } from '@/config';
 import { openNativePicker } from '@/utils/picker';
@@ -34,14 +34,38 @@ function suggestPickup(flightTime: string): string {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
+// Reloj de Cancún (se refresca cada minuto) para no ofrecer horas que ya pasaron hoy.
+const nextSlot = ref(nextTimeSlotInCancun());
+const timer = window.setInterval(() => (nextSlot.value = nextTimeSlotInCancun()), 60_000);
+onUnmounted(() => window.clearInterval(timer));
+
+/** Primera hora que se puede elegir: el inicio del horario, o la hora actual si el tramo es hoy. */
+const earliest = computed(() =>
+  props.date === todayInCancun() && nextSlot.value > serviceHours.start ? nextSlot.value : serviceHours.start,
+);
+/** Hoy ya no quedan horas dentro del horario de servicio. */
+const noTimesLeft = computed(() => earliest.value > serviceHours.end);
+
+const inRange = (time: string) => time >= earliest.value && time <= serviceHours.end;
+
+// Si una hora ya elegida queda en el pasado (o fuera de horario), se borra para que el cliente elija otra.
+watch(
+  earliest,
+  () => {
+    if (details.value.pickupTime && !inRange(details.value.pickupTime)) details.value.pickupTime = undefined;
+    if (props.kind === 'ARRIVAL' && details.value.flightTime && !inRange(details.value.flightTime)) details.value.flightTime = undefined;
+  },
+  { immediate: true },
+);
+
 // En salidas, al capturar la hora del vuelo se propone la recogida si aún no hay una.
 watch(
   () => details.value.flightTime,
   (flightTime) => {
     if (props.kind === 'DEPARTURE' && flightTime && !details.value.pickupTime) {
       const suggested = suggestPickup(flightTime);
-      // Solo se propone si cae dentro del horario de servicio.
-      if (suggested >= serviceHours.start && suggested <= serviceHours.end) details.value.pickupTime = suggested;
+      // Solo se propone si se puede elegir (horario de servicio y no en el pasado).
+      if (inRange(suggested)) details.value.pickupTime = suggested;
     }
   },
 );
@@ -92,7 +116,7 @@ watch(
             :id="ids.flightTime"
             v-model="details.flightTime"
             required
-            :min="serviceHours.start"
+            :min="earliest"
             :max="serviceHours.end"
             :select-class="inputClass"
           />
@@ -115,13 +139,17 @@ watch(
           :id="ids.pickup"
           v-model="details.pickupTime"
           required
-          :min="serviceHours.start"
+          :min="earliest"
           :max="serviceHours.end"
           :select-class="inputClass"
         />
       </div>
     </div>
 
+    <p v-if="noTimesLeft" role="alert" class="mt-4 rounded-xl bg-accent-400/10 px-4 py-3 text-sm font-medium text-accent-600">
+      There are no pickup times left for today (service hours: {{ serviceHours.label }}). Please choose another date or
+      contact us.
+    </p>
     <p v-if="props.kind === 'ARRIVAL'" class="mt-4 text-xs text-brand-900/60">
       Your driver tracks your flight and waits for you at the terminal exit with a sign with your name.
       Service hours: {{ serviceHours.label }}, Cancun local time.
