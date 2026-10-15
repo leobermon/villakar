@@ -21,14 +21,13 @@ const DESTINATIONS = [
   <footer class="mt-auto border-t border-brand-100 bg-white print:hidden">
     <div class="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 md:grid-cols-2">
       <section>
-        <h2 class="text-xs font-semibold tracking-wide text-brand-800 uppercase">Secure payments</h2>
-        <p class="mt-1 text-sm text-brand-900/60">Pay online by card or PayPal, or in cash to your driver.</p>
+        <h2 class="text-xs font-semibold tracking-wide text-brand-800 uppercase">Payment Methods</h2>
         <PaymentBadges class="mt-2.5" />
       </section>
 
       <section>
         <h2 class="text-xs font-semibold tracking-wide text-brand-800 uppercase">Destinations we serve</h2>
-        <ul class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-brand-950 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+        <ul class="mt-2 grid list-disc grid-cols-2 gap-x-6 gap-y-1 pl-4 text-sm text-brand-950 marker:text-brand-500 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
           <li v-for="place in DESTINATIONS" :key="place">{{ place }}</li>
         </ul>
       </section>

@@ -5,39 +5,39 @@
   --font-display: "Fraunces", ui-serif, Georgia, serif;
 
   /*
-   * Paleta tomada del logo VillaKar. El azul manda: texto, selección, enlaces,
-   * iconos y el encabezado. El rojo coral es la señal: solo el botón final de
-   * reserva/pago y los mensajes de error, para que la página no se sienta roja.
+   * Paleta "Sol y Océano Tropical". El azul manda: texto, selección, enlaces,
+   * iconos y el encabezado. El naranja sol es la señal: el botón final de
+   * reserva/pago (y los mensajes de error usan su tono más oscuro).
    */
 
   /*
-   * Azul: el vibrante del logo (#0077B6) en 600 (iconos, selección, enlaces) y el
-   * navy profundo (#023E8A) en 950 (texto principal).
+   * Azul: turquesa del mar (#219EBC) en 500, cian suave (#8ECAE6) en 300 para
+   * fondos y tarjetas, y el azul marino profundo (#023047) en 950 (texto principal).
    */
-  --color-brand-50: #eaf5fb;
-  --color-brand-100: #d2eaf6;
-  --color-brand-200: #a8d4ee;
-  --color-brand-300: #6db6df;
-  --color-brand-400: #2e95cc;
-  --color-brand-500: #0a84c1;
-  --color-brand-600: #0077b6;
-  --color-brand-700: #03629e;
-  --color-brand-800: #03508f;
-  --color-brand-900: #02458c;
-  --color-brand-950: #023e8a;
+  --color-brand-50: #eef8fb;
+  --color-brand-100: #d6eef6;
+  --color-brand-200: #b4def0;
+  --color-brand-300: #8ecae6;
+  --color-brand-400: #4fb4d6;
+  --color-brand-500: #219ebc;
+  --color-brand-600: #1789a6;
+  --color-brand-700: #0f6f8b;
+  --color-brand-800: #09566f;
+  --color-brand-900: #053f58;
+  --color-brand-950: #023047;
 
-  /* Fondos de playa: blanco crema (#FDFCF5) y arena muy pálida (#F1F1E6). */
-  --color-mist-50: #fdfcf5;
-  --color-mist-100: #f1f1e6;
-  --color-mist-200: #e3e3d3;
+  /* Fondos de arena: crema suave (#F5F0E6) y arena un poco más marcada. */
+  --color-mist-50: #f5f0e6;
+  --color-mist-100: #ebe3d3;
+  --color-mist-200: #ddd2bd;
 
-  /* Gris niebla (#EDF2F4): neutro de apoyo para paneles y fondos secundarios. */
+  /* Gris niebla: neutro de apoyo para paneles y fondos secundarios. */
   --color-fog-100: #edf2f4;
 
-  /* Rojo coral (#E53E3E): el rojo del logo, un poco más tropical. */
-  --color-accent-400: #f06a6a;
-  --color-accent-500: #e53e3e;
-  --color-accent-600: #c53030;
+  /* Naranja sol (#FB8500) con su amarillo (#FFB703): botones de compra. */
+  --color-accent-400: #ffb703;
+  --color-accent-500: #fb8500;
+  --color-accent-600: #d96c00;
 }
 
 @layer base {
