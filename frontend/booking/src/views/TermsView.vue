@@ -5,7 +5,7 @@ import SiteHeader from '@/components/layout/SiteHeader.vue';
 <template>
   <div>
     <SiteHeader />
-    <main class="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <article class="rounded-3xl border border-brand-100 bg-white p-6 text-[15px] leading-relaxed text-brand-950 sm:p-10">
         <h1 class="font-display text-2xl font-semibold sm:text-3xl">VillaKar Terms and Conditions</h1>
         <p class="mt-1 text-sm font-semibold tracking-wide text-brand-600 uppercase">

@@ -34,6 +34,18 @@ export const router = createRouter({
       component: () => import('@/views/payments/PaymentsView.vue'),
       meta: { title: 'Pagos' },
     },
+    {
+      path: '/emails',
+      name: 'emails',
+      component: () => import('@/views/emails/EmailsView.vue'),
+      meta: { title: 'Correos' },
+    },
+    {
+      path: '/contacts',
+      name: 'contacts',
+      component: () => import('@/views/contacts/ContactsView.vue'),
+      meta: { title: 'Mensajes' },
+    },
     { path: '/rates', name: 'rates', component: () => import('@/views/rates/RatesView.vue'), meta: { title: 'Tarifas' } },
     {
       path: '/vehicles',

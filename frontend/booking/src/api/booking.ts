@@ -123,7 +123,7 @@ export interface CreateReservationRequest extends QuoteRequest {
 
 export interface ReservationSummary {
   code: string;
-  status: 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
   paymentStatus: 'UNPAID' | 'PAID' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'FAILED';
   tripType: TripType;
   routeType: RouteType;
@@ -144,6 +144,8 @@ export interface ReservationSummary {
     terminal: string | null;
   }>;
   specialRequests: string | null;
+  /** Cuándo se creó la reserva (instante UTC en ISO). */
+  createdAt: string;
   expiresAt: string | null;
   canPay: boolean;
   /** El cliente pagará en efectivo al chofer después del servicio. */

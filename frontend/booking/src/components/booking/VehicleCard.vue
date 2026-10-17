@@ -14,13 +14,13 @@ const emit = defineEmits<{ select: [rateId: number] }>();
 </script>
 
 <template>
-  <!-- Tarjeta vertical: se muestran en una cuadrícula de 3 columnas. -->
+  <!-- Móvil: tarjeta alargada (foto a la izquierda, detalles al centro, precio y botón a la derecha). Desde sm: tarjeta vertical en cuadrícula de 3 columnas. -->
   <article
-    class="flex flex-col overflow-hidden rounded-2xl border bg-white transition"
+    class="flex overflow-hidden rounded-2xl border bg-white transition sm:flex-col"
     :class="props.selected ? 'border-brand-500 ring-4 ring-brand-300/30' : 'border-brand-100 hover:border-brand-300'"
   >
     <!-- Las fotos comparten lienzo 2:1 con el vehículo centrado; el recuadro 5:2 solo recorta margen vacío. -->
-    <div class="grid aspect-[5/2] place-items-center overflow-hidden bg-fog-100 px-2">
+    <div class="grid w-[34%] shrink-0 place-items-center overflow-hidden bg-fog-100 px-1 sm:aspect-[5/2] sm:w-full sm:px-2">
       <img
         v-if="props.option.vehicleType.imageUrl"
         :src="props.option.vehicleType.imageUrl"
@@ -28,9 +28,9 @@ const emit = defineEmits<{ select: [rateId: number] }>();
         width="800"
         height="400"
         loading="lazy"
-        class="h-[115%] w-full object-contain"
+        class="h-auto w-full object-contain sm:h-[115%]"
       />
-      <svg v-else viewBox="0 0 120 56" class="h-14 w-full text-brand-600" fill="none" aria-hidden="true">
+      <svg v-else viewBox="0 0 120 56" class="h-10 w-full sm:h-14 text-brand-600" fill="none" aria-hidden="true">
         <path
           d="M8 40V30c0-3 2-5 5-6l12-3 14-11c2-2 5-3 8-3h36c3 0 6 1 8 3l12 12 6 2c3 1 5 4 5 7v9"
           stroke="currentColor"
@@ -44,12 +44,13 @@ const emit = defineEmits<{ select: [rateId: number] }>();
       </svg>
     </div>
 
-    <div class="flex flex-1 flex-col px-4 pt-3 pb-3.5">
-      <h3 class="font-display text-lg font-semibold text-brand-950">{{ props.option.vehicleType.name }}</h3>
-      <p v-if="props.option.vehicleType.description" class="mt-0.5 text-xs text-brand-900/70">
+    <div class="flex flex-1 items-center gap-2 px-3 py-2.5 sm:flex-col sm:items-stretch sm:gap-0 sm:px-4 sm:pt-3 sm:pb-3.5">
+     <div class="min-w-0 flex-1 sm:flex-none">
+      <h3 class="truncate font-display text-base font-semibold text-brand-950 sm:text-lg">{{ props.option.vehicleType.name }}</h3>
+      <p v-if="props.option.vehicleType.description" class="mt-0.5 hidden text-xs text-brand-900/70 sm:block">
         {{ props.option.vehicleType.description }}
       </p>
-      <ul class="mt-2 flex flex-wrap gap-1.5 text-xs font-semibold text-brand-800">
+      <ul class="mt-1.5 flex flex-wrap gap-1.5 sm:mt-2 text-xs font-semibold text-brand-800">
         <li
           class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5"
           :title="`Up to ${props.option.vehicleType.maxPassengers} passengers`"
@@ -67,15 +68,16 @@ const emit = defineEmits<{ select: [rateId: number] }>();
           <span class="sr-only">suitcases</span>
         </li>
       </ul>
+     </div>
 
-      <div class="mt-auto pt-2">
-        <p class="text-[11px] text-brand-900/60">{{ props.tripType === 'ROUND_TRIP' ? 'Round trip total' : 'One way' }}</p>
-        <p class="font-display text-lg font-bold text-brand-950">
+      <div class="w-28 shrink-0 text-right sm:mt-auto sm:w-auto sm:pt-2 sm:text-left">
+        <p class="text-[10px] leading-tight text-brand-900/60 sm:text-[11px]">{{ props.tripType === 'ROUND_TRIP' ? 'Round trip total' : 'One way' }}</p>
+        <p class="font-display text-base font-bold text-brand-950 sm:text-lg">
           {{ formatUsd(props.option.price) }} <span class="font-sans text-[11px] font-medium text-brand-900/60">USD</span>
         </p>
         <button
           type="button"
-          class="mt-1.5 h-8 w-full rounded-lg text-xs font-bold transition"
+          class="mt-1 h-8 w-full rounded-lg text-xs font-bold transition sm:mt-1.5"
           :class="
             props.selected
               ? 'bg-brand-600 text-white'

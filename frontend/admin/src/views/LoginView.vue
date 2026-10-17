@@ -40,12 +40,9 @@ async function submit() {
 <template>
   <main class="grid min-h-screen place-items-center bg-fog-50 px-4 py-10">
     <div class="w-full max-w-sm">
-      <div class="mb-6 flex items-center justify-center gap-3">
-        <img src="/favicon-192.png" alt="" class="size-10" />
-        <div>
-          <p class="font-bold text-brand-950">VillaKar Transfers</p>
-          <p class="text-xs text-brand-900/60">Panel de administración</p>
-        </div>
+      <div class="mb-6 flex flex-col items-center gap-1">
+        <img src="/logo.png" alt="VillaKar Transfers" width="1000" height="436" class="h-20 w-auto" />
+        <p class="text-xs text-brand-900/60">Panel de administración</p>
       </div>
 
       <form class="space-y-4 rounded-2xl border border-fog-200 bg-white p-6" novalidate @submit.prevent="submit">

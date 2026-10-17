@@ -42,15 +42,20 @@ export class MailService {
 
   /** Devuelve true si el servidor SMTP aceptó el correo. Nunca lanza. */
   async send(mail: OutgoingMail): Promise<boolean> {
-    if (!this.transporter) return false;
+    return (await this.trySend(mail)).ok;
+  }
+
+  /** Igual que send, pero con el motivo cuando falla (para el registro de correos). Nunca lanza. */
+  async trySend(mail: OutgoingMail): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!this.transporter) return { ok: false, error: 'El correo está desactivado (SMTP_HOST no está configurado).' };
     try {
       // Remitente vigente de Configuración → Notificaciones (por defecto, MAIL_FROM del .env).
       const { senderName, senderEmail } = await this.settings.get('notifications');
       await this.transporter.sendMail({ from: { name: senderName, address: senderEmail }, ...mail });
-      return true;
+      return { ok: true };
     } catch (error) {
       this.logger.error(`Could not send "${mail.subject}": ${String(error)}`);
-      return false;
+      return { ok: false, error: String(error instanceof Error ? error.message : error).slice(0, 480) };
     }
   }
 }

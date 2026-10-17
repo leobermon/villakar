@@ -16,12 +16,12 @@ import {
   type ReservationSummary,
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
-import logoUrl from '@/assets/logo.webp';
+import logoUrl from '@/assets/logo.png';
 import { SITE } from '@/config';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import TermsCheckbox from '@/components/booking/TermsCheckbox.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
-import { formatLocalDateTime, formatLocalTime, formatUsd } from '@/utils/format';
+import { formatInstantCancun, formatLocalDateTime, formatLocalTime, formatUsd } from '@/utils/format';
 import { formatInternational } from '@/utils/phone';
 import { recallReservationEmail, rememberReservationEmail } from '@/utils/reservationAccess';
 
@@ -167,8 +167,15 @@ const inputClass =
       <template v-else>
         <!-- Empresa: logo y nombre (también encabeza la hoja impresa). -->
         <div class="mb-4 flex items-center gap-3">
-          <img :src="logoUrl" :alt="company.name" width="800" height="216" class="h-10 w-auto" />
-          <p class="font-display text-lg font-semibold text-brand-950">{{ company.name }}</p>
+          <img :src="logoUrl" :alt="company.name" width="1000" height="436" class="h-14 w-auto" />
+          <div>
+            <p class="font-display text-lg font-semibold text-brand-950">{{ company.name }}</p>
+            <!-- Fecha en que se hizo la reservación (hora de Cancún). -->
+            <p class="text-xs text-brand-900/70">
+              {{ isConfirmed ? 'Reservation confirmed on' : 'Reservation created on' }}
+              {{ formatInstantCancun(reservation.createdAt) }} (Cancun time)
+            </p>
+          </div>
           <button
             v-if="isConfirmed"
             type="button"

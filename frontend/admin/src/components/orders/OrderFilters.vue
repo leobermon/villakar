@@ -11,21 +11,21 @@ const ids = { search: useId(), payment: useId(), method: useId(), from: useId(),
 const STATUS_TABS = [{ value: 'ALL' as const, label: 'Todas' }, ...ORDER_STATUS_ORDER.map((value) => ({ value, label: ORDER_STATUS[value].label }))];
 
 const fieldClass =
-  'h-10 w-full rounded-lg border border-fog-200 bg-white px-3 text-sm text-brand-950 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-300/25';
-const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
+  'h-8 w-full rounded-lg border border-fog-200 bg-white px-2.5 text-xs text-brand-950 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-300/25';
+const labelClass = 'mb-0.5 block text-[11px] font-semibold text-brand-900/70';
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-2.5">
     <!-- Pestañas por estado: el número es cuántas órdenes hay con los demás filtros aplicados. -->
     <div class="-mx-1 overflow-x-auto px-1 pb-1">
-      <div class="flex gap-1.5" role="group" aria-label="Filtrar por estado">
+      <div class="flex gap-1" role="group" aria-label="Filtrar por estado">
         <button
           v-for="tab in STATUS_TABS"
           :key="tab.value"
           type="button"
           :aria-pressed="filters.status === tab.value"
-          class="flex shrink-0 items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+          class="flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
           :class="
             filters.status === tab.value
               ? 'bg-brand-600 text-white'
@@ -35,7 +35,7 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
         >
           {{ tab.label }}
           <span
-            class="rounded-md px-1.5 text-xs tabular-nums"
+            class="rounded px-1 text-[11px] tabular-nums"
             :class="filters.status === tab.value ? 'bg-white/20' : 'bg-fog-100 text-brand-900/60'"
           >
             {{ store.countsByStatus[tab.value] ?? 0 }}
@@ -44,11 +44,11 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
       </div>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
+    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
       <div class="sm:col-span-2 lg:col-span-4">
         <label :for="ids.search" :class="labelClass">Buscar</label>
         <div class="relative">
-          <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-brand-900/40" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-brand-900/40" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="11" cy="11" r="6.5" />
             <path d="m16 16 4 4" stroke-linecap="round" />
           </svg>
@@ -57,7 +57,7 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
             v-model="filters.query"
             type="search"
             placeholder="Código, cliente, email, hotel o vuelo"
-            :class="[fieldClass, 'pl-9']"
+            :class="[fieldClass, 'pl-8']"
           />
         </div>
       </div>
@@ -94,7 +94,7 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
     <button
       v-if="store.hasActiveFilters"
       type="button"
-      class="text-sm font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800"
+      class="text-xs font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800"
       @click="store.resetFilters()"
     >
       Quitar filtros

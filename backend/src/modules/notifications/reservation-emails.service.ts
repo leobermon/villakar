@@ -41,15 +41,8 @@ export class ReservationEmailsService {
       });
       if (claimed.count === 0) return;
 
-      const summary = await this.reservations.findSummaryById(reservationId);
-      const company = await this.settings.get('company');
-      const sent = await this.mail.send({
-        to: summary.customer.email,
-        subject: `Your transfer is confirmed · ${summary.code}`,
-        html: this.renderHtml(summary, company),
-        text: this.renderText(summary, company),
-      });
-      if (!sent) {
+      const result = await this.deliver(reservationId);
+      if (!result.ok) {
         await this.prisma.reservation.update({
           where: { id: reservationId },
           data: { confirmationEmailSentAt: null },
@@ -58,6 +51,50 @@ export class ReservationEmailsService {
     } catch (error) {
       this.logger.error(`Confirmation email for reservation ${reservationId} failed: ${String(error)}`);
     }
+  }
+
+  /**
+   * Reenvío manual desde el panel (el cliente dice que no le llegó). No depende de si
+   * ya se había enviado antes. Devuelve el resultado en vez de lanzar.
+   */
+  async resendConfirmation(reservationId: bigint): Promise<{ ok: true } | { ok: false; error: string }> {
+    try {
+      const result = await this.deliver(reservationId);
+      if (result.ok) {
+        await this.prisma.reservation.update({
+          where: { id: reservationId },
+          data: { confirmationEmailSentAt: new Date() },
+        });
+      }
+      return result;
+    } catch (error) {
+      this.logger.error(`Resend of confirmation for reservation ${reservationId} failed: ${String(error)}`);
+      return { ok: false, error: 'No se pudo preparar el correo.' };
+    }
+  }
+
+  /** Arma el correo, lo envía y deja el resultado en el registro de correos. */
+  private async deliver(reservationId: bigint): Promise<{ ok: true } | { ok: false; error: string }> {
+    const summary = await this.reservations.findSummaryById(reservationId);
+    const company = await this.settings.get('company');
+    const subject = `Your transfer is confirmed · ${summary.code}`;
+    const result = await this.mail.trySend({
+      to: summary.customer.email,
+      subject,
+      html: this.renderHtml(summary, company),
+      text: this.renderText(summary, company),
+    });
+    await this.prisma.emailLog.create({
+      data: {
+        kind: 'RESERVATION_CONFIRMATION',
+        reservationId,
+        toEmail: summary.customer.email,
+        subject,
+        status: result.ok ? 'SENT' : 'FAILED',
+        error: result.ok ? null : result.error,
+      },
+    });
+    return result;
   }
 
   private siteUrl(): string {
@@ -159,7 +196,7 @@ export class ReservationEmailsService {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
         <tr><td style="padding-bottom:16px;">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-            <td valign="middle"><img src="${esc(this.siteUrl())}/email/logo.png" width="148" height="40" alt="${esc(company.name)}" style="display:block;border:0;"></td>
+            <td valign="middle"><img src="${esc(this.siteUrl())}/email/logo.png" width="120" height="52" alt="${esc(company.name)}" style="display:block;border:0;"></td>
             <td valign="middle" style="padding-left:12px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;color:${NAVY};">${esc(company.name)}</td>
           </tr></table>
         </td></tr>

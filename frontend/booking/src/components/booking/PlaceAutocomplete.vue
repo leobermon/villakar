@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
         :aria-controls="listId"
         :aria-activedescendant="activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined"
         :aria-invalid="Boolean(props.error)"
-        :placeholder="props.placeholder ?? 'Search your hotel or address'"
+        :placeholder="props.placeholder ?? 'Search your hotel or resort'"
         class="h-12 w-full rounded-xl border bg-white pl-11 text-[15px] shadow-sm transition outline-none placeholder:text-brand-900/40 focus:ring-4"
         :class="[
           props.error
@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
       <ul :id="listId" role="listbox" class="max-h-72 overflow-y-auto py-1">
         <li v-if="loading && !suggestions.length" class="px-4 py-3 text-sm text-brand-900/60">Searching…</li>
         <li v-else-if="searchError" class="px-4 py-3 text-sm text-accent-600">{{ searchError }}</li>
-        <li v-else-if="!suggestions.length" class="px-4 py-3 text-sm text-brand-900/60">No places found.</li>
+        <li v-else-if="!suggestions.length" class="px-4 py-3 text-sm text-brand-900/60">No hotels found. Try the hotel name or its area.</li>
         <li
           v-for="(suggestion, index) in suggestions"
           :id="`${listId}-${index}`"

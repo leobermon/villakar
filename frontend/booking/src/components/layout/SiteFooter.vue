@@ -34,7 +34,7 @@ const DESTINATIONS = [
     </div>
 
     <div class="border-t border-brand-100">
-      <div class="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 text-xs text-brand-900/60 sm:flex-row sm:justify-between sm:px-6">
+      <div class="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 text-xs font-medium text-brand-950/85 sm:flex-row sm:justify-between sm:px-6">
         <p>© {{ year }} {{ SITE.name }} · Cancun & Riviera Maya</p>
         <p>
           Prices in USD ·

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { fetchFleet, type FleetVehicle } from '@/api/booking';
+import HeadingStripes from '@/components/home/HeadingStripes.vue';
 import LuggageIcon from '@/components/icons/LuggageIcon.vue';
 import PassengerIcon from '@/components/icons/PassengerIcon.vue';
 
@@ -35,9 +36,12 @@ onMounted(async () => {
   <!-- Si no se pudo cargar la flota, la sección no aparece (la portada sigue funcionando). -->
   <section v-if="!failed" class="mx-auto max-w-7xl px-4 pt-16 sm:px-6" aria-labelledby="fleet-title">
     <div class="max-w-2xl">
-      <h2 id="fleet-title" class="font-display text-3xl leading-tight font-bold text-balance text-brand-950 sm:text-4xl">
-        A vehicle for every group
-      </h2>
+      <div class="flex items-center gap-3 sm:gap-4">
+        <HeadingStripes />
+        <h2 id="fleet-title" class="font-display text-3xl leading-tight font-bold text-balance text-brand-950 sm:text-4xl">
+          A vehicle for every group
+        </h2>
+      </div>
       <p class="mt-3 text-base text-brand-900/75">
         Every transfer is private: the vehicle is just for you and your group. Choose it by the number of people and
         suitcases.

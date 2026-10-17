@@ -47,7 +47,7 @@ const movementColumns: DataTableColumn<Payment>[] = [
 ];
 const movementSort = ref<DataTableSort | null>({ key: 'date', direction: 'desc' });
 const movementPage = ref(1);
-const movementPageSize = ref(10);
+const movementPageSize = ref(25);
 watch(() => ({ ...store.filters }), () => (movementPage.value = 1), { deep: true });
 
 // ---- Links ----
@@ -102,70 +102,70 @@ function openPaymentFromRecord(id: number) {
 
 const ids = { search: useId(), provider: useId(), status: useId(), type: useId() };
 const fieldClass =
-  'h-10 w-full rounded-lg border border-fog-200 bg-white px-3 text-sm text-brand-950 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-300/25';
-const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
+  'h-8 w-full rounded-lg border border-fog-200 bg-white px-2.5 text-xs text-brand-950 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-300/25';
+const labelClass = 'mb-0.5 block text-[11px] font-semibold text-brand-900/70';
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-6">
+  <div class="mx-auto max-w-7xl space-y-3">
     <LoadErrorBanner :message="store.loadError" @retry="store.load(true)" />
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <p class="text-sm text-brand-900/65">Verifica cobros pendientes, registra pagos recibidos y envía links de pago.</p>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-xs text-brand-900/65">Verifica cobros pendientes, registra pagos recibidos y envía links de pago.</p>
       <div class="flex gap-2">
         <button
           type="button"
-          class="h-10 rounded-lg border border-brand-300 bg-white px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50"
+          class="h-7 rounded-md border border-brand-300 bg-white px-2.5 text-[11px] font-semibold text-brand-700 hover:bg-brand-50"
           @click="recordOpen = true"
         >
           Registrar pago
         </button>
-        <button type="button" class="h-10 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700" @click="linkOpen = true">
+        <button type="button" class="h-7 rounded-md bg-brand-600 px-2.5 text-[11px] font-semibold text-white hover:bg-brand-700" @click="linkOpen = true">
           Nuevo link de pago
         </button>
       </div>
     </div>
 
     <!-- Resumen: lo que requiere atención primero. -->
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       <button
         type="button"
-        class="rounded-xl border border-amber-200 bg-white p-4 text-left transition hover:border-amber-300 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+        class="rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-left transition hover:border-amber-300 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
         @click="showPending('CASH')"
       >
-        <p class="text-xs font-semibold text-amber-800">Efectivo por cobrar</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ formatUsd(store.summary.pendingCash.amount) }}</p>
-        <p class="text-xs text-brand-900/60">{{ store.summary.pendingCash.count }} cobros con choferes · ver lista</p>
+        <p class="text-[11px] font-semibold text-amber-800">Efectivo por cobrar</p>
+        <p class="text-base leading-tight font-bold tabular-nums">{{ formatUsd(store.summary.pendingCash.amount) }}</p>
+        <p class="text-[10px] leading-tight text-brand-900/60">{{ store.summary.pendingCash.count }} cobros con choferes · ver lista</p>
       </button>
       <button
         type="button"
-        class="rounded-xl border border-amber-200 bg-white p-4 text-left transition hover:border-amber-300 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+        class="rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-left transition hover:border-amber-300 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
         @click="showPending('TRANSFER')"
       >
-        <p class="text-xs font-semibold text-amber-800">Transferencias por verificar</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ formatUsd(store.summary.pendingTransfers.amount) }}</p>
-        <p class="text-xs text-brand-900/60">{{ store.summary.pendingTransfers.count }} por revisar en el banco · ver lista</p>
+        <p class="text-[11px] font-semibold text-amber-800">Transferencias por verificar</p>
+        <p class="text-base leading-tight font-bold tabular-nums">{{ formatUsd(store.summary.pendingTransfers.amount) }}</p>
+        <p class="text-[10px] leading-tight text-brand-900/60">{{ store.summary.pendingTransfers.count }} por revisar en el banco · ver lista</p>
       </button>
-      <div class="rounded-xl border border-fog-200 bg-white p-4">
-        <p class="text-xs font-semibold text-brand-900/70">Cobrado · últimos 30 días</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ formatUsd(store.summary.collected30d) }}</p>
-        <p class="text-xs text-brand-900/60">Neto, ya descontados los reembolsos</p>
+      <div class="rounded-lg border border-fog-200 bg-white px-2.5 py-1.5">
+        <p class="text-[11px] font-semibold text-brand-900/70">Cobrado · últimos 30 días</p>
+        <p class="text-base leading-tight font-bold tabular-nums">{{ formatUsd(store.summary.collected30d) }}</p>
+        <p class="text-[10px] leading-tight text-brand-900/60">Neto, ya descontados los reembolsos</p>
       </div>
       <button
         type="button"
-        class="rounded-xl border border-fog-200 bg-white p-4 text-left transition hover:border-brand-200 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+        class="rounded-lg border border-fog-200 bg-white px-2.5 py-1.5 text-left transition hover:border-brand-200 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
         @click="setTab('links')"
       >
-        <p class="text-xs font-semibold text-brand-900/70">Links de pago activos</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ store.summary.activeLinks }}</p>
-        <p class="text-xs text-brand-900/60">Esperando que el cliente pague · ver links</p>
+        <p class="text-[11px] font-semibold text-brand-900/70">Links de pago activos</p>
+        <p class="text-base leading-tight font-bold tabular-nums">{{ store.summary.activeLinks }}</p>
+        <p class="text-[10px] leading-tight text-brand-900/60">Esperando que el cliente pague · ver links</p>
       </button>
     </div>
 
     <TabBar :model-value="tab" :tabs="tabs" label="Secciones de pagos" @update:model-value="setTab" />
 
     <!-- Movimientos -->
-    <section v-if="tab === 'movements'" id="panel-movements" role="tabpanel" aria-labelledby="tab-movements" class="space-y-4">
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
+    <section v-if="tab === 'movements'" id="panel-movements" role="tabpanel" aria-labelledby="tab-movements" class="space-y-2.5">
+      <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
         <div class="sm:col-span-2 lg:col-span-5">
           <label :for="ids.search" :class="labelClass">Buscar</label>
           <input :id="ids.search" v-model="store.filters.query" type="search" placeholder="Orden, cliente, referencia o quién recibió" :class="fieldClass" />
@@ -195,7 +195,7 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
       <button
         v-if="store.hasActiveFilters"
         type="button"
-        class="text-sm font-semibold text-brand-700 underline underline-offset-2"
+        class="text-xs font-semibold text-brand-700 underline underline-offset-2"
         @click="store.resetFilters()"
       >
         Quitar filtros
@@ -210,6 +210,7 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
         :row-key="(payment) => payment.id"
         :loading="store.loading"
         caption="Movimientos de pago"
+        compact
         row-clickable
         :row-label="(payment) => `Abrir pago de ${payment.orderCode} por ${formatUsd(payment.amount)}`"
         empty-title="No hay movimientos con estos filtros"
@@ -251,6 +252,7 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
         :row-key="(link) => link.id"
         :loading="store.loading"
         caption="Links de pago"
+        compact
         empty-title="Todavía no hay links de pago"
         empty-text="Crea uno con el botón Nuevo link de pago."
       >

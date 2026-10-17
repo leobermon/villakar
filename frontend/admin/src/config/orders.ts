@@ -3,20 +3,16 @@ import type { Order, OrderSource, OrderStatus, PaymentMethod, RouteType } from '
 
 export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: BadgeTone }> = {
   PENDING: { label: 'Pendiente', tone: 'warning' },
-  CONFIRMED: { label: 'Confirmada', tone: 'info' },
-  ASSIGNED: { label: 'Asignada', tone: 'brand' },
-  IN_PROGRESS: { label: 'En curso', tone: 'brand' },
-  COMPLETED: { label: 'Completada', tone: 'success' },
-  CANCELLED: { label: 'Cancelada', tone: 'neutral' },
-  NO_SHOW: { label: 'No se presentó', tone: 'danger' },
+  CONFIRMED: { label: 'Confirmado', tone: 'info' },
+  COMPLETED: { label: 'Completado', tone: 'success' },
+  CANCELLED: { label: 'Cancelado', tone: 'neutral' },
+  NO_SHOW: { label: 'No show', tone: 'danger' },
 };
 
 /** Orden en que se muestran los estados en filtros y selectores. */
 export const ORDER_STATUS_ORDER: OrderStatus[] = [
   'PENDING',
   'CONFIRMED',
-  'ASSIGNED',
-  'IN_PROGRESS',
   'COMPLETED',
   'CANCELLED',
   'NO_SHOW',
@@ -28,9 +24,7 @@ export const ORDER_STATUS_ORDER: OrderStatus[] = [
  */
 export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED: ['ASSIGNED', 'CANCELLED'],
-  ASSIGNED: ['CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'NO_SHOW'],
-  IN_PROGRESS: ['COMPLETED', 'NO_SHOW'],
+  CONFIRMED: ['COMPLETED', 'CANCELLED', 'NO_SHOW'],
   COMPLETED: [],
   CANCELLED: [],
   NO_SHOW: [],

@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/env.validation';
 import { AdminCatalogModule } from './modules/admin-catalog/admin-catalog.module';
+import { AdminMessagesModule } from './modules/admin-messages/admin-messages.module';
 import { AdminOrdersModule } from './modules/admin-orders/admin-orders.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContactRequestsModule } from './modules/contact-requests/contact-requests.module';
@@ -26,6 +27,7 @@ import { PrismaModule } from './prisma/prisma.module';
     SettingsModule,
     AdminCatalogModule,
     AdminOrdersModule,
+    AdminMessagesModule,
     PlacesModule,
     ZonesModule,
     PricingModule,

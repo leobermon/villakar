@@ -48,8 +48,6 @@ enum RouteType {
 enum ReservationStatus {
   PENDING
   CONFIRMED
-  ASSIGNED
-  IN_PROGRESS
   COMPLETED
   CANCELLED
   NO_SHOW
@@ -107,6 +105,15 @@ enum PaymentLinkStatus {
   ACTIVE
   PAID
   CANCELLED
+}
+
+enum EmailKind {
+  RESERVATION_CONFIRMATION
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
 }
 
 enum ContactRequestStatus {
@@ -318,6 +325,7 @@ model Reservation {
   payments      Payment[]
   statusHistory ReservationStatusHistory[]
   paymentLinks  PaymentLink[]
+  emailLogs     EmailLog[]
 
   @@index([status, createdAt], map: "idx_res_status")
   @@index([customerId], map: "idx_res_customer")
@@ -481,4 +489,22 @@ model ContactRequest {
 
   @@index([status, createdAt], map: "idx_contact_status")
   @@map("contact_requests")
+}
+
+/// Correos que envía el sistema al cliente: permite ver si salieron y reenviarlos.
+model EmailLog {
+  id            BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  kind          EmailKind
+  reservationId BigInt?     @map("reservation_id") @db.UnsignedBigInt
+  toEmail       String      @map("to_email") @db.VarChar(190)
+  subject       String      @db.VarChar(255)
+  status        EmailStatus
+  error         String?     @db.VarChar(500)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.DateTime(0)
+
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull, map: "fk_email_logs_res")
+
+  @@index([createdAt], map: "idx_email_logs_created")
+  @@index([reservationId], map: "idx_email_logs_res")
+  @@map("email_logs")
 }

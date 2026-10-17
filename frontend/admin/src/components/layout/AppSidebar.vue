@@ -31,26 +31,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 
   <aside
     id="admin-sidebar"
-    class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar text-white transition-transform duration-200 motion-reduce:transition-none lg:translate-x-0"
+    class="fixed inset-y-0 left-0 z-40 flex w-52 flex-col bg-sidebar text-white transition-transform duration-200 motion-reduce:transition-none lg:translate-x-0"
     :class="ui.sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     aria-label="Menú principal"
   >
-    <div class="flex h-16 items-center gap-2.5 px-5">
-      <img src="/favicon-192.png" alt="" class="size-8" />
-      <div class="leading-tight">
-        <p class="text-sm font-bold">VillaKar Transfers</p>
-        <p class="text-xs text-white/60">Panel de administración</p>
-      </div>
+    <div class="flex h-16 items-center gap-2 px-4">
+      <img src="/logo.png" alt="VillaKar Transfers" width="1000" height="436" class="h-9 w-auto" />
+      <p class="text-[10px] leading-tight text-white/60">Panel de<br />administración</p>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-3 py-4">
-      <div v-for="group in NAVIGATION" :key="group.label" class="mb-6">
-        <p class="px-3 text-xs font-medium text-white/45">{{ group.label }}</p>
-        <ul class="mt-2 space-y-0.5">
+    <nav class="flex-1 overflow-y-auto px-2.5 py-3">
+      <div v-for="group in NAVIGATION" :key="group.label" class="mb-4">
+        <p class="px-2.5 text-[11px] font-medium text-white/45">{{ group.label }}</p>
+        <ul class="mt-1.5 space-y-0.5">
           <li v-for="item in group.items" :key="item.name">
             <RouterLink
               :to="{ name: item.name }"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:outline-none"
+              class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:outline-none"
               :class="
                 route.name === item.name ? 'bg-white/12 text-white' : 'text-white/70 hover:bg-white/6 hover:text-white'
               "
@@ -71,7 +68,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
       :href="publicSiteUrl"
       target="_blank"
       rel="noopener"
-      class="m-3 rounded-lg border border-white/15 px-3 py-2 text-center text-xs font-semibold text-white/75 hover:bg-white/6 hover:text-white"
+      class="m-2.5 rounded-lg border border-white/15 px-2.5 py-1.5 text-center text-[11px] font-semibold text-white/75 hover:bg-white/6 hover:text-white"
     >
       Ver sitio de reservas
     </a>

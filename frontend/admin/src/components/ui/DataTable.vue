@@ -17,6 +17,8 @@ const props = withDefaults(
     /** Descripción de la tabla para lectores de pantalla. */
     caption: string;
     loading?: boolean;
+    /** Filas más juntas y bajas, para ver más registros a la vez. */
+    compact?: boolean;
     /** Si es true, las filas se pueden abrir con clic o Enter (emite row-click). */
     rowClickable?: boolean;
     /** Etiqueta accesible de cada fila clicable. */
@@ -27,6 +29,7 @@ const props = withDefaults(
   }>(),
   {
     loading: false,
+    compact: false,
     rowClickable: false,
     rowLabel: undefined,
     pageSizes: () => [10, 25, 50],
@@ -94,8 +97,8 @@ const skeletonRows = computed(() => Math.min(pageSize.value, 8));
               v-for="column in props.columns"
               :key="column.key"
               scope="col"
-              class="px-4 py-3 whitespace-nowrap"
-              :class="columnClass(column)"
+              class="whitespace-nowrap"
+              :class="[props.compact ? 'px-3 py-2' : 'px-4 py-3', columnClass(column)]"
               :aria-sort="ariaSort(column)"
             >
               <span v-if="column.srOnlyLabel" class="sr-only">{{ column.label }}</span>
@@ -126,7 +129,7 @@ const skeletonRows = computed(() => Math.min(pageSize.value, 8));
         <!-- Cargando: filas grises del mismo alto para que la tabla no brinque. -->
         <tbody v-if="props.loading" aria-busy="true">
           <tr v-for="n in skeletonRows" :key="n" class="border-b border-fog-100 last:border-0">
-            <td v-for="column in props.columns" :key="column.key" class="px-4 py-3.5" :class="columnClass(column)">
+            <td v-for="column in props.columns" :key="column.key" :class="[props.compact ? 'px-3 py-2' : 'px-4 py-3.5', columnClass(column)]">
               <span class="block h-4 animate-pulse rounded bg-fog-100 motion-reduce:animate-none" />
             </td>
           </tr>
@@ -147,7 +150,7 @@ const skeletonRows = computed(() => Math.min(pageSize.value, 8));
             @click="props.rowClickable && emit('rowClick', row)"
             @keydown="props.rowClickable && onRowKeydown($event, row)"
           >
-            <td v-for="column in props.columns" :key="column.key" class="px-4 py-3 align-middle" :class="columnClass(column)">
+            <td v-for="column in props.columns" :key="column.key" class="align-middle" :class="[props.compact ? 'px-3 py-1.5 leading-tight' : 'px-4 py-3', columnClass(column)]">
               <slot :name="`cell-${column.key}`" :row="row">{{ display(column, row) }}</slot>
             </td>
           </tr>

@@ -72,12 +72,8 @@ const dirty = computed(() => {
   );
 });
 
-/** Una orden asignada o en curso necesita chofer en el primer tramo. */
-const validationError = computed(() => {
-  if (!['ASSIGNED', 'IN_PROGRESS'].includes(form.status)) return null;
-  if (form.drivers[0]?.driverName.trim()) return null;
-  return `Asigna un chofer a la ida para marcarla como "${ORDER_STATUS[form.status].label}".`;
-});
+/** Ya no hay validaciones por estado: el chofer es opcional. */
+const validationError = computed<string | null>(() => null);
 
 // Si se edita algo después de guardar, el aviso "Guardado" se quita.
 watch(

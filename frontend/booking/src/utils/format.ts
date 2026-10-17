@@ -65,3 +65,15 @@ export function formatDateOnly(value: string): string {
     timeZone: 'UTC',
   }).format(new Date(`${value}T00:00:00Z`));
 }
+
+/** Instante ISO (UTC) → "Oct 15, 2026, 2:35 PM" en hora de Cancún. */
+export function formatInstantCancun(value: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/Cancun',
+  }).format(new Date(value));
+}

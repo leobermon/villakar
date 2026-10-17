@@ -35,7 +35,7 @@ const contactCopy = computed(() =>
 <template>
   <div>
     <SiteHeader />
-    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
       <!-- Elección de vehículo, datos del pasajero y pago en una sola página; el resumen del viaje va en la columna del total. -->
       <BookingForm v-if="quote.serviceable && store.selectedOption" />
 

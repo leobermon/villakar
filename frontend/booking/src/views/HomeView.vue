@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import HeroSlider from '@/components/home/HeroSlider.vue';
 import SearchForm from '@/components/booking/SearchForm.vue';
 import CoverageSection from '@/components/home/CoverageSection.vue';
 import FleetSection from '@/components/home/FleetSection.vue';
+import ServicesSection from '@/components/home/ServicesSection.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
 
 const HIGHLIGHTS = [
@@ -12,22 +14,17 @@ const HIGHLIGHTS = [
 </script>
 
 <template>
-  <div>
+  <div class="pb-16">
     <section class="relative overflow-hidden bg-brand-900 pb-40 text-white sm:pb-44">
-      <!-- Foto de fondo provisional (para cambiarla, reemplaza los archivos de public/hero). -->
-      <img
-        src="/hero/home-1920.webp"
-        srcset="/hero/home-960.webp 960w, /hero/home-1920.webp 1920w"
-        sizes="100vw"
-        alt=""
-        fetchpriority="high"
-        class="absolute inset-0 h-full w-full object-cover object-[70%_center]"
-      />
+      <!-- Fotos de fondo en slider (para cambiarlas, edita SLIDES en HeroSlider.vue y los archivos de public/hero). -->
+      <HeroSlider />
       <!-- Degradado azul desde la izquierda: el texto blanco se lee sobre la foto. -->
       <div
-        class="absolute inset-0 bg-gradient-to-r from-brand-950/90 via-brand-900/60 to-brand-900/10"
+        class="absolute inset-0 bg-gradient-to-r from-brand-950/60 via-brand-900/25 to-transparent"
         aria-hidden="true"
       />
+      <!-- Sombra suave arriba: el logo y "Contact" (blancos) se leen sobre fotos claras. -->
+      <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-brand-950/55 to-transparent" aria-hidden="true" />
       <svg
         class="absolute inset-x-0 bottom-0 h-24 w-full text-mist-50"
         viewBox="0 0 1440 96"
@@ -55,17 +52,19 @@ const HIGHLIGHTS = [
       <SearchForm />
     </div>
 
-    <CoverageSection />
+    <ServicesSection />
 
     <FleetSection />
 
-    <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-      <div class="grid gap-6 md:grid-cols-3">
-        <div v-for="item in HIGHLIGHTS" :key="item.title" class="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 class="font-display text-lg font-semibold text-brand-900">{{ item.title }}</h2>
-          <p class="mt-2 text-sm text-brand-900/70">{{ item.text }}</p>
-        </div>
-      </div>
+    <section class="mx-auto max-w-7xl px-4 pt-10 sm:px-6" aria-label="Why book with us">
+      <ul class="grid gap-2 sm:grid-cols-3 sm:gap-3">
+        <li v-for="item in HIGHLIGHTS" :key="item.title" class="rounded-xl bg-white/70 px-4 py-2.5 ring-1 ring-brand-100">
+          <h2 class="text-sm font-semibold text-brand-900">{{ item.title }}</h2>
+          <p class="mt-0.5 text-xs leading-snug text-brand-900/65">{{ item.text }}</p>
+        </li>
+      </ul>
     </section>
+
+    <CoverageSection />
   </div>
 </template>

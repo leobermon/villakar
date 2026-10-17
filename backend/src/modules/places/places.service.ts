@@ -65,6 +65,12 @@ const SEARCH_AREA = {
   },
 };
 
+// El buscador solo ofrece hoteles y alojamientos (tipos principales de Google, máximo 5)
+// y solo en Quintana Roo.
+const LODGING_PRIMARY_TYPES = ['hotel', 'resort_hotel', 'lodging', 'hostel', 'guest_house'];
+const QUINTANA_ROO_PATTERN = /quintana\s*roo|\bq\.\s?r\./i;
+const NOT_LODGING_MESSAGE = 'Please choose a hotel or lodging in Quintana Roo.';
+
 const PLACE_SELECT = Prisma.sql`
   SELECT id, google_place_id, name, formatted_address, place_type,
          ST_Latitude(location) AS lat, ST_Longitude(location) AS lng, last_synced_at
@@ -108,6 +114,7 @@ export class PlacesService {
           sessionToken,
           languageCode: 'en',
           includedRegionCodes: ['mx'],
+          includedPrimaryTypes: LODGING_PRIMARY_TYPES,
           locationRestriction: SEARCH_AREA,
         }),
         signal: AbortSignal.timeout(5_000),
@@ -124,7 +131,7 @@ export class PlacesService {
 
     const data = (await response.json()) as GoogleAutocompleteResponse;
     return (data.suggestions ?? []).flatMap(({ placePrediction: prediction }) =>
-      prediction
+      prediction && isInQuintanaRoo(prediction.structuredFormat?.secondaryText?.text ?? prediction.text?.text)
         ? [
             {
               googlePlaceId: prediction.placeId,
@@ -147,12 +154,12 @@ export class PlacesService {
     }
 
     const cached = await this.findByGoogleId(googlePlaceId);
-    if (cached && this.isFresh(cached.last_synced_at)) return toResolvedPlace(cached);
+    if (cached && this.isFresh(cached.last_synced_at)) return assertLodging(toResolvedPlace(cached));
 
     const details = await this.fetchGoogleDetails(googlePlaceId, sessionToken);
     if (!details) {
       // Google no respondió: si hay una copia vieja es mejor usarla que fallar la cotización.
-      if (cached) return toResolvedPlace(cached);
+      if (cached) return assertLodging(toResolvedPlace(cached));
       throw new ServiceUnavailableException('Location service temporarily unavailable');
     }
 
@@ -162,6 +169,9 @@ export class PlacesService {
     }
 
     const types = details.types ?? [];
+    if (!types.includes('lodging') || !isInQuintanaRoo(details.formattedAddress)) {
+      throw new BadRequestException(NOT_LODGING_MESSAGE);
+    }
     const name = (details.displayName?.text ?? 'Unnamed place').slice(0, 190);
     const address = details.formattedAddress?.slice(0, 255) ?? null;
     const wkt = `POINT(${longitude} ${latitude})`;
@@ -179,7 +189,7 @@ export class PlacesService {
 
     const saved = await this.findByGoogleId(googlePlaceId);
     if (!saved) throw new ServiceUnavailableException('Could not store place');
-    return toResolvedPlace(saved);
+    return assertLodging(toResolvedPlace(saved));
   }
 
   private async findByGoogleId(googlePlaceId: string): Promise<PlaceRow | undefined> {
@@ -226,6 +236,17 @@ export class PlacesService {
     }
     return (await response.json()) as GooglePlaceDetails;
   }
+}
+
+/** ¿El texto (dirección o referencia de Google) menciona Quintana Roo? */
+function isInQuintanaRoo(text: string | null | undefined): boolean {
+  return text ? QUINTANA_ROO_PATTERN.test(text) : false;
+}
+
+/** Un lugar guardado de antes que no es alojamiento ya no se acepta como hotel. */
+function assertLodging(place: ResolvedPlace): ResolvedPlace {
+  if (place.placeType !== PlaceType.HOTEL) throw new BadRequestException(NOT_LODGING_MESSAGE);
+  return place;
 }
 
 function placeTypeFromGoogle(types: string[]): PlaceType {

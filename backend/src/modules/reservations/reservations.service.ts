@@ -62,6 +62,8 @@ export interface ReservationSummary {
     terminal: string | null;
   }>;
   specialRequests: string | null;
+  /** Cuándo se creó la reserva (instante UTC en ISO). */
+  createdAt: string;
   /** Límite para pagar (instante UTC en ISO). Null si ya no aplica. */
   expiresAt: string | null;
   /** true si aún se puede pagar en línea. */
@@ -391,6 +393,7 @@ function toSummary(reservation: ReservationWithDetails): ReservationSummary {
       terminal: leg.terminal,
     })),
     specialRequests: reservation.specialRequests,
+    createdAt: reservation.createdAt.toISOString(),
     expiresAt: payable && reservation.expiresAt ? reservation.expiresAt.toISOString() : null,
     canPay: payable,
     payInCash: reservation.paymentStatus === PaymentStatus.UNPAID && reservation.payments.length > 0,

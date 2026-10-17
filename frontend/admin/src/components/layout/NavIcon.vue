@@ -7,7 +7,7 @@ defineProps<{ name: NavItem['icon'] }>();
 <template>
   <svg
     viewBox="0 0 24 24"
-    class="size-5 shrink-0"
+    class="size-[18px] shrink-0"
     fill="none"
     stroke="currentColor"
     stroke-width="1.7"
@@ -24,6 +24,16 @@ defineProps<{ name: NavItem['icon'] }>();
     <template v-else-if="name === 'payments'">
       <rect x="3" y="5.5" width="18" height="13" rx="2" />
       <path d="M3 10h18M7 15h3" />
+    </template>
+    <!-- Correos: sobre -->
+    <template v-else-if="name === 'emails'">
+      <rect x="3" y="5.5" width="18" height="13" rx="2" />
+      <path d="m3.5 7 8.5 6.5L20.5 7" />
+    </template>
+    <!-- Mensajes: globo de chat -->
+    <template v-else-if="name === 'contacts'">
+      <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-4.5 3.5V17H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+      <path d="M8 10h8M8 13h5" />
     </template>
     <!-- Tarifas: etiqueta de precio -->
     <template v-else-if="name === 'rates'">

@@ -7,9 +7,7 @@ import { UpdateOrderDto } from './dto';
 /** Cambios de estado permitidos desde el panel (igual que frontend/admin/src/config/orders.ts). */
 const STATUS_TRANSITIONS: Record<ReservationStatus, ReservationStatus[]> = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED: ['ASSIGNED', 'CANCELLED'],
-  ASSIGNED: ['CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'NO_SHOW'],
-  IN_PROGRESS: ['COMPLETED', 'NO_SHOW'],
+  CONFIRMED: ['COMPLETED', 'CANCELLED', 'NO_SHOW'],
   COMPLETED: [],
   CANCELLED: [],
   NO_SHOW: [],
@@ -17,12 +15,10 @@ const STATUS_TRANSITIONS: Record<ReservationStatus, ReservationStatus[]> = {
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {
   PENDING: 'Pendiente',
-  CONFIRMED: 'Confirmada',
-  ASSIGNED: 'Asignada',
-  IN_PROGRESS: 'En curso',
-  COMPLETED: 'Completada',
-  CANCELLED: 'Cancelada',
-  NO_SHOW: 'No se presentó',
+  CONFIRMED: 'Confirmado',
+  COMPLETED: 'Completado',
+  CANCELLED: 'Cancelado',
+  NO_SHOW: 'No show',
 };
 
 /** Estado de los tramos cuando la orden termina sin servicio. */
@@ -68,14 +64,6 @@ export class AdminOrdersService {
         throw new BadRequestException(
           `No se puede pasar de "${STATUS_LABEL[current.status]}" a "${STATUS_LABEL[nextStatus]}".`,
         );
-      }
-
-      // Una orden asignada o en curso necesita chofer en el primer tramo.
-      const firstLeg = current.legs[0];
-      const firstLegChange = dto.legs?.find((change) => change.legNumber === firstLeg?.legNumber);
-      const firstDriver = firstLegChange ? clean(firstLegChange.driverName) : firstLeg?.driverName;
-      if (statusChanged && (nextStatus === 'ASSIGNED' || nextStatus === 'IN_PROGRESS') && !firstDriver) {
-        throw new BadRequestException(`Asigna un chofer a la ida para marcarla como "${STATUS_LABEL[nextStatus]}".`);
       }
 
       const data: Prisma.ReservationUpdateInput = {};

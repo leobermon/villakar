@@ -12,8 +12,8 @@ import AppSidebar from '@/components/layout/AppSidebar.vue';
       Saltar al contenido
     </a>
     <AppSidebar />
-    <!-- En pantallas grandes el menú es fijo: el contenido se desplaza su ancho (w-64). -->
-    <div class="flex min-h-screen flex-col lg:pl-64">
+    <!-- En pantallas grandes el menú es fijo: el contenido se desplaza su ancho (w-52). -->
+    <div class="flex min-h-screen flex-col lg:pl-52">
       <AppHeader />
       <main id="main" tabindex="-1" class="flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8">
         <slot />
