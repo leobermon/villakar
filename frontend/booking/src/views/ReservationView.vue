@@ -51,6 +51,24 @@ fetchCompanyInfo()
   .catch(() => {});
 
 const isPaid = computed(() => reservation.value?.paymentStatus === 'PAID');
+
+/** Cómo se llama cada medio de pago en pantalla (Stripe es el cobro con tarjeta). */
+const PAYMENT_METHOD_LABEL = {
+  STRIPE: 'Credit card (Stripe)',
+  PAYPAL: 'PayPal',
+  CASH: 'Cash',
+  TRANSFER: 'Bank transfer',
+} as const;
+
+/** Rótulo del monto: "Paid · PayPal" si ya se cobró, "Pending to pay · Cash" si se pagará en efectivo. */
+const paymentLabel = computed(() => {
+  const current = reservation.value;
+  if (!current) return 'Total';
+  const method = current.paymentMethod ? PAYMENT_METHOD_LABEL[current.paymentMethod] : null;
+  if (isPaid.value) return method ? `Paid · ${method}` : 'Paid';
+  if (current.payInCash) return 'Pending to pay · Cash';
+  return 'Total';
+});
 /** Confirmada: pagada en línea, o con pago en efectivo pendiente y no cancelada. */
 const isConfirmed = computed(() => {
   const current = reservation.value;
@@ -285,7 +303,7 @@ const inputClass =
               <dd class="font-medium">{{ reservation.passengers }}</dd>
             </div>
             <div>
-              <dt class="text-xs text-brand-900/60">{{ isPaid ? 'Paid' : reservation.payInCash ? 'Pay in cash' : 'Total' }}</dt>
+              <dt class="text-xs text-brand-900/60">{{ paymentLabel }}</dt>
               <dd class="font-medium">{{ formatUsd(reservation.total) }} USD</dd>
             </div>
             <div class="sm:col-span-3">

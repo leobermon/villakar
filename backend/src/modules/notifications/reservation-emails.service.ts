@@ -261,9 +261,11 @@ function usd(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
 
+const METHOD_LABEL = { STRIPE: 'Credit card (Stripe)', PAYPAL: 'PayPal', CASH: 'Cash', TRANSFER: 'Bank transfer' } as const;
+
 function totalLabel(r: ReservationSummary): string {
-  if (r.paymentStatus === 'PAID') return 'Paid';
-  return r.payInCash ? 'Pay in cash' : 'Total';
+  if (r.paymentStatus === 'PAID') return r.paymentMethod ? `Paid · ${METHOD_LABEL[r.paymentMethod]}` : 'Paid';
+  return r.payInCash ? 'Pending to pay · Cash' : 'Total';
 }
 
 function cashNote(r: ReservationSummary): string | null {

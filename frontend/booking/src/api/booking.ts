@@ -150,6 +150,8 @@ export interface ReservationSummary {
   canPay: boolean;
   /** El cliente pagará en efectivo al chofer después del servicio. */
   payInCash: boolean;
+  /** Con qué se pagó (si ya está cobrado) o se pagará (efectivo pendiente). null si aún no hay. */
+  paymentMethod: 'STRIPE' | 'PAYPAL' | 'CASH' | 'TRANSFER' | null;
   /** Servicio dentro de las próximas 8 horas: solo pago en línea. */
   lastMinute: boolean;
   /** Ya se envió el correo de confirmación al cliente. */

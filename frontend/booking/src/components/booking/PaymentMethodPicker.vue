@@ -79,6 +79,40 @@ watch(
           <span>
             <span class="block font-semibold text-brand-950">{{ option.title }}</span>
             <span class="block text-xs text-brand-900/60">{{ option.disabled ? 'Not available for last-minute bookings' : option.text }}</span>
+
+            <!-- Logos del servicio (mismos dibujos que PaymentBadges del pie de página). -->
+            <span class="mt-2.5 flex items-center gap-1.5" aria-hidden="true">
+              <template v-if="option.value === 'card'">
+                <svg viewBox="0 0 48 32" class="h-6 w-9">
+                  <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#fff" stroke="#d2eaf6" />
+                  <text x="24" y="20.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="900" font-style="italic" fill="#1a1f71">VISA</text>
+                </svg>
+                <svg viewBox="0 0 48 32" class="h-6 w-9">
+                  <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#fff" stroke="#d2eaf6" />
+                  <circle cx="19.5" cy="16" r="8" fill="#eb001b" />
+                  <circle cx="28.5" cy="16" r="8" fill="#f79e1b" />
+                  <path d="M24 9.4a8 8 0 0 1 0 13.2 8 8 0 0 1 0-13.2Z" fill="#ff5f00" />
+                </svg>
+                <svg viewBox="0 0 48 32" class="h-6 w-9">
+                  <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#635bff" />
+                  <text x="24" y="20.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#fff">stripe</text>
+                </svg>
+              </template>
+              <svg v-else-if="option.value === 'paypal'" viewBox="0 0 48 32" class="h-6 w-9">
+                <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#fff" stroke="#d2eaf6" />
+                <text x="24" y="20" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10.5" font-weight="900" font-style="italic">
+                  <tspan fill="#003087">Pay</tspan><tspan fill="#009cde">Pal</tspan>
+                </text>
+              </svg>
+              <!-- Efectivo: billete -->
+              <svg v-else viewBox="0 0 48 32" class="h-6 w-9">
+                <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#e8f5ec" stroke="#b7dcc2" />
+                <rect x="7" y="8" width="34" height="16" rx="2.5" fill="#fff" stroke="#2f9e5b" stroke-width="1.6" />
+                <circle cx="24" cy="16" r="4.2" fill="none" stroke="#2f9e5b" stroke-width="1.6" />
+                <circle cx="12.5" cy="16" r="1.3" fill="#2f9e5b" />
+                <circle cx="35.5" cy="16" r="1.3" fill="#2f9e5b" />
+              </svg>
+            </span>
           </span>
         </label>
       </div>

@@ -31,9 +31,11 @@ const reservationInclude = {
   customer: true,
   vehicleType: true,
   legs: { orderBy: { legNumber: 'asc' } },
+  // Cobros vigentes (pendientes o cobrados), el más reciente primero: de ahí sale el método de pago.
   payments: {
-    where: { provider: PaymentProvider.CASH, type: PaymentType.CHARGE, status: PaymentRecordStatus.PENDING },
-    select: { id: true },
+    where: { type: PaymentType.CHARGE, status: { in: [PaymentRecordStatus.PENDING, PaymentRecordStatus.SUCCEEDED] } },
+    select: { provider: true, status: true },
+    orderBy: { id: 'desc' },
   },
 } satisfies Prisma.ReservationInclude;
 
@@ -70,6 +72,8 @@ export interface ReservationSummary {
   canPay: boolean;
   /** true si el cliente eligió pagar en efectivo al chofer después del servicio. */
   payInCash: boolean;
+  /** Con qué se pagó (si ya está cobrado) o con qué se pagará (efectivo pendiente). null si aún no hay. */
+  paymentMethod: PaymentProvider | null;
   /** true si el primer servicio es dentro de CASH_MIN_NOTICE_HOURS: solo se acepta pago en línea. */
   lastMinute: boolean;
   /** true si ya se le envió al cliente el correo de confirmación. */
@@ -364,6 +368,20 @@ function normalizeFlightNumber(value: string): string {
   return value.replace(/\s+/g, '').toUpperCase();
 }
 
+function hasPendingCash(reservation: ReservationWithDetails): boolean {
+  return reservation.payments.some(
+    (payment) => payment.provider === PaymentProvider.CASH && payment.status === PaymentRecordStatus.PENDING,
+  );
+}
+
+/** Método con el que se cobró; si aún no se cobra, "CASH" cuando quedó pendiente de pagar en efectivo. */
+function paymentMethodOf(reservation: ReservationWithDetails): PaymentProvider | null {
+  if (reservation.paymentStatus !== PaymentStatus.UNPAID) {
+    return reservation.payments.find((payment) => payment.status === PaymentRecordStatus.SUCCEEDED)?.provider ?? null;
+  }
+  return hasPendingCash(reservation) ? PaymentProvider.CASH : null;
+}
+
 function toSummary(reservation: ReservationWithDetails): ReservationSummary {
   const payable = isPayable(reservation);
   return {
@@ -396,7 +414,8 @@ function toSummary(reservation: ReservationWithDetails): ReservationSummary {
     createdAt: reservation.createdAt.toISOString(),
     expiresAt: payable && reservation.expiresAt ? reservation.expiresAt.toISOString() : null,
     canPay: payable,
-    payInCash: reservation.paymentStatus === PaymentStatus.UNPAID && reservation.payments.length > 0,
+    payInCash: reservation.paymentStatus === PaymentStatus.UNPAID && hasPendingCash(reservation),
+    paymentMethod: paymentMethodOf(reservation),
     lastMinute: isLastMinute(reservation.legs[0]!.pickupAt),
     confirmationEmailSent: reservation.confirmationEmailSentAt !== null,
   };
