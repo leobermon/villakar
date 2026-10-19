@@ -6,4 +6,4 @@ Disallow: /reservation/
 Disallow: /pay/
 Disallow: /checkout
 
-Sitemap: https://villakarshuttle.com/sitemap.xml
+Sitemap: https://villakartransfers.com/sitemap.xml

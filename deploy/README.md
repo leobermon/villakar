@@ -4,8 +4,8 @@ Resultado final:
 
 | Qué | Dirección |
 |---|---|
-| Sitio de reservas | https://villakarshuttle.com (www redirige aquí) |
-| Panel de administración | https://admin.villakarshuttle.com |
+| Sitio de reservas | https://villakartransfers.com (www redirige aquí) |
+| Panel de administración | https://admin.villakartransfers.com |
 
 Todo corre en Docker dentro del VPS: MySQL 8, el backend, el sitio + panel (Caddy, con HTTPS
 automático) y un respaldo diario de la base. Se configura con un solo archivo `.env`.
@@ -17,7 +17,7 @@ automático) y un respaldo diario de la base. Se configura con un solo archivo `
 
 ## 1. DNS del dominio (hPanel de Hostinger)
 
-En **hPanel → Dominios → villakarshuttle.com → DNS / Nameservers**, crea o edita estos registros
+En **hPanel → Dominios → villakartransfers.com → DNS / Nameservers**, crea o edita estos registros
 tipo **A** con la IP de tu VPS:
 
 | Tipo | Nombre | Apunta a |
@@ -29,8 +29,8 @@ tipo **A** con la IP de tu VPS:
 - Si ya existe un registro `A` para `@` o `www` (del hosting compartido), **edítalo**: solo debe
   haber uno por nombre.
 - **No toques** los registros `MX`, `TXT` (SPF/DKIM) ni los de correo: el correo
-  `reservations@villakarshuttle.com` sigue en Hostinger.
-- Los cambios tardan de minutos a unas horas. Para comprobar (PC): `nslookup admin.villakarshuttle.com`
+  `reservations@villakartransfers.com` sigue en Hostinger.
+- Los cambios tardan de minutos a unas horas. Para comprobar (PC): `nslookup admin.villakartransfers.com`
   debe responder con la IP del VPS.
 
 **Haz el paso 5 solo cuando los tres nombres ya apunten al VPS**: Caddy pide los certificados
@@ -107,7 +107,7 @@ openssl rand -hex 48   # ADMIN_JWT_SECRET
 |---|---|
 | `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` | Generadas con `openssl rand -hex 24` |
 | `GOOGLE_MAPS_SERVER_KEY` | La misma clave de Google que usas en `backend/.env` de tu PC |
-| `SMTP_PASS` | La contraseña del buzón `reservations@villakarshuttle.com` |
+| `SMTP_PASS` | La contraseña del buzón `reservations@villakartransfers.com` |
 | `ADMIN_JWT_SECRET` | Generado con `openssl rand -hex 48` |
 | `ADMIN_SEED_EMAIL`, `ADMIN_SEED_PASSWORD` | Tu correo y contraseña para entrar al panel (mínimo 12 caracteres) |
 
@@ -181,9 +181,9 @@ rm catalogo.sql
 
 ## 8. Probar
 
-1. Abre https://villakarshuttle.com, busca un hotel y haz una reserva de prueba con pago en efectivo.
-2. Revisa que llegue el correo de confirmación (desde `reservations@villakarshuttle.com`).
-3. Entra a https://admin.villakarshuttle.com con tu usuario: la reserva debe aparecer en Órdenes.
+1. Abre https://villakartransfers.com, busca un hotel y haz una reserva de prueba con pago en efectivo.
+2. Revisa que llegue el correo de confirmación (desde `reservations@villakartransfers.com`).
+3. Entra a https://admin.villakartransfers.com con tu usuario: la reserva debe aparecer en Órdenes.
 4. Cancela o borra esa reserva de prueba desde el panel.
 
 **Google Maps:** en Google Cloud → Credenciales, restringe la clave de servidor a la IP del VPS
@@ -231,4 +231,4 @@ gunzip -c backups/ARCHIVO.sql.gz | docker compose exec -T mysql sh -c 'mysql -u 
 
 Cuando tengas las claves reales de Stripe y PayPal, ponlas en el `.env` del VPS y corre
 `docker compose up -d`. En Stripe, el webhook va a:
-`https://villakarshuttle.com/api/payments/stripe/webhook`
+`https://villakartransfers.com/api/payments/stripe/webhook`

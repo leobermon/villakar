@@ -15,7 +15,7 @@ import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
-const origin = process.env.VITE_PUBLIC_SITE_URL || 'https://villakarshuttle.com';
+const origin = process.env.VITE_PUBLIC_SITE_URL || 'https://villakartransfers.com';
 
 const template = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 const { render, headTags, INDEXABLE_PATHS } = await import(
