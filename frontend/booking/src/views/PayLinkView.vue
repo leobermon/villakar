@@ -9,6 +9,7 @@ import {
   type PaymentLinkInfo,
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
+import PaymentBadges from '@/components/layout/PaymentBadges.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
 import { formatUsd } from '@/utils/format';
 
@@ -170,7 +171,10 @@ onMounted(async () => {
                   <span class="block text-[15px] font-bold text-brand-950">{{ paying === 'card' ? 'Opening secure payment…' : 'Pay with credit or debit card' }}</span>
                   <span class="block text-xs text-brand-900/60">Visa, Mastercard, American Express · secured by Stripe</span>
                 </span>
-                <span class="text-brand-600" aria-hidden="true">→</span>
+                <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0" role="img" aria-label="Stripe">
+                  <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#635bff" />
+                  <text x="24" y="20.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#fff">stripe</text>
+                </svg>
               </button>
               <button
                 v-if="link.methods.paypal"
@@ -183,8 +187,18 @@ onMounted(async () => {
                   <span class="block text-[15px] font-bold text-brand-950">{{ paying === 'paypal' ? 'Opening PayPal…' : 'Pay with PayPal' }}</span>
                   <span class="block text-xs text-brand-900/60">Use your PayPal account or card</span>
                 </span>
-                <span class="text-brand-600" aria-hidden="true">→</span>
+                <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0" role="img" aria-label="PayPal">
+                  <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#fff" stroke="#d2eaf6" />
+                  <text x="24" y="20" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10.5" font-weight="900" font-style="italic">
+                    <tspan fill="#003087">Pay</tspan><tspan fill="#009cde">Pal</tspan>
+                  </text>
+                </svg>
               </button>
+            </div>
+
+            <div v-if="!noMethods" class="mt-6 flex flex-col items-center gap-2 border-t border-brand-100 pt-5">
+              <p class="text-xs font-semibold tracking-wide text-brand-900/60 uppercase">We accept</p>
+              <PaymentBadges class="justify-center" />
             </div>
 
             <p class="mt-5 text-center text-xs text-brand-900/60">
