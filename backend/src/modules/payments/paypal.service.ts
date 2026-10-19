@@ -105,6 +105,97 @@ export class PaypalService {
     return { approveUrl };
   }
 
+  /** Orden de PayPal por un monto libre (links de pago). `referenceId` regresa al capturar. */
+  async createOrderFor(params: {
+    referenceId: string;
+    description: string;
+    amount: Prisma.Decimal;
+    returnUrl: string;
+    cancelUrl: string;
+  }): Promise<{ orderId: string; approveUrl: string }> {
+    this.ensureConfigured();
+    const order = await this.request<PaypalOrder>('POST', '/v2/checkout/orders', {
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          reference_id: params.referenceId,
+          custom_id: params.referenceId,
+          description: params.description.slice(0, 127),
+          amount: { currency_code: 'USD', value: params.amount.toFixed(2) },
+        },
+      ],
+      payment_source: {
+        paypal: {
+          experience_context: {
+            brand_name: 'VillaKar Transfers',
+            user_action: 'PAY_NOW',
+            shipping_preference: 'NO_SHIPPING',
+            return_url: params.returnUrl,
+            cancel_url: params.cancelUrl,
+          },
+        },
+      },
+    }).catch((error: unknown) => {
+      if (error instanceof PaypalApiError) {
+        throw new ServiceUnavailableException('PayPal is temporarily unavailable. Please try again or pay by card.');
+      }
+      throw error;
+    });
+
+    const approveUrl = order.links?.find((link) => link.rel === 'payer-action' || link.rel === 'approve')?.href;
+    if (!approveUrl) {
+      this.logger.error(`PayPal order ${order.id} has no approval link`);
+      throw new ServiceUnavailableException('PayPal is temporarily unavailable. Please try again or pay by card.');
+    }
+    return { orderId: order.id, approveUrl };
+  }
+
+  /** Captura una orden de un link de pago y devuelve el resultado ya interpretado. Idempotente. */
+  async captureFor(orderId: string): Promise<{
+    status: 'paid' | 'declined' | 'pending';
+    referenceId: string;
+    amount?: Prisma.Decimal;
+    currency?: string;
+    captureId?: string;
+    message?: string;
+  }> {
+    this.ensureConfigured();
+
+    let order: PaypalOrder;
+    try {
+      order = await this.request<PaypalOrder>('POST', `/v2/checkout/orders/${orderId}/capture`, {});
+    } catch (error) {
+      if (!(error instanceof PaypalApiError)) throw error;
+      const issue = error.issue;
+      if (issue === 'ORDER_ALREADY_CAPTURED') {
+        order = await this.request<PaypalOrder>('GET', `/v2/checkout/orders/${orderId}`);
+      } else if (issue === 'INSTRUMENT_DECLINED' || issue === 'PAYER_ACTION_REQUIRED' || issue === 'ORDER_NOT_APPROVED') {
+        throw new BadRequestException('PayPal could not complete the payment. Please try again.');
+      } else if (error.status === 404) {
+        throw new BadRequestException('Unknown PayPal order');
+      } else {
+        throw new ServiceUnavailableException('We could not confirm your PayPal payment yet. Please refresh in a moment.');
+      }
+    }
+
+    const unit = order.purchase_units?.[0];
+    const referenceId = unit?.reference_id ?? '';
+    const capture = unit?.payments?.captures?.find((candidate) => candidate.status === 'COMPLETED');
+    if (order.status === 'COMPLETED' && capture?.amount) {
+      return {
+        status: 'paid',
+        referenceId,
+        amount: new Prisma.Decimal(capture.amount.value),
+        currency: capture.amount.currency_code,
+        captureId: capture.id,
+      };
+    }
+    if (unit?.payments?.captures?.some((candidate) => candidate.status === 'DECLINED')) {
+      return { status: 'declined', referenceId, message: 'PayPal declined the payment. Please try another payment method.' };
+    }
+    return { status: 'pending', referenceId, message: 'Your PayPal payment is pending review. We will email you once it clears.' };
+  }
+
   /** Captura la orden que el cliente aprobó en PayPal. Idempotente. */
   async captureOrder(orderId: string): Promise<{ code: string; paid: boolean; message?: string }> {
     this.ensureConfigured();

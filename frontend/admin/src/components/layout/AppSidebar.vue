@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { NAVIGATION } from '@/config/navigation';
 import { PUBLIC_SITE_URL } from '@/config/site';
+import { useAuthStore } from '@/stores/auth';
 import { useUiStore } from '@/stores/ui';
 import NavIcon from './NavIcon.vue';
 
 const ui = useUiStore();
+const auth = useAuthStore();
+
+/** El menú sin lo que el rol no puede ver (los operadores no ven Usuarios). */
+const groups = computed(() =>
+  NAVIGATION.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.adminOnly || auth.canEditCatalog),
+  })).filter((group) => group.items.length > 0),
+);
 const route = useRoute();
 const publicSiteUrl = PUBLIC_SITE_URL;
 
@@ -41,7 +51,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
     </div>
 
     <nav class="flex-1 overflow-y-auto px-2.5 py-3">
-      <div v-for="group in NAVIGATION" :key="group.label" class="mb-4">
+      <div v-for="group in groups" :key="group.label" class="mb-4">
         <p class="px-2.5 text-[11px] font-medium text-white/45">{{ group.label }}</p>
         <ul class="mt-1.5 space-y-0.5">
           <li v-for="item in group.items" :key="item.name">

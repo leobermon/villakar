@@ -10,6 +10,7 @@ import Stripe from 'stripe';
 import { ReservationAccessDto } from '../reservations/dto/lookup-reservation.dto';
 import { ReservationsService } from '../reservations/reservations.service';
 import { PaymentLedgerService } from './payment-ledger.service';
+import { PaymentLinksService } from './payment-links.service';
 
 /** Stripe exige al menos 30 minutos de vida para una sesión de Checkout. */
 const SESSION_TTL_SECONDS = 30 * 60;
@@ -27,6 +28,7 @@ export class StripeService {
     private readonly config: ConfigService,
     private readonly reservations: ReservationsService,
     private readonly ledger: PaymentLedgerService,
+    private readonly links: PaymentLinksService,
   ) {
     const secretKey = this.config.get<string>('STRIPE_SECRET_KEY');
     this.client = secretKey ? new Stripe(secretKey) : null;
@@ -136,6 +138,11 @@ export class StripeService {
     session: Stripe.Checkout.Session,
     eventType?: string,
   ): Promise<{ code: string; paid: boolean }> {
+    // Sesiones de links de pago (/pay/<token>): las registra PaymentLinksService.
+    if (session.metadata?.paymentLinkToken) {
+      const result = await this.links.settleStripeSession(session);
+      return { code: '', paid: result.paid };
+    }
     const code = session.metadata?.reservationCode ?? session.client_reference_id ?? '';
 
     if (session.payment_status === 'paid') {

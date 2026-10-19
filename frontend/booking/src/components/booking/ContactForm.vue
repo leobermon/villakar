@@ -70,7 +70,7 @@ async function submit() {
     </div>
 
     <template v-else>
-      <h2 class="font-display text-2xl font-semibold text-brand-950">{{ props.title }}</h2>
+      <h1 class="font-display text-2xl font-semibold text-brand-950">{{ props.title }}</h1>
       <p class="mt-2 text-sm text-brand-900/70">{{ props.intro }}</p>
 
       <form class="mt-6 grid gap-4 sm:grid-cols-2" @submit.prevent="submit">

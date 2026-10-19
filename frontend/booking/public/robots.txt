@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+# Páginas privadas: cotización y reservaciones.
+Disallow: /results
+Disallow: /reservation/
+Disallow: /pay/
+Disallow: /checkout
+
+Sitemap: https://villakarshuttle.com/sitemap.xml

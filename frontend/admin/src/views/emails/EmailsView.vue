@@ -27,13 +27,16 @@ watch(() => ({ ...store.emailFilters }), () => (page.value = 1), { deep: true })
 
 /** Reenvío fila por fila: qué orden se está enviando y cómo salió el último intento. */
 const resending = ref<number | null>(null);
+/** Fila cuyo reenvío espera confirmación ("¿Estás seguro?"), en la misma celda. */
+const confirming = ref<number | null>(null);
 const results = reactive<Record<number, { ok: boolean; text: string }>>({});
 
 async function resend(email: EmailLog) {
   if (email.reservationId === null || resending.value !== null) return;
+  confirming.value = null;
   resending.value = email.id;
   try {
-    const outcome = await store.resendConfirmation(email.reservationId);
+    const outcome = await store.resendEmail(email.reservationId, email.kind);
     results[email.id] = outcome.sent
       ? { ok: true, text: `Reenviado a ${email.toEmail}.` }
       : { ok: false, text: outcome.error ?? 'No se pudo enviar.' };
@@ -56,7 +59,7 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p class="max-w-2xl text-sm text-brand-900/65">
-        Correos que envía el sistema a los clientes. Si alguien dice que no le llegó su confirmación, revisa aquí si salió y reenvíala.
+        Correos que envía el sistema a los clientes. Si alguien dice que no le llegó un correo (reserva recibida, confirmación, agradecimiento o cancelación), revisa aquí si salió y reenvíalo.
       </p>
       <button
         type="button"
@@ -141,13 +144,20 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
       </template>
       <template #cell-actions="{ row }">
         <div class="flex flex-col items-end gap-1">
+          <div v-if="confirming === row.id" role="alertdialog" class="flex max-w-48 flex-col items-end gap-1.5 rounded-md bg-amber-50 px-2.5 py-1.5">
+            <p class="text-right text-[11px] leading-tight font-medium text-amber-900">¿Estás seguro de reenviar este correo?</p>
+            <div class="flex gap-1.5">
+              <button type="button" class="h-6 rounded-md bg-brand-600 px-2.5 text-[11px] font-semibold text-white hover:bg-brand-700" @click="resend(row)">Sí, reenviar</button>
+              <button type="button" class="h-6 rounded-md px-2.5 text-[11px] font-semibold text-brand-900 hover:bg-amber-100" @click="confirming = null">No</button>
+            </div>
+          </div>
           <button
-            v-if="row.reservationId !== null"
+            v-else-if="row.reservationId !== null"
             type="button"
             class="h-8 rounded-lg border border-brand-300 bg-white px-3 text-xs font-semibold whitespace-nowrap text-brand-700 hover:bg-brand-50 disabled:opacity-60"
             :disabled="resending !== null"
-            :aria-label="`Reenviar confirmación a ${row.toEmail}`"
-            @click="resend(row)"
+            :aria-label="`Reenviar ${EMAIL_KIND_LABEL[row.kind]} a ${row.toEmail}`"
+            @click="confirming = row.id"
           >
             {{ resending === row.id ? 'Enviando…' : 'Reenviar' }}
           </button>

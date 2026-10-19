@@ -119,6 +119,14 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   MAIL_FROM: string = 'VillaKar Transfers <no-reply@villakar.test>';
+
+  /**
+   * Copia oculta (BCC) de TODOS los correos que envía el sistema, para llevar un control en la fase
+   * de pruebas. Una o varias direcciones separadas por coma. Vacío = sin copia.
+   */
+  @IsOptional()
+  @IsString()
+  MAIL_COPY_TO?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

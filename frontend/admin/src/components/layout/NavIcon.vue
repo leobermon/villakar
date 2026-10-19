@@ -51,6 +51,11 @@ defineProps<{ name: NavItem['icon'] }>();
       <path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z" />
       <path d="M9 4v14M15 6v14" />
     </template>
+    <!-- Usuarios: dos personas -->
+    <template v-else-if="name === 'users'">
+      <circle cx="9" cy="8.5" r="3.2" />
+      <path d="M3 19.5c.4-3.3 2.8-5 6-5s5.6 1.7 6 5M16 5.6a3 3 0 0 1 0 5.8M17.5 14.8c2 .5 3.3 2 3.5 4.7" />
+    </template>
     <!-- Configuración: engrane -->
     <template v-else>
       <circle cx="12" cy="12" r="3" />

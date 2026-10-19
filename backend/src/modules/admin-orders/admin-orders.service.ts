@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { LegStatus, PaymentRecordStatus, PaymentType, Prisma, ReservationStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { AdminOrder, orderInclude, toOrder } from './admin-orders.mappers';
 import { UpdateOrderDto } from './dto';
 
@@ -30,7 +31,10 @@ const CLOSED_LEG_STATUS: Partial<Record<ReservationStatus, LegStatus>> = {
 /** Órdenes (reservas) para el panel: listado y cambios de estado, notas y choferes. */
 @Injectable()
 export class AdminOrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emails: ReservationEmailsService,
+  ) {}
 
   async list(): Promise<AdminOrder[]> {
     const rows = await this.prisma.reservation.findMany({ include: orderInclude, orderBy: { createdAt: 'desc' } });
@@ -45,7 +49,7 @@ export class AdminOrdersService {
 
   async update(id: number, dto: UpdateOrderDto, userId: number): Promise<AdminOrder> {
     const reservationId = BigInt(id);
-    await this.prisma.$transaction(async (tx) => {
+    const changedTo = await this.prisma.$transaction(async (tx): Promise<ReservationStatus | null> => {
       const current = await tx.reservation.findUnique({
         where: { id: reservationId },
         include: { legs: { orderBy: { legNumber: 'asc' } } },
@@ -78,7 +82,7 @@ export class AdminOrdersService {
         });
       }
 
-      if (!statusChanged) return;
+      if (!statusChanged) return null;
       await tx.reservationStatusHistory.create({
         data: { reservationId, fromStatus: current.status, toStatus: nextStatus, changedBy: userId, comment: 'Cambio desde el panel' },
       });
@@ -96,7 +100,14 @@ export class AdminOrdersService {
           },
         });
       }
+      return nextStatus;
     });
+
+    // Correos del cliente según el nuevo estado (fuera de la transacción, ya guardado el cambio).
+    if (changedTo === ReservationStatus.CONFIRMED) await this.emails.sendConfirmation(reservationId);
+    else if (changedTo === ReservationStatus.COMPLETED) await this.emails.sendKind(reservationId, 'RESERVATION_COMPLETED');
+    else if (changedTo === ReservationStatus.CANCELLED) await this.emails.sendKind(reservationId, 'RESERVATION_CANCELLED');
+
     return this.get(id);
   }
 }

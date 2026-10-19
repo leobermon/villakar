@@ -222,3 +222,49 @@ export function confirmStripePayment(sessionId: string): Promise<PaymentReturnRe
 export function capturePaypalPayment(orderId: string): Promise<PaymentReturnResult> {
   return apiRequest('/payments/paypal/capture', { method: 'POST', json: { orderId } });
 }
+
+// ---- Links de pago (/pay/<token>) ----
+
+/** Lo que muestra la página de un link de pago (sin correo ni teléfono del cliente). */
+export interface PaymentLinkInfo {
+  token: string;
+  description: string;
+  amount: number;
+  currency: 'USD';
+  customerName: string;
+  /** Código de la reserva a la que abona, si el link es de una orden. */
+  reservationCode: string | null;
+  status: 'ACTIVE' | 'PAID' | 'EXPIRED' | 'CANCELLED';
+  expiresAt: string;
+  paidAt: string | null;
+  methods: { card: boolean; paypal: boolean };
+}
+
+export function fetchPaymentLink(token: string): Promise<PaymentLinkInfo> {
+  return apiRequest(`/payment-links/${encodeURIComponent(token)}`);
+}
+
+/** Crea el cobro del link con el proveedor y devuelve la URL a la que hay que redirigir. */
+export async function startLinkPayment(token: string, method: 'card' | 'paypal'): Promise<string> {
+  const path = `/payment-links/${encodeURIComponent(token)}`;
+  if (method === 'card') {
+    const { url } = await apiRequest<{ url: string }>(`${path}/stripe`, { method: 'POST' });
+    return url;
+  }
+  const { approveUrl } = await apiRequest<{ approveUrl: string }>(`${path}/paypal`, { method: 'POST' });
+  return approveUrl;
+}
+
+export interface PaymentLinkReturnResult {
+  token: string;
+  paid: boolean;
+  message?: string;
+}
+
+export function confirmLinkStripe(sessionId: string): Promise<PaymentLinkReturnResult> {
+  return apiRequest('/payment-links/stripe/confirm', { method: 'POST', json: { sessionId } });
+}
+
+export function captureLinkPaypal(orderId: string): Promise<PaymentLinkReturnResult> {
+  return apiRequest('/payment-links/paypal/capture', { method: 'POST', json: { orderId } });
+}

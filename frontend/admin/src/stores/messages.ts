@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, reactive, ref } from 'vue';
 import { ApiError, api } from '@/api/client';
-import type { ContactRequest, ContactStatus, ContactUpdate, EmailLog, EmailStatus, ResendResult } from '@/types/messages';
+import type { ContactRequest, ContactStatus, ContactUpdate, EmailKind, EmailLog, EmailStatus, ResendResult } from '@/types/messages';
 
 export interface EmailFilters {
   query: string;
@@ -62,10 +62,17 @@ export const useMessagesStore = defineStore('messages', () => {
     }
   }
 
-  /** Reenvía la confirmación de una orden; refresca el registro para mostrar el intento nuevo. */
-  async function resendConfirmation(reservationId: number): Promise<ResendResult> {
-    const result = await api<ResendResult>(`/admin/orders/${reservationId}/resend-confirmation`, { method: 'POST' });
-    await loadEmails(true);
+  /** Historial de correos por orden (se carga al abrir el detalle de la orden). */
+  const orderEmails = reactive<Record<number, EmailLog[]>>({});
+
+  async function loadOrderEmails(orderId: number): Promise<void> {
+    orderEmails[orderId] = await api<EmailLog[]>(`/admin/orders/${orderId}/emails`);
+  }
+
+  /** Reenvía un correo de una orden; refresca los historiales para mostrar el intento nuevo. */
+  async function resendEmail(reservationId: number, kind: EmailKind): Promise<ResendResult> {
+    const result = await api<ResendResult>(`/admin/orders/${reservationId}/resend-email`, { method: 'POST', json: { kind } });
+    await Promise.all([loadOrderEmails(reservationId), loadEmails(true)]);
     return result;
   }
 
@@ -104,7 +111,9 @@ export const useMessagesStore = defineStore('messages', () => {
     filteredEmails,
     failedEmails,
     loadEmails,
-    resendConfirmation,
+    orderEmails,
+    loadOrderEmails,
+    resendEmail,
     contacts,
     contactsLoading,
     contactsError,

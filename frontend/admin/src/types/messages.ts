@@ -1,9 +1,12 @@
 export type EmailStatus = 'SENT' | 'FAILED';
 
+/** Tipos de correo que el sistema envía al cliente. */
+export type EmailKind = 'RESERVATION_PENDING' | 'RESERVATION_CONFIRMATION' | 'RESERVATION_COMPLETED' | 'RESERVATION_CANCELLED';
+
 /** Correo que envió el sistema al cliente (registro de /api/admin/emails). */
 export interface EmailLog {
   id: number;
-  kind: 'RESERVATION_CONFIRMATION';
+  kind: EmailKind;
   reservationId: number | null;
   reservationCode: string | null;
   customerName: string | null;

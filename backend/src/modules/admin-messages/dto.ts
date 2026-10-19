@@ -1,5 +1,10 @@
-import { ContactRequestStatus } from '@prisma/client';
+import { ContactRequestStatus, EmailKind } from '@prisma/client';
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class ResendEmailDto {
+  @IsEnum(EmailKind, { message: 'El tipo de correo no es válido.' })
+  kind: EmailKind;
+}
 
 export class UpdateContactRequestDto {
   @IsOptional()

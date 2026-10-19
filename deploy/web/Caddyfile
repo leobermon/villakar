@@ -34,7 +34,8 @@ www.{$DOMAIN} {
 	import common
 	handle {
 		root * /srv/booking
-		try_files {path} /index.html
+		# /contact y /terms tienen su HTML prerenderizado (contact.html, terms.html); el resto es la app.
+		try_files {path} {path}.html /index.html
 		file_server
 	}
 }

@@ -46,6 +46,12 @@ export const router = createRouter({
       component: () => import('@/views/contacts/ContactsView.vue'),
       meta: { title: 'Mensajes' },
     },
+    {
+      path: '/users',
+      name: 'users',
+      component: () => import('@/views/users/UsersView.vue'),
+      meta: { title: 'Usuarios' },
+    },
     { path: '/rates', name: 'rates', component: () => import('@/views/rates/RatesView.vue'), meta: { title: 'Tarifas' } },
     {
       path: '/vehicles',

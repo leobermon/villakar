@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { EmailKind, Prisma, ReservationStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { UpdateContactRequestDto } from './dto';
@@ -12,7 +12,7 @@ type EmailLogRow = Prisma.EmailLogGetPayload<{ include: typeof emailInclude }>;
 
 export interface AdminEmail {
   id: number;
-  kind: 'RESERVATION_CONFIRMATION';
+  kind: EmailKind;
   reservationId: number | null;
   reservationCode: string | null;
   customerName: string | null;
@@ -37,6 +37,15 @@ export interface AdminContactRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Qué correos tiene sentido enviar según el estado de la orden (reenvíos desde el panel). */
+const ALLOWED_BY_STATUS: Record<ReservationStatus, EmailKind[]> = {
+  PENDING: ['RESERVATION_PENDING'],
+  CONFIRMED: ['RESERVATION_CONFIRMATION'],
+  COMPLETED: ['RESERVATION_CONFIRMATION', 'RESERVATION_COMPLETED'],
+  CANCELLED: ['RESERVATION_CANCELLED'],
+  NO_SHOW: [],
+};
 
 function toEmail(row: EmailLogRow): AdminEmail {
   return {
@@ -87,13 +96,29 @@ export class AdminMessagesService {
     return rows.map(toEmail);
   }
 
-  /** Reenvía el correo de confirmación de una orden y devuelve cómo salió. */
-  async resendConfirmation(reservationId: number): Promise<{ sent: boolean; error: string | null; email: AdminEmail | null }> {
+  /** Historial de correos de una orden: el más reciente primero. */
+  async listOrderEmails(reservationId: number): Promise<AdminEmail[]> {
     const id = BigInt(reservationId);
     const reservation = await this.prisma.reservation.findUnique({ where: { id }, select: { id: true } });
     if (!reservation) throw new NotFoundException('La orden no existe.');
+    const rows = await this.prisma.emailLog.findMany({
+      where: { reservationId: id },
+      include: emailInclude,
+      orderBy: { id: 'desc' },
+    });
+    return rows.map(toEmail);
+  }
 
-    const result = await this.emails.resendConfirmation(id);
+  /** Reenvía un correo de una orden y devuelve cómo salió. Solo los que corresponden a su estado actual. */
+  async resend(reservationId: number, kind: EmailKind): Promise<{ sent: boolean; error: string | null; email: AdminEmail | null }> {
+    const id = BigInt(reservationId);
+    const reservation = await this.prisma.reservation.findUnique({ where: { id }, select: { id: true, status: true } });
+    if (!reservation) throw new NotFoundException('La orden no existe.');
+    if (!ALLOWED_BY_STATUS[reservation.status].includes(kind)) {
+      throw new BadRequestException('Ese correo no corresponde al estado actual de la orden.');
+    }
+
+    const result = await this.emails.resend(id, kind);
     const latest = await this.prisma.emailLog.findFirst({
       where: { reservationId: id },
       include: emailInclude,

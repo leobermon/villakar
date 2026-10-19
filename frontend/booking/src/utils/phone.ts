@@ -43,6 +43,8 @@ export function countryOption(code: CountryCode): CountryOption {
 
 /** País sugerido por el idioma del navegador (en-US → US, es-MX → MX); si no, Estados Unidos. */
 export function defaultCountry(): CountryCode {
+  // En el prerenderizado (Node) no hay navegador: se sugiere Estados Unidos.
+  if (typeof navigator === 'undefined') return 'US';
   for (const language of navigator.languages ?? [navigator.language]) {
     const region = language.split('-')[1]?.toUpperCase();
     if (region && ALL_CODES.has(region)) return region as CountryCode;

@@ -2,8 +2,10 @@
 export interface NavItem {
   name: string;
   label: string;
-  icon: 'orders' | 'payments' | 'emails' | 'contacts' | 'rates' | 'vehicles' | 'zones' | 'settings';
+  icon: 'orders' | 'payments' | 'emails' | 'contacts' | 'rates' | 'vehicles' | 'zones' | 'users' | 'settings';
   ready: boolean;
+  /** Solo lo ven administradores y superadministradores. */
+  adminOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -36,6 +38,9 @@ export const NAVIGATION: NavGroup[] = [
   },
   {
     label: 'Sistema',
-    items: [{ name: 'settings', label: 'Configuración', icon: 'settings', ready: true }],
+    items: [
+      { name: 'users', label: 'Usuarios', icon: 'users', ready: true, adminOnly: true },
+      { name: 'settings', label: 'Configuración', icon: 'settings', ready: true },
+    ],
   },
 ];

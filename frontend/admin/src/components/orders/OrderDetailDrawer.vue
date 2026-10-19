@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, useId, watch } from 'vue';
+import OrderEmailsSection from '@/components/orders/OrderEmailsSection.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
 import StatusBadge from '@/components/ui/StatusBadge.vue';
 import { ORDER_STATUS, ROUTE_LABEL, SOURCE_LABEL, STATUS_TRANSITIONS, paymentSummary } from '@/config/orders';
@@ -244,6 +245,12 @@ const sectionTitle = 'text-base font-bold text-brand-950';
             </div>
           </div>
         </article>
+      </section>
+
+      <!-- Historial de correos al cliente: reserva recibida, confirmación, agradecimiento y cancelación. -->
+      <section>
+        <h3 :class="[sectionTitle, 'mb-3']">Correos al cliente</h3>
+        <OrderEmailsSection :order-id="order.id" :status="order.status" :customer-email="order.customer.email" />
       </section>
 
       <section class="space-y-3">

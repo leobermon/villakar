@@ -11,13 +11,22 @@ defineProps<{ transparent?: boolean }>();
       <RouterLink :to="{ name: 'home' }" class="flex items-center" :aria-label="`${SITE.name} home`">
         <img :src="logoUrl" :alt="SITE.name" width="1000" height="436" class="h-14 w-auto" />
       </RouterLink>
-      <RouterLink
-        :to="{ name: 'contact' }"
-        class="rounded-lg px-3 py-2 text-sm font-semibold transition"
-        :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
-      >
-        Contact
-      </RouterLink>
+      <nav class="flex items-center gap-1" aria-label="Main">
+        <RouterLink
+          :to="{ name: 'faq' }"
+          class="rounded-lg px-3 py-2 text-sm font-semibold transition"
+          :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
+        >
+          FAQ
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'contact' }"
+          class="rounded-lg px-3 py-2 text-sm font-semibold transition"
+          :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
+        >
+          Contact
+        </RouterLink>
+      </nav>
     </div>
   </header>
 </template>

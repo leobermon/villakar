@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/env.validation';
 import { AdminCatalogModule } from './modules/admin-catalog/admin-catalog.module';
 import { AdminMessagesModule } from './modules/admin-messages/admin-messages.module';
+import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { AdminOrdersModule } from './modules/admin-orders/admin-orders.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContactRequestsModule } from './modules/contact-requests/contact-requests.module';
@@ -28,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AdminCatalogModule,
     AdminOrdersModule,
     AdminMessagesModule,
+    AdminUsersModule,
     PlacesModule,
     ZonesModule,
     PricingModule,

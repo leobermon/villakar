@@ -38,6 +38,8 @@ const DESTINATIONS = [
         <p>© {{ year }} {{ SITE.name }} · Cancun & Riviera Maya</p>
         <p>
           Prices in USD ·
+          <RouterLink :to="{ name: 'faq' }" class="underline underline-offset-2 hover:text-brand-800">FAQ</RouterLink>
+          ·
           <RouterLink :to="{ name: 'terms' }" class="underline underline-offset-2 hover:text-brand-800">Terms and Conditions</RouterLink>
         </p>
       </div>

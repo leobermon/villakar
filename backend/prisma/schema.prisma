@@ -109,6 +109,9 @@ enum PaymentLinkStatus {
 
 enum EmailKind {
   RESERVATION_CONFIRMATION
+  RESERVATION_PENDING
+  RESERVATION_COMPLETED
+  RESERVATION_CANCELLED
 }
 
 enum EmailStatus {
@@ -415,6 +418,9 @@ model PaymentLink {
   amount        Decimal           @db.Decimal(10, 2)
   currency      String            @default("USD") @db.Char(3)
   status        PaymentLinkStatus @default(ACTIVE)
+  /// Proveedor del último intento de cobro desde la página pública del link.
+  provider          PaymentProvider? @map("provider")
+  providerPaymentId String?          @map("provider_payment_id") @db.VarChar(191)
   expiresAt     DateTime          @map("expires_at") @db.DateTime(0)
   paidAt        DateTime?         @map("paid_at") @db.DateTime(0)
   createdBy     BigInt?           @map("created_by") @db.UnsignedBigInt
@@ -424,6 +430,7 @@ model PaymentLink {
   reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull, map: "fk_payment_links_res")
   author      User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull, map: "fk_payment_links_user")
 
+  @@index([provider, providerPaymentId], map: "idx_payment_links_provider")
   @@index([reservationId], map: "idx_payment_links_res")
   @@index([createdBy], map: "idx_payment_links_user")
   @@map("payment_links")

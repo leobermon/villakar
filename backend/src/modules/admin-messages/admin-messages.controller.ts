@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { AdminMessagesService } from './admin-messages.service';
-import { UpdateContactRequestDto } from './dto';
+import { ResendEmailDto, UpdateContactRequestDto } from './dto';
 
 /** Comunicación con clientes: registro de correos enviados y solicitudes del formulario de contacto. */
 @Controller('admin')
@@ -14,10 +14,22 @@ export class AdminMessagesController {
     return this.messages.listEmails();
   }
 
+  /** Historial de correos de una orden. */
+  @Get('orders/:id/emails')
+  listOrderEmails(@Param('id', ParseIntPipe) id: number) {
+    return this.messages.listOrderEmails(id);
+  }
+
+  @Post('orders/:id/resend-email')
+  @HttpCode(200)
+  resendEmail(@Param('id', ParseIntPipe) id: number, @Body() dto: ResendEmailDto) {
+    return this.messages.resend(id, dto.kind);
+  }
+
   @Post('orders/:id/resend-confirmation')
   @HttpCode(200)
   resendConfirmation(@Param('id', ParseIntPipe) id: number) {
-    return this.messages.resendConfirmation(id);
+    return this.messages.resend(id, 'RESERVATION_CONFIRMATION');
   }
 
   @Get('contact-requests')
