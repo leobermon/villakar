@@ -130,7 +130,10 @@ onMounted(async () => {
           </p>
 
           <div class="mt-6 flex items-end justify-between rounded-2xl bg-brand-50 px-5 py-4">
-            <span class="text-sm font-semibold text-brand-900/70">Amount to pay</span>
+            <span>
+              <span class="block text-sm font-semibold text-brand-900/70">Amount to pay</span>
+              <span class="block text-xs font-semibold text-emerald-700">Tax Included</span>
+            </span>
             <span class="font-display text-3xl font-bold text-brand-950">
               {{ formatUsd(link.amount) }} <span class="font-sans text-sm font-medium text-brand-900/60">USD</span>
             </span>

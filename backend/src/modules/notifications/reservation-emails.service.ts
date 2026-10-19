@@ -22,7 +22,7 @@ export type SendResult = { ok: true } | { ok: false; error: string };
 interface EmailCopy {
   subject: (code: string) => string;
   heading: string;
-  intro: (firstName: string) => string;
+  intro: (name: string) => string;
   /** Párrafo bajo el encabezado que explica qué sigue. */
   note: string;
   icon: string;
@@ -197,7 +197,7 @@ export class ReservationEmailsService {
       company.name,
       '',
       copy.heading,
-      copy.intro(r.customer.firstName),
+      copy.intro(`${r.customer.firstName} ${r.customer.lastName}`.trim()),
       '',
       copy.note,
       '',
@@ -299,7 +299,7 @@ export class ReservationEmailsService {
             </td>
             <td valign="top">
               <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;">${esc(copy.heading)}</div>
-              <div style="font-size:14px;color:#f3f3f3;margin-top:4px;">${esc(copy.intro(r.customer.firstName))}</div>
+              <div style="font-size:14px;color:#f3f3f3;margin-top:4px;">${esc(copy.intro(`${r.customer.firstName} ${r.customer.lastName}`.trim()))}</div>
               <div style="font-size:11px;color:#f3f3f3;margin-top:12px;">Reservation code</div>
               <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;letter-spacing:3px;">${esc(r.code)}</div>
             </td>

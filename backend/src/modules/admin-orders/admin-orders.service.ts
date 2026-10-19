@@ -106,7 +106,7 @@ export class AdminOrdersService {
     // Correos del cliente según el nuevo estado (fuera de la transacción, ya guardado el cambio).
     if (changedTo === ReservationStatus.CONFIRMED) await this.emails.sendConfirmation(reservationId);
     else if (changedTo === ReservationStatus.COMPLETED) await this.emails.sendKind(reservationId, 'RESERVATION_COMPLETED');
-    else if (changedTo === ReservationStatus.CANCELLED) await this.emails.sendKind(reservationId, 'RESERVATION_CANCELLED');
+    // Al cancelar no se envía ningún correo al cliente.
 
     return this.get(id);
   }
