@@ -48,6 +48,7 @@ interface GoogleAutocompleteResponse {
   suggestions?: Array<{
     placePrediction?: {
       placeId: string;
+      types?: string[];
       text?: { text: string };
       structuredFormat?: { mainText?: { text: string }; secondaryText?: { text: string } };
     };
@@ -65,11 +66,47 @@ const SEARCH_AREA = {
   },
 };
 
-// El buscador solo ofrece hoteles y alojamientos (tipos principales de Google, máximo 5)
-// y solo en Quintana Roo.
-const LODGING_PRIMARY_TYPES = ['hotel', 'resort_hotel', 'lodging', 'hostel', 'guest_house'];
+// El buscador solo ofrece alojamientos, y solo en Quintana Roo. Google limita el filtro por tipo
+// principal a 5 tipos por búsqueda, así que se hacen tres búsquedas en paralelo y se mezclan:
+//   - hoteles y alojamientos clásicos
+//   - casas, cuartos y rentas vacacionales (muchos Airbnb entran aquí)
+//   - condominios, departamentos y residenciales
+const SEARCH_TYPE_GROUPS: string[][] = [
+  ['hotel', 'resort_hotel', 'lodging', 'hostel', 'guest_house'],
+  ['private_guest_room', 'bed_and_breakfast', 'cottage', 'inn', 'extended_stay_hotel'],
+  ['condominium_complex', 'apartment_complex', 'apartment_building', 'housing_complex'],
+];
+/** Cuántas sugerencias se muestran como máximo después de mezclar los tres grupos. */
+const MAX_SUGGESTIONS = 8;
+/** Cualquiera de estos tipos de Google cuenta como alojamiento al cotizar. */
+const ACCOMMODATION_TYPES = new Set(SEARCH_TYPE_GROUPS.flat().concat(['motel', 'campground', 'camping_cabin', 'farmstay', 'mobile_home_park', 'rv_park', 'japanese_inn']));
+/**
+ * Hay alojamientos que Google clasifica mal (p. ej. un condominio listado como "proveedor"), así
+ * que no traen ningún tipo de alojamiento. Se aceptan si su NOMBRE dice que lo son (condo, villas,
+ * residencial, airbnb…), salvo que Google los marque claramente como negocio de otro giro.
+ */
+const NAME_KEYWORDS =
+  /\b(hotel|hotels|hostal|hostel|resort|villa|villas|condo|condos|condominio|condominios|condominium|condominiums|residencial|residencias|residences|apartment|apartments|apartamento|apartamentos|departamento|departamentos|suite|suites|casa|cabana|cabanas|cabin|cabins|bungalow|bungalows|posada|inn|lodge|loft|penthouse|airbnb|rental|rentals|renta|rentas)\b/;
+const NON_LODGING_TYPES = new Set([
+  'restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery', 'store', 'supermarket', 'grocery_store',
+  'convenience_store', 'shopping_mall', 'school', 'university', 'hospital', 'doctor', 'pharmacy', 'bank', 'atm',
+  'gas_station', 'car_dealer', 'car_repair', 'car_rental', 'car_wash', 'church', 'gym', 'night_club', 'airport',
+  'bus_station', 'parking', 'park', 'tourist_attraction', 'museum', 'movie_theater', 'beach',
+]);
+
+/** Quita acentos y pasa a minúsculas para comparar nombres ("Cabañas" → "cabanas"). */
+function normalizeName(name: string): string {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+/** ¿Es un alojamiento? Por su tipo en Google o, si Google lo clasificó mal, por su nombre. */
+function looksLikeAccommodation(types: string[], name: string): boolean {
+  if (types.some((type) => ACCOMMODATION_TYPES.has(type))) return true;
+  return NAME_KEYWORDS.test(normalizeName(name)) && !types.some((type) => NON_LODGING_TYPES.has(type));
+}
+
 const QUINTANA_ROO_PATTERN = /quintana\s*roo|\bq\.\s?r\./i;
-const NOT_LODGING_MESSAGE = 'Please choose a hotel or lodging in Quintana Roo.';
+const NOT_LODGING_MESSAGE = 'Please choose a hotel, resort, condo or vacation rental in Quintana Roo.';
 
 const PLACE_SELECT = Prisma.sql`
   SELECT id, google_place_id, name, formatted_address, place_type,
@@ -101,6 +138,29 @@ export class PlacesService {
    * Google cobra las búsquedas + el detalle como una sola sesión.
    */
   async autocomplete(input: string, sessionToken: string): Promise<PlaceSuggestion[]> {
+    // Tres búsquedas por tipo y una abierta (sin tipo) que rescata alojamientos mal clasificados por Google.
+    const searches = [...SEARCH_TYPE_GROUPS.map((types) => this.autocompleteGroup(input, sessionToken, types)), this.autocompleteGroup(input, sessionToken, null)];
+    const groups = await Promise.allSettled(searches);
+    const ok = groups.flatMap((group) => (group.status === 'fulfilled' ? [group.value] : []));
+    // Si Google falló en todas, sí es un error; si falló solo una, se muestran las demás.
+    if (ok.length === 0) throw new ServiceUnavailableException('Location search temporarily unavailable');
+
+    // Se mezclan por turnos (hotel, casa, condominio, hotel…) sin repetir lugares.
+    const merged: PlaceSuggestion[] = [];
+    const seen = new Set<string>();
+    for (let index = 0; merged.length < MAX_SUGGESTIONS && ok.some((list) => index < list.length); index++) {
+      for (const list of ok) {
+        const suggestion = list[index];
+        if (!suggestion || seen.has(suggestion.googlePlaceId) || merged.length >= MAX_SUGGESTIONS) continue;
+        seen.add(suggestion.googlePlaceId);
+        merged.push(suggestion);
+      }
+    }
+    return merged;
+  }
+
+  /** Una búsqueda de Google limitada a un grupo de tipos de lugar; solo resultados de Quintana Roo. */
+  private async autocompleteGroup(input: string, sessionToken: string, types: string[] | null): Promise<PlaceSuggestion[]> {
     let response: Response;
     try {
       response = await fetch(`${GOOGLE_PLACES_URL}/places:autocomplete`, {
@@ -114,7 +174,7 @@ export class PlacesService {
           sessionToken,
           languageCode: 'en',
           includedRegionCodes: ['mx'],
-          includedPrimaryTypes: LODGING_PRIMARY_TYPES,
+          ...(types ? { includedPrimaryTypes: types } : {}),
           locationRestriction: SEARCH_AREA,
         }),
         signal: AbortSignal.timeout(5_000),
@@ -131,7 +191,10 @@ export class PlacesService {
 
     const data = (await response.json()) as GoogleAutocompleteResponse;
     return (data.suggestions ?? []).flatMap(({ placePrediction: prediction }) =>
-      prediction && isInQuintanaRoo(prediction.structuredFormat?.secondaryText?.text ?? prediction.text?.text)
+      prediction &&
+      isInQuintanaRoo(prediction.structuredFormat?.secondaryText?.text ?? prediction.text?.text) &&
+      // La búsqueda abierta solo deja pasar lo que parece alojamiento; las de tipo ya vienen filtradas por Google.
+      (types !== null || looksLikeAccommodation(prediction.types ?? [], prediction.structuredFormat?.mainText?.text ?? prediction.text?.text ?? ''))
         ? [
             {
               googlePlaceId: prediction.placeId,
@@ -154,7 +217,8 @@ export class PlacesService {
     }
 
     const cached = await this.findByGoogleId(googlePlaceId);
-    if (cached && this.isFresh(cached.last_synced_at)) return assertLodging(toResolvedPlace(cached));
+    // Un lugar guardado antes con otro tipo (p. ej. un condominio) se vuelve a consultar para reclasificarlo.
+    if (cached && cached.place_type === PlaceType.HOTEL && this.isFresh(cached.last_synced_at)) return toResolvedPlace(cached);
 
     const details = await this.fetchGoogleDetails(googlePlaceId, sessionToken);
     if (!details) {
@@ -169,7 +233,7 @@ export class PlacesService {
     }
 
     const types = details.types ?? [];
-    if (!types.includes('lodging') || !isInQuintanaRoo(details.formattedAddress)) {
+    if (!looksLikeAccommodation(types, details.displayName?.text ?? '') || !isInQuintanaRoo(details.formattedAddress)) {
       throw new BadRequestException(NOT_LODGING_MESSAGE);
     }
     const name = (details.displayName?.text ?? 'Unnamed place').slice(0, 190);
@@ -178,7 +242,7 @@ export class PlacesService {
 
     await this.prisma.$executeRaw`
       INSERT INTO places (google_place_id, place_type, name, formatted_address, location, google_types, last_synced_at)
-      VALUES (${googlePlaceId}, ${placeTypeFromGoogle(types)}, ${name}, ${address},
+      VALUES (${googlePlaceId}, ${placeTypeFromGoogle(types, name)}, ${name}, ${address},
               ST_GeomFromText(${wkt}, 4326, 'axis-order=long-lat'), ${JSON.stringify(types)}, NOW()) AS incoming
       ON DUPLICATE KEY UPDATE
         name = incoming.name,
@@ -249,9 +313,10 @@ function assertLodging(place: ResolvedPlace): ResolvedPlace {
   return place;
 }
 
-function placeTypeFromGoogle(types: string[]): PlaceType {
+function placeTypeFromGoogle(types: string[], name: string): PlaceType {
   if (types.includes('airport')) return PlaceType.AIRPORT;
-  if (types.includes('lodging')) return PlaceType.HOTEL;
+  // Todo alojamiento (hotel, casa, condominio, departamento…) se trata como hotel: se cotiza por zona.
+  if (looksLikeAccommodation(types, name)) return PlaceType.HOTEL;
   return PlaceType.OTHER;
 }
 
