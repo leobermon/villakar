@@ -30,7 +30,7 @@ const youId = computed(() => auth.user?.id ?? -1);
 </script>
 
 <template>
-  <div class="mx-auto max-w-5xl space-y-3">
+  <div class="mx-auto max-w-[110rem] space-y-3">
     <LoadErrorBanner :message="store.loadError" @retry="store.load(true)" />
 
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

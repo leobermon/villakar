@@ -1,5 +1,5 @@
 import type { BadgeTone } from '@/components/ui/badge';
-import type { Order, OrderSource, OrderStatus, PaymentMethod, RouteType } from '@/types/order';
+import type { Order, OrderLeg, OrderSource, OrderStatus, PaymentMethod, RouteType } from '@/types/order';
 
 export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: BadgeTone }> = {
   PENDING: { label: 'Pendiente', tone: 'warning' },
@@ -29,6 +29,18 @@ export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   CANCELLED: [],
   NO_SHOW: [],
 };
+
+/**
+ * Estado de un tramo tal como se ve en la lista: el del propio tramo si ya se cerró (completado, cancelado,
+ * no show) y, si sigue abierto, el de la orden (pendiente o confirmado).
+ */
+export function legDisplayStatus(order: Order, leg: OrderLeg): OrderStatus {
+  if (leg.status === 'COMPLETED' || leg.status === 'CANCELLED' || leg.status === 'NO_SHOW') return leg.status;
+  return order.status;
+}
+
+/** Cambios de estado de un tramo abierto de una orden confirmada. */
+export const LEG_CLOSE_OPTIONS: Array<'COMPLETED' | 'CANCELLED' | 'NO_SHOW'> = ['COMPLETED', 'CANCELLED', 'NO_SHOW'];
 
 export const PAYMENT_METHOD_LABEL: Record<Exclude<PaymentMethod, null>, string> = {
   STRIPE: 'Tarjeta',

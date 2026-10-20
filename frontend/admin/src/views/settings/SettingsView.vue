@@ -50,7 +50,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload)
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl space-y-5">
+  <div class="mx-auto max-w-6xl space-y-5">
     <p class="text-sm text-brand-900/65">Datos del negocio y reglas del sitio. Cada sección se guarda por separado.</p>
 
     <TabBar :model-value="tab" :tabs="tabs" label="Secciones de configuración" @update:model-value="setTab" />

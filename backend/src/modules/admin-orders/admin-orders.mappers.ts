@@ -52,6 +52,7 @@ export function toOrder(row: OrderRow) {
       terminal: leg.terminal,
       driverName: leg.driverName,
       driverPhone: leg.driverPhone,
+      status: leg.status,
     })),
     specialRequests: row.specialRequests,
     internalNotes: row.internalNotes,

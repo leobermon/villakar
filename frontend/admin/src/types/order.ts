@@ -15,6 +15,9 @@ export type TripType = 'ONE_WAY' | 'ROUND_TRIP';
 export type RouteType = 'AIRPORT_HOTEL' | 'HOTEL_AIRPORT' | 'HOTEL_HOTEL';
 export type OrderSource = 'WEB' | 'ADMIN' | 'PHONE' | 'AGENCY';
 
+/** Estado de un tramo. Los abiertos (SCHEDULED, ASSIGNED, IN_PROGRESS) siguen el estado de la orden. */
+export type LegStatus = 'SCHEDULED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+
 export interface OrderLeg {
   legNumber: number;
   originName: string;
@@ -26,6 +29,7 @@ export interface OrderLeg {
   terminal: string | null;
   driverName: string | null;
   driverPhone: string | null;
+  status: LegStatus;
 }
 
 export interface Order {
@@ -54,5 +58,6 @@ export interface Order {
 export interface OrderUpdate {
   status?: OrderStatus;
   internalNotes?: string | null;
-  legs?: Array<Pick<OrderLeg, 'legNumber' | 'driverName' | 'driverPhone'>>;
+  /** Chofer y/o cierre de un tramo (completado, cancelado, no show) sin tocar el otro. */
+  legs?: Array<Pick<OrderLeg, 'legNumber'> & Partial<Pick<OrderLeg, 'driverName' | 'driverPhone'>> & { status?: 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' }>;
 }

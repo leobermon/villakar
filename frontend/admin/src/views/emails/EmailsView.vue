@@ -54,12 +54,12 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-6">
+  <div class="mx-auto max-w-[110rem] space-y-6">
     <LoadErrorBanner :message="store.emailsError" @retry="store.loadEmails(true)" />
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <p class="max-w-2xl text-sm text-brand-900/65">
-        Correos que envía el sistema a los clientes. Si alguien dice que no le llegó un correo (reserva recibida, confirmación, agradecimiento o cancelación), revisa aquí si salió y reenvíalo.
+      <p class="min-w-0 text-xs text-brand-900/65 sm:truncate">
+        Correos que envía el sistema a los clientes. Si alguien no recibió uno, revisa aquí si salió y reenvíalo.
       </p>
       <button
         type="button"
@@ -70,24 +70,24 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
       </button>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-3">
-      <div class="rounded-xl border border-fog-200 bg-white p-4">
-        <p class="text-xs font-semibold text-brand-900/70">Correos registrados</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ store.emails.length }}</p>
+    <div class="flex flex-wrap gap-2">
+      <div class="flex items-center gap-2 rounded-lg border border-fog-200 bg-white px-3 py-1.5">
+        <span class="text-xs font-semibold text-brand-900/70">Correos registrados</span>
+        <span class="text-lg leading-none font-bold tabular-nums">{{ store.emails.length }}</span>
       </div>
-      <div class="rounded-xl border border-fog-200 bg-white p-4">
-        <p class="text-xs font-semibold text-brand-900/70">Enviados</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ store.emails.length - store.failedEmails }}</p>
+      <div class="flex items-center gap-2 rounded-lg border border-fog-200 bg-white px-3 py-1.5">
+        <span class="text-xs font-semibold text-brand-900/70">Enviados</span>
+        <span class="text-lg leading-none font-bold tabular-nums">{{ store.emails.length - store.failedEmails }}</span>
       </div>
       <button
         type="button"
-        class="rounded-xl border bg-white p-4 text-left transition hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+        class="flex items-center gap-2 rounded-lg border bg-white px-3 py-1.5 transition hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
         :class="store.failedEmails ? 'border-accent-500/40' : 'border-fog-200'"
+        :title="store.failedEmails ? 'Ver cuáles fallaron' : 'Todo salió bien'"
         @click="store.emailFilters.status = 'FAILED'"
       >
-        <p class="text-xs font-semibold" :class="store.failedEmails ? 'text-accent-600' : 'text-brand-900/70'">Fallaron</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ store.failedEmails }}</p>
-        <p class="text-xs text-brand-900/60">{{ store.failedEmails ? 'Ver cuáles' : 'Todo salió bien' }}</p>
+        <span class="text-xs font-semibold" :class="store.failedEmails ? 'text-accent-600' : 'text-brand-900/70'">Fallaron</span>
+        <span class="text-lg leading-none font-bold tabular-nums">{{ store.failedEmails }}</span>
       </button>
     </div>
 
@@ -147,8 +147,8 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
           <div v-if="confirming === row.id" role="alertdialog" class="flex max-w-48 flex-col items-end gap-1.5 rounded-md bg-amber-50 px-2.5 py-1.5">
             <p class="text-right text-[11px] leading-tight font-medium text-amber-900">¿Estás seguro de reenviar este correo?</p>
             <div class="flex gap-1.5">
-              <button type="button" class="h-6 rounded-md bg-brand-600 px-2.5 text-[11px] font-semibold text-white hover:bg-brand-700" @click="resend(row)">Sí, reenviar</button>
-              <button type="button" class="h-6 rounded-md px-2.5 text-[11px] font-semibold text-brand-900 hover:bg-amber-100" @click="confirming = null">No</button>
+              <button type="button" class="h-6 rounded-md bg-brand-600 px-2.5 text-xs font-semibold text-white hover:bg-brand-700" @click="resend(row)">Sí, reenviar</button>
+              <button type="button" class="h-6 rounded-md px-2.5 text-xs font-semibold text-brand-900 hover:bg-amber-100" @click="confirming = null">No</button>
             </div>
           </div>
           <button

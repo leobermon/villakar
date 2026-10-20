@@ -6,8 +6,8 @@ import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
  * clicable, foco atrapado dentro del panel y devuelve el foco al elemento que
  * lo abrió al cerrarse.
  */
-/** size lg: panel más ancho, para registros con mucha información (p. ej. órdenes). */
-const props = defineProps<{ open: boolean; title: string; subtitle?: string; size?: 'md' | 'lg' }>();
+/** size lg: panel más ancho; xl: el más ancho, para registros con mucha información (p. ej. órdenes). */
+const props = defineProps<{ open: boolean; title: string; subtitle?: string; size?: 'md' | 'lg' | 'xl' }>();
 const emit = defineEmits<{ close: [] }>();
 
 const titleId = useId();
@@ -83,12 +83,15 @@ function onKeydown(event: KeyboardEvent) {
           :aria-labelledby="titleId"
           tabindex="-1"
           class="relative flex h-full w-full flex-col bg-white shadow-2xl outline-none"
-          :class="props.size === 'lg' ? 'max-w-3xl' : 'max-w-xl'"
+          :class="props.size === 'xl' ? 'max-w-5xl' : props.size === 'lg' ? 'max-w-3xl' : 'max-w-xl'"
           @keydown="onKeydown"
         >
           <header class="flex items-start justify-between gap-4 border-b border-fog-200 px-5 py-4">
             <div class="min-w-0">
-              <h2 :id="titleId" class="truncate text-lg font-bold text-brand-950">{{ props.title }}</h2>
+              <div class="flex items-center gap-2">
+                <h2 :id="titleId" class="truncate text-lg font-bold text-brand-950">{{ props.title }}</h2>
+                <slot name="title-extra" />
+              </div>
               <p v-if="props.subtitle" class="text-sm text-brand-900/60">{{ props.subtitle }}</p>
               <slot name="header" />
             </div>

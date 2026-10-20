@@ -22,11 +22,27 @@ const STATUS_LABEL: Record<ReservationStatus, string> = {
   NO_SHOW: 'No show',
 };
 
-/** Estado de los tramos cuando la orden termina sin servicio. */
-const CLOSED_LEG_STATUS: Partial<Record<ReservationStatus, LegStatus>> = {
+/** Estado que reciben los tramos aún abiertos cuando la orden se cierra completa. */
+const LEG_STATUS_OF_ORDER: Partial<Record<ReservationStatus, LegStatus>> = {
+  COMPLETED: LegStatus.COMPLETED,
   CANCELLED: LegStatus.CANCELLED,
   NO_SHOW: LegStatus.NO_SHOW,
 };
+
+/** Un tramo abierto todavía no se completa, cancela ni se marca como no show. */
+const OPEN_LEG_STATUS: LegStatus[] = [LegStatus.SCHEDULED, LegStatus.ASSIGNED, LegStatus.IN_PROGRESS];
+
+/**
+ * Estado de la orden a partir de sus tramos. Mientras quede un tramo abierto la orden sigue como está.
+ * Cerrados todos: si algún tramo se completó, la orden está completada (hubo servicio); si no, no show
+ * cuando alguno fue no show, y cancelada en los demás casos.
+ */
+function orderStatusFromLegs(legs: LegStatus[]): ReservationStatus | null {
+  if (legs.some((status) => OPEN_LEG_STATUS.includes(status))) return null;
+  if (legs.includes(LegStatus.COMPLETED)) return ReservationStatus.COMPLETED;
+  if (legs.includes(LegStatus.NO_SHOW)) return ReservationStatus.NO_SHOW;
+  return ReservationStatus.CANCELLED;
+}
 
 /** Órdenes (reservas) para el panel: listado y cambios de estado, notas y choferes. */
 @Injectable()
@@ -76,31 +92,77 @@ export class AdminOrdersService {
       if (Object.keys(data).length > 0) await tx.reservation.update({ where: { id: reservationId }, data });
 
       for (const change of dto.legs ?? []) {
+        const driver: Prisma.ReservationLegUpdateInput = {};
+        if (change.driverName !== undefined) driver.driverName = clean(change.driverName);
+        if (change.driverPhone !== undefined) driver.driverPhone = clean(change.driverPhone);
+        if (Object.keys(driver).length === 0) continue;
         await tx.reservationLeg.update({
           where: { reservationId_legNumber: { reservationId, legNumber: change.legNumber } },
-          data: { driverName: clean(change.driverName), driverPhone: clean(change.driverPhone) },
+          data: driver,
         });
       }
 
-      if (!statusChanged) return null;
+      // La orden se cierra completa: los tramos que seguían abiertos reciben el mismo estado.
+      const legStatusOfOrder = LEG_STATUS_OF_ORDER[nextStatus];
+      if (statusChanged && legStatusOfOrder) {
+        await tx.reservationLeg.updateMany({
+          where: { reservationId, status: { in: OPEN_LEG_STATUS } },
+          data: { status: legStatusOfOrder },
+        });
+      }
+
+      // Cierre de un solo tramo (completarlo, cancelarlo o marcarlo no show) sin tocar el otro.
+      const legClosures = (dto.legs ?? []).filter((change) => change.status);
+      if (legClosures.length > 0) {
+        if (statusChanged || current.status !== ReservationStatus.CONFIRMED) {
+          throw new BadRequestException('Solo se puede cerrar un tramo cuando la orden está confirmada.');
+        }
+        for (const change of legClosures) {
+          const leg = current.legs.find((candidate) => candidate.legNumber === change.legNumber)!;
+          if (!OPEN_LEG_STATUS.includes(leg.status)) {
+            throw new BadRequestException(`El tramo ${change.legNumber} ya está cerrado.`);
+          }
+          await tx.reservationLeg.update({
+            where: { reservationId_legNumber: { reservationId, legNumber: change.legNumber } },
+            data: { status: change.status },
+          });
+        }
+      }
+
+      // El estado de la orden sigue al de sus tramos cuando el último queda cerrado.
+      let finalStatus = nextStatus;
+      if (legClosures.length > 0) {
+        const legs = await tx.reservationLeg.findMany({ where: { reservationId }, select: { status: true } });
+        const derived = orderStatusFromLegs(legs.map((leg) => leg.status));
+        if (derived) {
+          finalStatus = derived;
+          await tx.reservation.update({ where: { id: reservationId }, data: { status: derived } });
+        }
+      }
+      if (finalStatus === current.status) return null;
+
       await tx.reservationStatusHistory.create({
-        data: { reservationId, fromStatus: current.status, toStatus: nextStatus, changedBy: userId, comment: 'Cambio desde el panel' },
+        data: {
+          reservationId,
+          fromStatus: current.status,
+          toStatus: finalStatus,
+          changedBy: userId,
+          comment: finalStatus === nextStatus ? 'Cambio desde el panel' : 'Todos los tramos cerrados',
+        },
       });
 
-      const closedLegStatus = CLOSED_LEG_STATUS[nextStatus];
-      if (closedLegStatus) {
-        await tx.reservationLeg.updateMany({ where: { reservationId }, data: { status: closedLegStatus } });
+      if (finalStatus === ReservationStatus.CANCELLED || finalStatus === ReservationStatus.NO_SHOW) {
         // El efectivo o la transferencia que se esperaban ya no se van a cobrar.
         await tx.payment.updateMany({
           where: { reservationId, type: PaymentType.CHARGE, status: PaymentRecordStatus.PENDING, provider: { in: ['CASH', 'TRANSFER'] } },
           data: {
             status: PaymentRecordStatus.CANCELLED,
-            note: nextStatus === 'CANCELLED' ? 'Orden cancelada' : 'El cliente no se presentó',
+            note: finalStatus === 'CANCELLED' ? 'Orden cancelada' : 'El cliente no se presentó',
             recordedBy: userId,
           },
         });
       }
-      return nextStatus;
+      return finalStatus;
     });
 
     // Correos del cliente según el nuevo estado (fuera de la transacción, ya guardado el cambio).

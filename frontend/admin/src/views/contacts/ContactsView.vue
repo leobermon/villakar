@@ -34,13 +34,12 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-6">
+  <div class="mx-auto max-w-[110rem] space-y-6">
     <LoadErrorBanner :message="store.contactsError" @retry="store.loadContacts(true)" />
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <p class="max-w-2xl text-sm text-brand-900/65">
-        Solicitudes de cotización del formulario "Contact us" del sitio (hoteles fuera de zona o grupos grandes). Responde desde tu correo o
-        WhatsApp y marca el avance aquí.
+      <p class="min-w-0 text-xs text-brand-900/65 sm:truncate">
+        Solicitudes del formulario "Contact us" del sitio. Responde desde tu correo o WhatsApp y marca el avance aquí.
       </p>
       <button
         type="button"
@@ -51,24 +50,24 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
       </button>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-3">
+    <div class="flex flex-wrap gap-2">
       <button
         type="button"
-        class="rounded-xl border bg-white p-4 text-left transition hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+        class="flex items-center gap-2 rounded-lg border bg-white px-3 py-1.5 transition hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
         :class="store.newContacts ? 'border-amber-300' : 'border-fog-200'"
+        :title="store.newContacts ? 'Ver solicitudes nuevas' : 'Nada pendiente'"
         @click="store.contactFilters.status = 'NEW'"
       >
-        <p class="text-xs font-semibold" :class="store.newContacts ? 'text-amber-800' : 'text-brand-900/70'">Por atender</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ store.newContacts }}</p>
-        <p class="text-xs text-brand-900/60">{{ store.newContacts ? 'Ver solicitudes nuevas' : 'Nada pendiente' }}</p>
+        <span class="text-xs font-semibold" :class="store.newContacts ? 'text-amber-800' : 'text-brand-900/70'">Por atender</span>
+        <span class="text-lg leading-none font-bold tabular-nums">{{ store.newContacts }}</span>
       </button>
-      <div class="rounded-xl border border-fog-200 bg-white p-4">
-        <p class="text-xs font-semibold text-brand-900/70">Atendidas</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ store.contacts.filter((contact) => contact.status === 'CONTACTED').length }}</p>
+      <div class="flex items-center gap-2 rounded-lg border border-fog-200 bg-white px-3 py-1.5">
+        <span class="text-xs font-semibold text-brand-900/70">Atendidas</span>
+        <span class="text-lg leading-none font-bold tabular-nums">{{ store.contacts.filter((contact) => contact.status === 'CONTACTED').length }}</span>
       </div>
-      <div class="rounded-xl border border-fog-200 bg-white p-4">
-        <p class="text-xs font-semibold text-brand-900/70">Total recibidas</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums">{{ store.contacts.length }}</p>
+      <div class="flex items-center gap-2 rounded-lg border border-fog-200 bg-white px-3 py-1.5">
+        <span class="text-xs font-semibold text-brand-900/70">Total recibidas</span>
+        <span class="text-lg leading-none font-bold tabular-nums">{{ store.contacts.length }}</span>
       </div>
     </div>
 

@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, useId, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, useId, watch } from 'vue';
 import OrderEmailsSection from '@/components/orders/OrderEmailsSection.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
 import StatusBadge from '@/components/ui/StatusBadge.vue';
-import { ORDER_STATUS, ROUTE_LABEL, SOURCE_LABEL, STATUS_TRANSITIONS, paymentSummary } from '@/config/orders';
+import { LEG_CLOSE_OPTIONS, ORDER_STATUS, ROUTE_LABEL, SOURCE_LABEL, STATUS_TRANSITIONS, legDisplayStatus, paymentSummary } from '@/config/orders';
 import { PAYMENT_STATUS, PAYMENT_TYPE_LABEL, PROVIDER_LABEL } from '@/config/payments';
 import { useOrdersStore } from '@/stores/orders';
 import { usePaymentsStore } from '@/stores/payments';
 import type { OrderStatus } from '@/types/order';
+
+/** Cómo se cierra un tramo desde el panel; '' = sigue abierto. */
+type LegClose = 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 import { formatInstant, formatLocalDateTime, formatUsd } from '@/utils/format';
 import { countryLabel, formatPhone, phoneDigits } from '@/utils/phone';
 
@@ -31,7 +34,7 @@ const canRequestPayment = computed(
 const form = reactive({
   status: 'PENDING' as OrderStatus,
   internalNotes: '',
-  drivers: [] as Array<{ legNumber: number; driverName: string; driverPhone: string }>,
+  drivers: [] as Array<{ legNumber: number; driverName: string; driverPhone: string; closeAs: LegClose | '' }>,
 });
 const saving = ref(false);
 const saved = ref(false);
@@ -47,6 +50,7 @@ function resetForm() {
     legNumber: leg.legNumber,
     driverName: leg.driverName ?? '',
     driverPhone: leg.driverPhone ?? '',
+    closeAs: '',
   }));
   saved.value = false;
   saveError.value = null;
@@ -55,10 +59,20 @@ function resetForm() {
 // También cuando la orden llega del backend después de abrir el panel (enlace ?order=).
 watch(() => [props.orderId, Boolean(order.value)], resetForm, { immediate: true });
 
+// El estado de la orden se elige aquí solo mientras está pendiente (confirmar o cancelar). Ya confirmada,
+// cada tramo se completa o cancela por separado y la orden se cierra sola cuando el último tramo se cierra.
 const statusOptions = computed(() => {
   const current = order.value?.status;
-  return current ? [current, ...STATUS_TRANSITIONS[current]] : [];
+  if (!current) return [];
+  return current === 'PENDING' ? [current, ...STATUS_TRANSITIONS[current]] : [current];
 });
+
+/** Un tramo se puede cerrar si la orden está confirmada y el tramo sigue abierto. */
+function canCloseLeg(index: number): boolean {
+  const current = order.value;
+  const leg = current?.legs[index];
+  return Boolean(current && leg && current.status === 'CONFIRMED' && legDisplayStatus(current, leg) === 'CONFIRMED');
+}
 
 const dirty = computed(() => {
   const current = order.value;
@@ -68,7 +82,7 @@ const dirty = computed(() => {
     form.internalNotes !== (current.internalNotes ?? '') ||
     form.drivers.some((driver, index) => {
       const leg = current.legs[index]!;
-      return driver.driverName !== (leg.driverName ?? '') || driver.driverPhone !== (leg.driverPhone ?? '');
+      return driver.driverName !== (leg.driverName ?? '') || driver.driverPhone !== (leg.driverPhone ?? '') || driver.closeAs !== '';
     })
   );
 });
@@ -98,6 +112,7 @@ async function save() {
         legNumber: driver.legNumber,
         driverName: driver.driverName.trim() || null,
         driverPhone: driver.driverPhone.trim() || null,
+        ...(driver.closeAs ? { status: driver.closeAs } : {}),
       })),
     });
     resetForm();
@@ -107,6 +122,32 @@ async function save() {
   } finally {
     saving.value = false;
   }
+}
+
+// ---- Copiar el número de orden ----
+const copied = ref(false);
+let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+onBeforeUnmount(() => clearTimeout(copiedTimer));
+
+async function copyCode() {
+  const code = order.value?.code;
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+  } catch {
+    // Sin permiso del portapapeles (p. ej. http): copia con un campo temporal.
+    const field = document.createElement('textarea');
+    field.value = code;
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    document.execCommand('copy');
+    field.remove();
+  }
+  copied.value = true;
+  clearTimeout(copiedTimer);
+  copiedTimer = setTimeout(() => (copied.value = false), 2000);
 }
 
 /** Enlace de WhatsApp a partir del teléfono (solo dígitos). */
@@ -122,12 +163,30 @@ const sectionTitle = 'text-base font-bold text-brand-950';
 
 <template>
   <BaseDrawer
-    size="lg"
+    size="xl"
     :open="Boolean(order)"
     :title="order ? `Orden ${order.code}` : ''"
     :subtitle="order ? `Creada ${formatInstant(order.createdAt)} · ${SOURCE_LABEL[order.source]}` : undefined"
     @close="emit('close')"
   >
+    <template v-if="order" #title-extra>
+      <button
+        type="button"
+        class="grid size-7 shrink-0 place-items-center rounded-md text-brand-900/60 hover:bg-fog-100 hover:text-brand-950 focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none"
+        aria-label="Copiar número de orden"
+        title="Copiar número de orden"
+        @click="copyCode"
+      >
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="11" height="11" rx="2" />
+          <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+        </svg>
+      </button>
+      <span v-if="copied" role="status" class="shrink-0 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+        Número de orden copiado
+      </span>
+    </template>
+
     <template v-if="order" #header>
       <div class="mt-2 flex flex-wrap gap-1.5">
         <StatusBadge v-bind="ORDER_STATUS[order.status]" />
@@ -219,10 +278,13 @@ const sectionTitle = 'text-base font-bold text-brand-950';
       <section class="space-y-3">
         <h3 :class="sectionTitle">{{ order.legs.length > 1 ? 'Tramos' : 'Tramo' }}</h3>
         <article v-for="(leg, index) in order.legs" :key="leg.legNumber" class="rounded-xl border border-fog-200 p-4">
-          <p class="text-sm font-semibold text-brand-600">
-            {{ order.legs.length > 1 ? (leg.legNumber === 1 ? 'Ida' : 'Regreso') : 'Traslado' }} ·
-            {{ formatLocalDateTime(leg.pickupAt) }}
-          </p>
+          <div class="flex items-start justify-between gap-2">
+            <p class="text-sm font-semibold text-brand-600">
+              {{ order.legs.length > 1 ? (leg.legNumber === 1 ? 'Ida' : 'Regreso') : 'Traslado' }} ·
+              {{ formatLocalDateTime(leg.pickupAt) }}
+            </p>
+            <StatusBadge v-bind="ORDER_STATUS[legDisplayStatus(order, leg)]" />
+          </div>
           <p class="mt-1 text-base font-semibold">{{ leg.originName }} → {{ leg.destinationName }}</p>
           <p v-if="leg.flightNumber" class="mt-0.5 text-sm text-brand-900/65">
             Vuelo {{ leg.airline }} {{ leg.flightNumber }}<template v-if="leg.terminal"> · Terminal {{ leg.terminal.slice(1) }}</template>
@@ -244,6 +306,16 @@ const sectionTitle = 'text-base font-bold text-brand-950';
               />
             </div>
           </div>
+          <div v-if="form.drivers[index] && canCloseLeg(index)" class="mt-3">
+            <label :for="`leg-status-${order.id}-${leg.legNumber}`" :class="labelClass">Estado del tramo</label>
+            <select :id="`leg-status-${order.id}-${leg.legNumber}`" v-model="form.drivers[index].closeAs" :class="inputClass">
+              <option value="">{{ ORDER_STATUS.CONFIRMED.label }}</option>
+              <option v-for="status in LEG_CLOSE_OPTIONS" :key="status" :value="status">{{ ORDER_STATUS[status].label }}</option>
+            </select>
+            <p v-if="form.drivers[index].closeAs === 'CANCELLED'" class="mt-1 text-sm font-medium text-accent-600">
+              Solo se cancela este tramo{{ order.legs.length > 1 ? '; el otro sigue su curso' : '' }}. El reembolso, si aplica, se gestiona en Pagos.
+            </p>
+          </div>
         </article>
       </section>
 
@@ -260,7 +332,10 @@ const sectionTitle = 'text-base font-bold text-brand-950';
           <select :id="ids.status" v-model="form.status" :class="inputClass" :disabled="statusOptions.length <= 1">
             <option v-for="status in statusOptions" :key="status" :value="status">{{ ORDER_STATUS[status].label }}</option>
           </select>
-          <p v-if="statusOptions.length <= 1" class="mt-1 text-sm text-brand-900/60">Esta orden ya está cerrada; su estado no se puede cambiar.</p>
+          <p v-if="order.status === 'CONFIRMED'" class="mt-1 text-sm text-brand-900/60">
+            Cambia el estado de cada tramo arriba. La orden se cierra sola cuando todos sus tramos están cerrados.
+          </p>
+          <p v-else-if="statusOptions.length <= 1" class="mt-1 text-sm text-brand-900/60">Esta orden ya está cerrada; su estado no se puede cambiar.</p>
           <p v-else-if="validationError" class="mt-1 text-sm font-medium text-accent-600" role="alert">{{ validationError }}</p>
           <p v-else-if="form.status === 'CANCELLED' && order.status !== 'CANCELLED'" class="mt-1 text-sm font-medium text-accent-600">
             Al guardar, la orden quedará cancelada. Si ya estaba pagada, el reembolso se gestiona en Pagos.

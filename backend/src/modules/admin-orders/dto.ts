@@ -27,15 +27,21 @@ export class LegDriverDto {
   @Max(2)
   legNumber: number;
 
+  /** Si no viene, el chofer del tramo no se toca. */
   @IsOptional()
   @IsString()
   @MaxLength(120, { message: 'El nombre del chofer es demasiado largo.' })
-  driverName: string | null;
+  driverName?: string | null;
 
   @IsOptional()
   @IsString()
   @MaxLength(30, { message: 'El teléfono del chofer es demasiado largo.' })
-  driverPhone: string | null;
+  driverPhone?: string | null;
+
+  /** Cierra este tramo sin tocar el otro (ida y vuelta se completan o cancelan por separado). */
+  @IsOptional()
+  @IsIn(['COMPLETED', 'CANCELLED', 'NO_SHOW'], { message: 'El estado del tramo no es válido.' })
+  status?: 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 }
 
 export class UpdateOrderDto {

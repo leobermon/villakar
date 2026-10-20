@@ -107,7 +107,7 @@ const labelClass = 'mb-0.5 block text-[11px] font-semibold text-brand-900/70';
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-3">
+  <div class="mx-auto max-w-[110rem] space-y-3">
     <LoadErrorBanner :message="store.loadError" @retry="store.load(true)" />
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-xs text-brand-900/65">Verifica cobros pendientes, registra pagos recibidos y envía links de pago.</p>

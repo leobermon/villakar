@@ -202,7 +202,7 @@ const priceInputClass = (changed: boolean, invalid: boolean) =>
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-5 pb-24">
+  <div class="mx-auto max-w-[110rem] space-y-5 pb-24">
     <LoadErrorBanner :message="catalog.loadError" @retry="catalog.load(true)" />
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <p class="text-sm text-brand-900/65">
@@ -380,7 +380,7 @@ const priceInputClass = (changed: boolean, invalid: boolean) =>
       role="region"
       aria-label="Cambios sin guardar"
     >
-      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+      <div class="mx-auto flex max-w-[110rem] flex-wrap items-center justify-between gap-3">
         <p class="text-sm">
           <strong>{{ drafts.size }} {{ drafts.size === 1 ? 'tarifa con cambios' : 'tarifas con cambios' }}</strong>
           <span v-if="hasInvalid" class="ml-2 font-medium text-accent-600">Hay precios vacíos o en cero.</span>

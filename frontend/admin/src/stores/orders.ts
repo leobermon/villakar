@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
 import { computed, reactive, ref } from 'vue';
 import { ApiError, api } from '@/api/client';
-import type { Order, OrderStatus, OrderUpdate, PaymentMethod } from '@/types/order';
+import { legDisplayStatus } from '@/config/orders';
+import type { Order, OrderLeg, OrderStatus, OrderUpdate, PaymentMethod } from '@/types/order';
 
 export interface OrderFilters {
   /** Busca en código, nombre, email, teléfono y lugares. */
@@ -10,9 +11,18 @@ export interface OrderFilters {
   /** 'UNPAID' incluye efectivo por cobrar. */
   payment: 'ALL' | 'PAID' | 'UNPAID' | 'REFUNDED';
   method: Exclude<PaymentMethod, null> | 'ALL';
-  /** Rango de la primera recogida, 'YYYY-MM-DD'. */
+  /** Rango de recogida de cada servicio, 'YYYY-MM-DD'. */
   from: string;
   to: string;
+}
+
+/** Una fila de la lista: cada tramo de una orden (ida, regreso) es un servicio aparte. */
+export interface OrderRow {
+  key: string;
+  order: Order;
+  leg: OrderLeg;
+  /** Estado del tramo (ver legDisplayStatus). */
+  status: OrderStatus;
 }
 
 const EMPTY_FILTERS: OrderFilters = { query: '', status: 'ALL', payment: 'ALL', method: 'ALL', from: '', to: '' };
@@ -68,18 +78,30 @@ export const useOrdersStore = defineStore('orders', () => {
     (Object.keys(EMPTY_FILTERS) as Array<keyof OrderFilters>).some((key) => filters[key] !== EMPTY_FILTERS[key]),
   );
 
-  /** Todas las órdenes filtradas salvo por estado (para contar por pestaña). */
-  const matchingExceptStatus = computed(() => orders.value.filter((order) => matches(order, filters, false)));
-
-  const filtered = computed(() =>
-    filters.status === 'ALL'
-      ? matchingExceptStatus.value
-      : matchingExceptStatus.value.filter((order) => order.status === filters.status),
+  /** Un servicio por tramo, con todos los filtros salvo el de estado (para contar por pestaña). */
+  const rowsExceptStatus = computed<OrderRow[]>(() =>
+    orders.value
+      .filter((order) => matches(order, filters))
+      .flatMap((order) =>
+        order.legs
+          .filter((leg) => inDateRange(leg, filters))
+          .map((leg) => ({ key: `${order.id}-${leg.legNumber}`, order, leg, status: legDisplayStatus(order, leg) })),
+      ),
   );
 
+  const rows = computed(() =>
+    filters.status === 'ALL' ? rowsExceptStatus.value : rowsExceptStatus.value.filter((row) => row.status === filters.status),
+  );
+
+  /** Órdenes (sin repetir) que tienen algún servicio en la lista; es lo que se exporta a Excel. */
+  const filtered = computed(() => {
+    const seen = new Set<number>();
+    return rows.value.flatMap((row) => (seen.has(row.order.id) ? [] : (seen.add(row.order.id), [row.order])));
+  });
+
   const countsByStatus = computed(() => {
-    const counts: Partial<Record<OrderStatus | 'ALL', number>> = { ALL: matchingExceptStatus.value.length };
-    for (const order of matchingExceptStatus.value) counts[order.status] = (counts[order.status] ?? 0) + 1;
+    const counts: Partial<Record<OrderStatus | 'ALL', number>> = { ALL: rowsExceptStatus.value.length };
+    for (const row of rowsExceptStatus.value) counts[row.status] = (counts[row.status] ?? 0) + 1;
     return counts;
   });
 
@@ -88,6 +110,7 @@ export const useOrdersStore = defineStore('orders', () => {
     loading,
     loadError,
     filters,
+    rows,
     filtered,
     countsByStatus,
     hasActiveFilters,
@@ -99,17 +122,19 @@ export const useOrdersStore = defineStore('orders', () => {
   };
 });
 
-function matches(order: Order, filters: OrderFilters, checkStatus: boolean): boolean {
-  if (checkStatus && filters.status !== 'ALL' && order.status !== filters.status) return false;
+/** Rango de fechas de recogida: se aplica a cada tramo, no solo al primero. */
+function inDateRange(leg: OrderLeg, filters: OrderFilters): boolean {
+  const day = leg.pickupAt.slice(0, 10);
+  if (filters.from && day < filters.from) return false;
+  if (filters.to && day > filters.to) return false;
+  return true;
+}
 
+function matches(order: Order, filters: OrderFilters): boolean {
   if (filters.payment === 'PAID' && order.paymentStatus !== 'PAID') return false;
   if (filters.payment === 'UNPAID' && order.paymentStatus !== 'UNPAID') return false;
   if (filters.payment === 'REFUNDED' && !['REFUNDED', 'PARTIALLY_REFUNDED'].includes(order.paymentStatus)) return false;
   if (filters.method !== 'ALL' && order.paymentMethod !== filters.method) return false;
-
-  const firstPickup = order.legs[0]?.pickupAt.slice(0, 10) ?? '';
-  if (filters.from && firstPickup < filters.from) return false;
-  if (filters.to && firstPickup > filters.to) return false;
 
   const query = normalize(filters.query.trim());
   if (!query) return true;

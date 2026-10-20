@@ -66,7 +66,7 @@ const ids = { type: useId(), status: useId() };
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-5">
+  <div class="mx-auto max-w-[110rem] space-y-5">
     <LoadErrorBanner :message="catalog.loadError" @retry="catalog.load(true)" />
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-sm text-brand-900/65">
