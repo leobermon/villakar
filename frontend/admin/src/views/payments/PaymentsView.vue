@@ -90,6 +90,18 @@ watch(
   { immediate: true },
 );
 
+// ?order=<código> muestra solo los movimientos de esa orden (desde el detalle de la orden).
+watch(
+  () => route.query.order,
+  (value) => {
+    if (typeof value !== 'string' || !value) return;
+    store.resetFilters();
+    store.filters.query = value;
+    router.replace({ query: { ...route.query, order: undefined, tab: undefined } });
+  },
+  { immediate: true },
+);
+
 function closeLinkDrawer() {
   linkOpen.value = false;
   linkPresetOrderId.value = null;

@@ -9,6 +9,8 @@ declare module 'vue-router' {
     title: string;
     /** Accesible sin sesión (solo el login). */
     public?: boolean;
+    /** Solo superadministradores. */
+    superOnly?: boolean;
   }
 }
 
@@ -66,6 +68,12 @@ export const router = createRouter({
       component: () => import('@/views/settings/SettingsView.vue'),
       meta: { title: 'Configuración' },
     },
+    {
+      path: '/audit',
+      name: 'audit',
+      component: () => import('@/views/audit/AuditView.vue'),
+      meta: { title: 'Historial', superOnly: true },
+    },
     ...upcoming,
     { path: '/:pathMatch(.*)*', redirect: { name: 'orders' } },
   ],
@@ -77,6 +85,7 @@ router.beforeEach(async (to) => {
   const user = await auth.restore();
   if (to.meta.public) return user && to.name === 'login' ? { path: '/' } : true;
   if (!user) return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} };
+  if (to.meta.superOnly && user.role !== 'SUPER_ADMIN') return { name: 'orders' };
   return true;
 });
 

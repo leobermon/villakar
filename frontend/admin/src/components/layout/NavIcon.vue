@@ -56,6 +56,10 @@ defineProps<{ name: NavItem['icon'] }>();
       <circle cx="9" cy="8.5" r="3.2" />
       <path d="M3 19.5c.4-3.3 2.8-5 6-5s5.6 1.7 6 5M16 5.6a3 3 0 0 1 0 5.8M17.5 14.8c2 .5 3.3 2 3.5 4.7" />
     </template>
+    <!-- Historial: reloj con flecha -->
+    <template v-else-if="name === 'audit'">
+      <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5M3.5 4v4.5H8M12 7.5V12l3 2" />
+    </template>
     <!-- Configuración: engrane -->
     <template v-else>
       <circle cx="12" cy="12" r="3" />

@@ -64,8 +64,13 @@ watch(() => [props.orderId, Boolean(order.value)], resetForm, { immediate: true 
 const statusOptions = computed(() => {
   const current = order.value?.status;
   if (!current) return [];
-  return current === 'PENDING' ? [current, ...STATUS_TRANSITIONS[current]] : [current];
+  if (current === 'PENDING') return [current, ...STATUS_TRANSITIONS[current]];
+  // Confirmada: "Completado" se ve pero queda bloqueado hasta que todos los tramos estén completados.
+  return current === 'CONFIRMED' ? [current, 'COMPLETED' as OrderStatus] : [current];
 });
+
+/** Un tramo solo se completa con el cobro hecho. */
+const isPaid = computed(() => order.value?.paymentStatus === 'PAID');
 
 /** Un tramo se puede cerrar si la orden está confirmada y el tramo sigue abierto. */
 function canCloseLeg(index: number): boolean {
@@ -246,6 +251,12 @@ const sectionTitle = 'text-base font-bold text-brand-950';
         <div class="flex items-center justify-between gap-3">
           <h3 :class="sectionTitle">Pagos</h3>
           <RouterLink
+            :to="{ name: 'payments', query: { order: order.code } }"
+            class="ml-auto text-sm font-semibold text-brand-700 underline underline-offset-2"
+          >
+            Gestionar pago
+          </RouterLink>
+          <RouterLink
             v-if="canRequestPayment"
             :to="{ name: 'payments', query: { tab: 'links', linkFor: order.id } }"
             class="text-sm font-semibold text-brand-700 underline underline-offset-2"
@@ -310,8 +321,13 @@ const sectionTitle = 'text-base font-bold text-brand-950';
             <label :for="`leg-status-${order.id}-${leg.legNumber}`" :class="labelClass">Estado del tramo</label>
             <select :id="`leg-status-${order.id}-${leg.legNumber}`" v-model="form.drivers[index].closeAs" :class="inputClass">
               <option value="">{{ ORDER_STATUS.CONFIRMED.label }}</option>
-              <option v-for="status in LEG_CLOSE_OPTIONS" :key="status" :value="status">{{ ORDER_STATUS[status].label }}</option>
+              <option v-for="status in LEG_CLOSE_OPTIONS" :key="status" :value="status" :disabled="status === 'COMPLETED' && !isPaid">
+                {{ ORDER_STATUS[status].label }}
+              </option>
             </select>
+            <p v-if="!isPaid" class="mt-1 text-sm text-brand-900/60">
+              No se puede completar hasta que el pago esté cobrado.
+            </p>
             <p v-if="form.drivers[index].closeAs === 'CANCELLED'" class="mt-1 text-sm font-medium text-accent-600">
               Solo se cancela este tramo{{ order.legs.length > 1 ? '; el otro sigue su curso' : '' }}. El reembolso, si aplica, se gestiona en Pagos.
             </p>
@@ -330,10 +346,17 @@ const sectionTitle = 'text-base font-bold text-brand-950';
         <div>
           <label :for="ids.status" :class="labelClass">Estado</label>
           <select :id="ids.status" v-model="form.status" :class="inputClass" :disabled="statusOptions.length <= 1">
-            <option v-for="status in statusOptions" :key="status" :value="status">{{ ORDER_STATUS[status].label }}</option>
+            <option
+              v-for="status in statusOptions"
+              :key="status"
+              :value="status"
+              :disabled="status === 'COMPLETED' && order.status === 'CONFIRMED'"
+            >
+              {{ ORDER_STATUS[status].label }}
+            </option>
           </select>
           <p v-if="order.status === 'CONFIRMED'" class="mt-1 text-sm text-brand-900/60">
-            Cambia el estado de cada tramo arriba. La orden se cierra sola cuando todos sus tramos están cerrados.
+            No se puede pasar a Completado mientras los tramos no estén completados. Cambia el estado de cada tramo arriba; la orden se cierra sola cuando todos están completados.
           </p>
           <p v-else-if="statusOptions.length <= 1" class="mt-1 text-sm text-brand-900/60">Esta orden ya está cerrada; su estado no se puede cambiar.</p>
           <p v-else-if="validationError" class="mt-1 text-sm font-medium text-accent-600" role="alert">{{ validationError }}</p>

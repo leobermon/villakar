@@ -9,7 +9,7 @@ defineProps<{ transparent?: boolean }>();
   <header :class="transparent ? 'absolute inset-x-0 top-0 z-20 text-white' : 'border-b border-brand-100 bg-white text-brand-950'">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
       <RouterLink :to="{ name: 'home' }" class="flex items-center" :aria-label="`${SITE.name} home`">
-        <img :src="logoUrl" :alt="SITE.name" width="1000" height="436" class="h-14 w-auto" />
+        <img :src="logoUrl" :alt="SITE.name" width="958" height="410" class="h-14 w-auto" />
       </RouterLink>
       <nav class="flex items-center gap-1" aria-label="Main">
         <RouterLink

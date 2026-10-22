@@ -185,7 +185,7 @@ const inputClass =
       <template v-else>
         <!-- Empresa: logo y nombre (también encabeza la hoja impresa). -->
         <div class="mb-4 flex items-center gap-3">
-          <img :src="logoUrl" :alt="company.name" width="1000" height="436" class="h-14 w-auto" />
+          <img :src="logoUrl" :alt="company.name" width="958" height="410" class="h-14 w-auto" />
           <div>
             <p class="font-display text-lg font-semibold text-brand-950">{{ company.name }}</p>
             <!-- Fecha en que se hizo la reservación (hora de Cancún). -->

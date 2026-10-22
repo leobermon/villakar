@@ -14,11 +14,14 @@ const auth = useAuthStore();
 const groups = computed(() =>
   NAVIGATION.map((group) => ({
     ...group,
-    items: group.items.filter((item) => !item.adminOnly || auth.canEditCatalog),
+    items: group.items.filter(
+      (item) => (!item.adminOnly || auth.canEditCatalog) && (!item.superOnly || auth.user?.role === 'SUPER_ADMIN'),
+    ),
   })).filter((group) => group.items.length > 0),
 );
 const route = useRoute();
 const publicSiteUrl = PUBLIC_SITE_URL;
+const appVersion = __APP_VERSION__;
 
 // En móvil el menú es un panel encima del contenido: se cierra al navegar o con Escape.
 watch(() => route.fullPath, () => ui.closeSidebar());
@@ -46,7 +49,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
     aria-label="Menú principal"
   >
     <div class="flex h-16 items-center gap-2 px-4">
-      <img src="/logo.png" alt="VillaKar Transfers" width="1000" height="436" class="h-9 w-auto" />
+      <img src="/logo.png" alt="VillaKar Transfers" width="958" height="410" class="h-9 w-auto" />
       <p class="text-[10px] leading-tight text-white/60">Panel de<br />administración</p>
     </div>
 
@@ -82,5 +85,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
     >
       Ver sitio de reservas
     </a>
+    <p class="px-2.5 pb-2.5 text-center text-[10px] text-white/40">Versión {{ appVersion }}</p>
   </aside>
 </template>

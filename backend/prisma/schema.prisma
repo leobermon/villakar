@@ -143,6 +143,7 @@ model User {
   paymentsRecorded Payment[]
   paymentLinks     PaymentLink[]
   settingsUpdated  AppSetting[]
+  auditLogs        AuditLog[]
 
   @@map("users")
 }
@@ -514,4 +515,29 @@ model EmailLog {
   @@index([createdAt], map: "idx_email_logs_created")
   @@index([reservationId], map: "idx_email_logs_res")
   @@map("email_logs")
+}
+
+/// Historial de movimientos hechos en el panel (solo lo ven los superadministradores).
+model AuditLog {
+  id            BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  userId        BigInt?  @map("user_id") @db.UnsignedBigInt
+  /// Nombre y correo al momento del movimiento (se conservan aunque el usuario cambie).
+  userName      String   @map("user_name") @db.VarChar(120)
+  userEmail     String   @map("user_email") @db.VarChar(190)
+  /// Ej. ORDER_STATUS, LEG_STATUS, PAYMENT_MANUAL, PAYMENT_VERIFIED, PAYMENT_REJECTED, PAYMENT_LINK_CREATED
+  action        String   @db.VarChar(40)
+  entityType    String   @map("entity_type") @db.VarChar(30)
+  entityId      BigInt?  @map("entity_id") @db.UnsignedBigInt
+  /// Código de la orden relacionada, para buscar.
+  orderCode     String?  @map("order_code") @db.VarChar(20)
+  summary       String   @db.VarChar(500)
+  details       Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull, map: "fk_audit_logs_user")
+
+  @@index([createdAt], map: "idx_audit_logs_created")
+  @@index([userId], map: "idx_audit_logs_user")
+  @@index([orderCode], map: "idx_audit_logs_order")
+  @@map("audit_logs")
 }

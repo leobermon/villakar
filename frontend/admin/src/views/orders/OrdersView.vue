@@ -14,7 +14,8 @@ import { exportOrdersToExcel } from '@/utils/exportOrders';
 import { formatInstantStamp, formatLocalStamp, formatUsd } from '@/utils/format';
 
 const store = useOrdersStore();
-onMounted(() => store.load());
+// Cada vez que se abre Órdenes se vuelve a leer la base: las reservas nuevas aparecen sin recargar la página.
+onMounted(() => store.load(true));
 
 function isAirport(name: string): boolean {
   return /airport|aeropuerto/i.test(name);
@@ -33,7 +34,7 @@ function shortPlace(name: string | undefined): string {
 }
 
 const columns: DataTableColumn<OrderRow>[] = [
-  { key: 'created', label: 'Creado', hideBelow: 'md', sortable: true, sortValue: (row) => row.order.createdAt },
+  { key: 'created', label: 'Creado', hideBelow: 'md', sortable: true, sortValue: (row) => Date.parse(row.order.createdAt) },
   {
     key: 'customer',
     label: 'Cliente',
@@ -69,8 +70,8 @@ function legTag(row: OrderRow): string | null {
   return `${row.leg.legNumber}/${row.order.legs.length}`;
 }
 
-// Por defecto, las próximas recogidas primero.
-const sort = ref<DataTableSort | null>({ key: 'pickup', direction: 'asc' });
+// Por defecto, las órdenes creadas más recientemente primero.
+const sort = ref<DataTableSort | null>({ key: 'created', direction: 'desc' });
 const page = ref(1);
 const pageSize = ref(25);
 

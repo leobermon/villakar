@@ -25,7 +25,8 @@ export interface OrderRow {
   status: OrderStatus;
 }
 
-const EMPTY_FILTERS: OrderFilters = { query: '', status: 'ALL', payment: 'ALL', method: 'ALL', from: '', to: '' };
+// Por defecto solo se muestran los servicios confirmados.
+const EMPTY_FILTERS: OrderFilters = { query: '', status: 'CONFIRMED', payment: 'ALL', method: 'ALL', from: '', to: '' };
 
 /**
  * Órdenes del panel (reservas de la base de datos, /api/admin/orders). Los

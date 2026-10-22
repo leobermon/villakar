@@ -25,7 +25,7 @@ export class AdminOrdersController {
 
   @Patch('orders/:id')
   updateOrder(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateOrderDto, @CurrentAdmin() user: AdminUser) {
-    return this.orders.update(id, dto, user.id);
+    return this.orders.update(id, dto, user);
   }
 
   @Get('payments')
@@ -35,29 +35,29 @@ export class AdminOrdersController {
 
   @Post('payments')
   recordPayment(@Body() dto: ManualPaymentDto, @CurrentAdmin() user: AdminUser) {
-    return this.payments.recordManual(dto, user.id);
+    return this.payments.recordManual(dto, user);
   }
 
   @Post('payments/:id/verify')
   @HttpCode(200)
   verifyPayment(@Param('id', ParseIntPipe) id: number, @Body() dto: VerifyPaymentDto, @CurrentAdmin() user: AdminUser) {
-    return this.payments.verify(id, dto, user.id);
+    return this.payments.verify(id, dto, user);
   }
 
   @Post('payments/:id/reject')
   @HttpCode(200)
   rejectPayment(@Param('id', ParseIntPipe) id: number, @Body() dto: RejectPaymentDto, @CurrentAdmin() user: AdminUser) {
-    return this.payments.reject(id, dto, user.id);
+    return this.payments.reject(id, dto, user);
   }
 
   @Post('payment-links')
   createLink(@Body() dto: CreatePaymentLinkDto, @CurrentAdmin() user: AdminUser) {
-    return this.payments.createLink(dto, user.id);
+    return this.payments.createLink(dto, user);
   }
 
   @Post('payment-links/:id/cancel')
   @HttpCode(200)
-  cancelLink(@Param('id', ParseIntPipe) id: number) {
-    return this.payments.cancelLink(id);
+  cancelLink(@Param('id', ParseIntPipe) id: number, @CurrentAdmin() user: AdminUser) {
+    return this.payments.cancelLink(id, user);
   }
 }

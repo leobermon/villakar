@@ -87,7 +87,7 @@ function onKeydown(event: KeyboardEvent) {
           @keydown="onKeydown"
         >
           <header class="flex items-start justify-between gap-4 border-b border-fog-200 px-5 py-4">
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <h2 :id="titleId" class="truncate text-lg font-bold text-brand-950">{{ props.title }}</h2>
                 <slot name="title-extra" />

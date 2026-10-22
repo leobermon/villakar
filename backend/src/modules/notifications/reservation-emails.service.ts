@@ -212,7 +212,7 @@ export class ReservationEmailsService {
       ]),
       `Vehicle: ${r.vehicleName}`,
       `Passengers: ${r.passengers}`,
-      `${totalLabel(r)}: ${usd(r.total)} USD`,
+      `${totalLabel(r, kind)}: ${usd(r.total)} USD`,
       `Lead passenger: ${leadPassenger(r)}`,
       ...(r.specialRequests ? [`Special requests: ${r.specialRequests}`] : []),
       '',
@@ -287,7 +287,7 @@ export class ReservationEmailsService {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
         <tr><td style="padding-bottom:16px;">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-            <td valign="middle"><img src="${esc(this.siteUrl())}/email/logo.png" width="120" height="52" alt="${esc(company.name)}" style="display:block;border:0;"></td>
+            <td valign="middle"><img src="${esc(this.siteUrl())}/email/logo.png" width="120" height="51" alt="${esc(company.name)}" style="display:block;border:0;"></td>
             <td valign="middle" style="padding-left:12px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;color:${NAVY};">${esc(company.name)}</td>
           </tr></table>
         </td></tr>
@@ -316,7 +316,7 @@ export class ReservationEmailsService {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
             <td valign="top" width="33%"><div style="${label}">Vehicle</div><div style="${value}">${esc(r.vehicleName)}</div></td>
             <td valign="top" width="33%"><div style="${label}">Passengers</div><div style="${value}">${r.passengers}</div></td>
-            <td valign="top"><div style="${label}">${totalLabel(r)}</div><div style="${value}">${usd(r.total)} USD</div></td>
+            <td valign="top"><div style="${label}">${totalLabel(r, kind)}</div><div style="${value}">${usd(r.total)} USD</div></td>
           </tr></table>
           <div style="${label}margin-top:14px;">Lead passenger</div>
           <div style="${value}">${esc(leadPassenger(r))}</div>
@@ -356,7 +356,9 @@ function usd(amount: number): string {
 
 const METHOD_LABEL = { STRIPE: 'Credit card (Stripe)', PAYPAL: 'PayPal', CASH: 'Cash', TRANSFER: 'Bank transfer' } as const;
 
-function totalLabel(r: ReservationSummary): string {
+function totalLabel(r: ReservationSummary, kind: EmailKind): string {
+  // En el correo de servicio completado solo va "Price" y la cantidad.
+  if (kind === 'RESERVATION_COMPLETED') return 'Price';
   if (r.paymentStatus === 'PAID') return r.paymentMethod ? `Paid · ${METHOD_LABEL[r.paymentMethod]}` : 'Paid';
   return r.payInCash ? 'Pending to pay · Cash' : 'Total';
 }

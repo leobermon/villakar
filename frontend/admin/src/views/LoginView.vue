@@ -41,7 +41,7 @@ async function submit() {
   <main class="grid min-h-screen place-items-center bg-fog-50 px-4 py-10">
     <div class="w-full max-w-sm">
       <div class="mb-6 flex flex-col items-center gap-1">
-        <img src="/logo.png" alt="VillaKar Transfers" width="1000" height="436" class="h-20 w-auto" />
+        <img src="/logo.png" alt="VillaKar Transfers" width="958" height="410" class="h-20 w-auto" />
         <p class="text-xs text-brand-900/60">Panel de administración</p>
       </div>
 

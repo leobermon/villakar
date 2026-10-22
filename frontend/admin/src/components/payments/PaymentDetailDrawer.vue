@@ -100,7 +100,15 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
     @close="emit('close')"
   >
     <template v-if="payment" #header>
-      <div class="mt-2"><StatusBadge v-bind="PAYMENT_STATUS[payment.status]" /></div>
+      <div class="mt-2 flex items-center justify-between gap-3">
+        <StatusBadge v-bind="PAYMENT_STATUS[payment.status]" />
+        <RouterLink
+          :to="{ name: 'orders', query: { order: payment.orderId } }"
+          class="text-sm font-semibold text-brand-700 underline underline-offset-2"
+        >
+          Ver orden
+        </RouterLink>
+      </div>
     </template>
 
     <div v-if="payment" class="space-y-6">

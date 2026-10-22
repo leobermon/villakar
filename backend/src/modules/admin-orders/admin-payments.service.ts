@@ -11,6 +11,8 @@ import {
   ReservationStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import type { AdminUser } from '../auth/auth.service';
 import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { AdminOrder, linkInclude, paymentInclude, toPayment, toPaymentLink } from './admin-orders.mappers';
 import { AdminOrdersService } from './admin-orders.service';
@@ -38,6 +40,7 @@ export class AdminPaymentsService {
     private readonly prisma: PrismaService,
     private readonly orders: AdminOrdersService,
     private readonly emails: ReservationEmailsService,
+    private readonly audit: AuditService,
     private readonly config: ConfigService,
   ) {}
 
@@ -51,7 +54,8 @@ export class AdminPaymentsService {
   }
 
   /** Confirma un cobro pendiente: efectivo entregado por el chofer o transferencia vista en el banco. */
-  async verify(id: number, dto: VerifyPaymentDto, userId: number): Promise<PaymentChange> {
+  async verify(id: number, dto: VerifyPaymentDto, actor: AdminUser): Promise<PaymentChange> {
+    const userId = actor.id;
     const { reservationId, confirmedNow } = await this.prisma.$transaction(async (tx) => {
       const payment = await tx.payment.findUnique({ where: { id: BigInt(id) } });
       if (!payment) throw new NotFoundException('El pago no existe.');
@@ -74,11 +78,13 @@ export class AdminPaymentsService {
       const confirmed = await this.syncReservation(tx, payment.reservationId, userId);
       return { reservationId: payment.reservationId, confirmedNow: confirmed };
     });
+    await this.logPayment(actor, 'PAYMENT_VERIFIED', id, reservationId, 'Confirmó el cobro', { receivedBy: clean(dto.receivedBy), reference: clean(dto.reference) });
     return this.afterChange(reservationId, confirmedNow);
   }
 
   /** Marca un cobro pendiente como no recibido (p. ej. la transferencia nunca llegó). */
-  async reject(id: number, dto: RejectPaymentDto, userId: number): Promise<PaymentChange> {
+  async reject(id: number, dto: RejectPaymentDto, actor: AdminUser): Promise<PaymentChange> {
+    const userId = actor.id;
     const payment = await this.prisma.payment.findUnique({ where: { id: BigInt(id) } });
     if (!payment) throw new NotFoundException('El pago no existe.');
     const reason = dto.reason.trim();
@@ -87,11 +93,13 @@ export class AdminPaymentsService {
       data: { status: PaymentRecordStatus.FAILED, failureReason: reason, note: reason, recordedBy: userId },
     });
     if (claimed.count === 0) throw new ConflictException('Este pago ya no está pendiente.');
+    await this.logPayment(actor, 'PAYMENT_REJECTED', id, payment.reservationId, 'Marcó como no recibido el cobro', { reason });
     return this.afterChange(payment.reservationId, false);
   }
 
   /** Alta de un cobro ya recibido (efectivo o transferencia). `payment` es el cobro creado. */
-  async recordManual(dto: ManualPaymentDto, userId: number): Promise<PaymentChange & { payment: ReturnType<typeof toPayment> }> {
+  async recordManual(dto: ManualPaymentDto, actor: AdminUser): Promise<PaymentChange & { payment: ReturnType<typeof toPayment> }> {
+    const userId = actor.id;
     const reservationId = BigInt(dto.orderId);
     const { confirmedNow, createdId } = await this.prisma.$transaction(async (tx) => {
       // Bloquea la reserva: dos altas simultáneas no pueden pasarse del saldo.
@@ -139,13 +147,20 @@ export class AdminPaymentsService {
       }
       return { confirmedNow: await this.syncReservation(tx, reservationId, userId), createdId: Number(created.id) };
     });
+    await this.logPayment(actor, 'PAYMENT_MANUAL', createdId, reservationId, `Registró un cobro de USD ${new Prisma.Decimal(dto.amount).toFixed(2)} (${dto.provider})`, {
+      amount: dto.amount,
+      provider: dto.provider,
+      receivedBy: clean(dto.receivedBy),
+      reference: clean(dto.reference),
+    });
     const change = await this.afterChange(reservationId, confirmedNow);
     return { ...change, payment: change.payments.find((payment) => payment.id === createdId)! };
   }
 
   // ---------------- Links de pago ----------------
 
-  async createLink(dto: CreatePaymentLinkDto, userId: number) {
+  async createLink(dto: CreatePaymentLinkDto, actor: AdminUser) {
+    const userId = actor.id;
     let reservationId: bigint | null = null;
     if (dto.orderId) {
       reservationId = BigInt(dto.orderId);
@@ -176,20 +191,47 @@ export class AdminPaymentsService {
       },
       include: linkInclude,
     });
+    await this.audit.record(actor, {
+      action: 'PAYMENT_LINK_CREATED',
+      entityType: 'PAYMENT_LINK',
+      entityId: link.id,
+      orderCode: reservationId ? await this.audit.orderCode(reservationId) : null,
+      summary: `Creó un link de pago de USD ${new Prisma.Decimal(dto.amount).toFixed(2)} para ${dto.customerName.trim()}`,
+      details: { amount: dto.amount, description: dto.description.trim() },
+    });
     return toPaymentLink(link, this.siteUrl());
   }
 
-  async cancelLink(id: number) {
+  async cancelLink(id: number, actor: AdminUser) {
     const cancelled = await this.prisma.paymentLink.updateMany({
       where: { id: BigInt(id), status: PaymentLinkStatus.ACTIVE, expiresAt: { gt: new Date() } },
       data: { status: PaymentLinkStatus.CANCELLED },
     });
     if (cancelled.count === 0) throw new ConflictException('Solo se pueden cancelar links activos.');
     const link = await this.prisma.paymentLink.findUniqueOrThrow({ where: { id: BigInt(id) }, include: linkInclude });
+    await this.audit.record(actor, {
+      action: 'PAYMENT_LINK_CANCELLED',
+      entityType: 'PAYMENT_LINK',
+      entityId: id,
+      orderCode: link.reservationId ? await this.audit.orderCode(link.reservationId) : null,
+      summary: `Canceló el link de pago #${id}`,
+    });
     return toPaymentLink(link, this.siteUrl());
   }
 
   // ---------------- Internos ----------------
+
+  private async logPayment(actor: AdminUser, action: string, paymentId: number, reservationId: bigint, text: string, details: Prisma.InputJsonValue) {
+    const orderCode = await this.audit.orderCode(reservationId);
+    await this.audit.record(actor, {
+      action,
+      entityType: 'PAYMENT',
+      entityId: paymentId,
+      orderCode,
+      summary: `${text} #${paymentId}${orderCode ? ` de la orden ${orderCode}` : ''}`,
+      details,
+    });
+  }
 
   /**
    * Recalcula payment_status con los pagos guardados. Si la orden seguía

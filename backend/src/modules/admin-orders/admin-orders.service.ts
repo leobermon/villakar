@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { LegStatus, PaymentRecordStatus, PaymentType, Prisma, ReservationStatus } from '@prisma/client';
+import { LegStatus, PaymentRecordStatus, PaymentStatus, PaymentType, Prisma, ReservationStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditEntry, AuditService } from '../audit/audit.service';
+import type { AdminUser } from '../auth/auth.service';
 import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { AdminOrder, orderInclude, toOrder } from './admin-orders.mappers';
 import { UpdateOrderDto } from './dto';
@@ -12,6 +14,15 @@ const STATUS_TRANSITIONS: Record<ReservationStatus, ReservationStatus[]> = {
   COMPLETED: [],
   CANCELLED: [],
   NO_SHOW: [],
+};
+
+const LEG_LABEL: Record<LegStatus, string> = {
+  SCHEDULED: 'Programado',
+  ASSIGNED: 'Programado',
+  IN_PROGRESS: 'En curso',
+  COMPLETED: 'Completado',
+  CANCELLED: 'Cancelado',
+  NO_SHOW: 'No show',
 };
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {
@@ -50,6 +61,7 @@ export class AdminOrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emails: ReservationEmailsService,
+    private readonly audit: AuditService,
   ) {}
 
   async list(): Promise<AdminOrder[]> {
@@ -63,8 +75,10 @@ export class AdminOrdersService {
     return toOrder(row);
   }
 
-  async update(id: number, dto: UpdateOrderDto, userId: number): Promise<AdminOrder> {
+  async update(id: number, dto: UpdateOrderDto, actor: AdminUser): Promise<AdminOrder> {
+    const userId = actor.id;
     const reservationId = BigInt(id);
+    const trail: AuditEntry[] = [];
     const changedTo = await this.prisma.$transaction(async (tx): Promise<ReservationStatus | null> => {
       const current = await tx.reservation.findUnique({
         where: { id: reservationId },
@@ -86,9 +100,33 @@ export class AdminOrdersService {
         );
       }
 
+      // La orden solo se completa cuando todos sus tramos ya están completados (y por tanto cobrados).
+      if (statusChanged && nextStatus === ReservationStatus.COMPLETED) {
+        if (current.legs.some((leg) => leg.status !== LegStatus.COMPLETED)) {
+          throw new BadRequestException('No se puede completar la orden mientras sus tramos no estén completados.');
+        }
+      }
+      // Un tramo no se completa hasta que el cobro esté hecho.
+      if ((dto.legs ?? []).some((change) => change.status === 'COMPLETED') && current.paymentStatus !== PaymentStatus.PAID) {
+        throw new BadRequestException('No se puede completar el tramo hasta que el pago esté cobrado.');
+      }
+
       const data: Prisma.ReservationUpdateInput = {};
+      const entry = (action: string, summary: string, details?: AuditEntry['details']): AuditEntry => ({
+        action,
+        entityType: 'ORDER',
+        entityId: id,
+        orderCode: current.code,
+        summary,
+        details,
+      });
       if (statusChanged) data.status = nextStatus;
-      if (dto.internalNotes !== undefined) data.internalNotes = clean(dto.internalNotes);
+      if (dto.internalNotes !== undefined) {
+        data.internalNotes = clean(dto.internalNotes);
+        if (data.internalNotes !== (current.internalNotes ?? null)) {
+          trail.push(entry('ORDER_NOTES', `Editó las notas internas de la orden ${current.code}`));
+        }
+      }
       if (Object.keys(data).length > 0) await tx.reservation.update({ where: { id: reservationId }, data });
 
       for (const change of dto.legs ?? []) {
@@ -96,6 +134,18 @@ export class AdminOrdersService {
         if (change.driverName !== undefined) driver.driverName = clean(change.driverName);
         if (change.driverPhone !== undefined) driver.driverPhone = clean(change.driverPhone);
         if (Object.keys(driver).length === 0) continue;
+        const before = current.legs.find((leg) => leg.legNumber === change.legNumber)!;
+        const name = driver.driverName !== undefined ? (driver.driverName as string | null) : before.driverName;
+        const phone = driver.driverPhone !== undefined ? (driver.driverPhone as string | null) : before.driverPhone;
+        if (name !== before.driverName || phone !== before.driverPhone) {
+          trail.push(
+            entry(
+              'LEG_DRIVER',
+              `Chofer del tramo ${change.legNumber} de la orden ${current.code}: ${before.driverName ?? 'sin asignar'} → ${name ?? 'sin asignar'}`,
+              { legNumber: change.legNumber, from: { name: before.driverName, phone: before.driverPhone }, to: { name, phone } },
+            ),
+          );
+        }
         await tx.reservationLeg.update({
           where: { reservationId_legNumber: { reservationId, legNumber: change.legNumber } },
           data: driver,
@@ -126,6 +176,13 @@ export class AdminOrdersService {
             where: { reservationId_legNumber: { reservationId, legNumber: change.legNumber } },
             data: { status: change.status },
           });
+          trail.push(
+            entry(
+              'LEG_STATUS',
+              `Tramo ${change.legNumber} de la orden ${current.code}: ${LEG_LABEL[leg.status]} → ${LEG_LABEL[change.status!]}`,
+              { legNumber: change.legNumber, from: leg.status, to: change.status! },
+            ),
+          );
         }
       }
 
@@ -140,6 +197,13 @@ export class AdminOrdersService {
         }
       }
       if (finalStatus === current.status) return null;
+      trail.push(
+        entry(
+          'ORDER_STATUS',
+          `Orden ${current.code}: ${STATUS_LABEL[current.status]} → ${STATUS_LABEL[finalStatus]}${finalStatus === nextStatus ? '' : ' (todos los tramos cerrados)'}`,
+          { from: current.status, to: finalStatus },
+        ),
+      );
 
       await tx.reservationStatusHistory.create({
         data: {
@@ -164,6 +228,8 @@ export class AdminOrdersService {
       }
       return finalStatus;
     });
+
+    await this.audit.record(actor, ...trail);
 
     // Correos del cliente según el nuevo estado (fuera de la transacción, ya guardado el cambio).
     if (changedTo === ReservationStatus.CONFIRMED) await this.emails.sendConfirmation(reservationId);
