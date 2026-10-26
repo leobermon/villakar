@@ -36,6 +36,7 @@ export function createAppRouter(history: RouterHistory) {
       { path: '/contact', name: 'contact', component: () => import('@/views/ContactView.vue') },
       { path: '/faq', name: 'faq', component: () => import('@/views/FaqView.vue') },
       { path: '/terms', name: 'terms', component: () => import('@/views/TermsView.vue') },
+      { path: '/privacy', name: 'privacy', component: () => import('@/views/PrivacyView.vue') },
       { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
     ],
   });

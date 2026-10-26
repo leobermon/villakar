@@ -4,6 +4,8 @@
  * pagos, horario, términos). Si cambia alguna regla del negocio, se actualiza aquí.
  * El mismo texto alimenta la página y los datos estructurados (FAQPage) para Google.
  */
+import { SITE } from '@/config';
+
 export interface FaqItem {
   question: string;
   answer: string;
@@ -48,7 +50,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'Can I book a round trip or a transfer from my hotel to the airport?',
     answer:
-      'Yes. You can book airport to hotel, hotel to airport, hotel to hotel, and round trips in a single reservation. Pickups are available from 5:00 am to 8:00 pm (Cancun time). For departures, we suggest a pickup about 3 hours before an international flight (2 hours before a domestic one).',
+      `Yes. You can book airport to hotel, hotel to airport, ${SITE.hotelToHotelEnabled ? 'hotel to hotel, ' : ''}and round trips in a single reservation. Pickups are available from 5:00 am to 8:00 pm (Cancun time). For departures, we suggest a pickup about 3 hours before an international flight (2 hours before a domestic one).`,
   },
   {
     question: 'Which areas do you serve?',

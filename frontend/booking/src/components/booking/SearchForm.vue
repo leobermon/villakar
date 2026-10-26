@@ -2,6 +2,7 @@
 import { computed, reactive, useId, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import type { RouteType } from '@/api/booking';
+import { trackQuote } from '@/analytics';
 import { SITE } from '@/config';
 import { useBookingStore } from '@/stores/booking';
 import { todayInCancun } from '@/utils/format';
@@ -16,7 +17,7 @@ const search = store.search;
 const ROUTES: Array<{ value: RouteType; label: string }> = [
   { value: 'AIRPORT_HOTEL', label: 'Airport → Hotel' },
   { value: 'HOTEL_AIRPORT', label: 'Hotel → Airport' },
-  { value: 'HOTEL_HOTEL', label: 'Hotel → Hotel' },
+  ...(SITE.hotelToHotelEnabled ? [{ value: 'HOTEL_HOTEL' as const, label: 'Hotel → Hotel' }] : []),
 ];
 
 const errors = reactive<Record<string, string | null>>({});
@@ -78,7 +79,10 @@ function validate(): boolean {
 
 async function submit() {
   if (!validate()) return;
-  if (await store.fetchQuote()) await router.push({ name: 'results' });
+  if (await store.fetchQuote()) {
+    trackQuote(search.route, search.tripType, search.passengers);
+    await router.push({ name: 'results' });
+  }
 }
 
 function goToContact(query: string) {

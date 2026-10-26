@@ -50,6 +50,7 @@ services:
       dockerfile: deploy/web/Dockerfile
       args:
         PUBLIC_SITE_URL: https://${DOMAIN:?Falta DOMAIN en .env}
+        GA_ID: ${GA_MEASUREMENT_ID:-G-5PYQQMCTWZ}
     restart: unless-stopped
     depends_on:
       - backend

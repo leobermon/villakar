@@ -16,6 +16,7 @@ import {
   type ReservationSummary,
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
+import { trackPurchase } from '@/analytics';
 import logoUrl from '@/assets/logo.png';
 import { SITE } from '@/config';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
@@ -106,6 +107,11 @@ async function load(): Promise<void> {
     reservation.value = await lookupReservation({ code, email: email.value.trim() });
     rememberReservationEmail(code, email.value.trim());
     needsEmail.value = false;
+    const current = reservation.value;
+    const confirmed = current.status !== 'CANCELLED' && current.status !== 'NO_SHOW' && (current.paymentStatus === 'PAID' || current.payInCash);
+    if (confirmed) {
+      trackPurchase(current.code, current.total, current.vehicleName, current.paymentMethod ?? 'UNKNOWN', current.createdAt);
+    }
     if (reservation.value.canPay && !availableMethods.value) await loadPaymentMethods();
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : 'Something went wrong. Please try again.';

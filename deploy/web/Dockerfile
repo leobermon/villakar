@@ -13,6 +13,9 @@ COPY frontend frontend
 # URL pública del sitio: el panel la usa para armar los links de pago y el enlace "Ver sitio".
 ARG PUBLIC_SITE_URL
 ENV VITE_PUBLIC_SITE_URL=$PUBLIC_SITE_URL
+# ID de medición de Google Analytics 4 (público, va dentro del JavaScript del sitio).
+ARG GA_ID
+ENV VITE_GA_ID=$GA_ID
 RUN npm run build -w @cancun-transfers/booking && npm run build -w @cancun-transfers/admin
 
 FROM caddy:2-alpine

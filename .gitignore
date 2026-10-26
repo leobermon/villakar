@@ -5,3 +5,4 @@ dist/
 backups/
 catalogo.sql
 dist-server/
+.env.local

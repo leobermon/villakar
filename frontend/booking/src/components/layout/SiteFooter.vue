@@ -41,6 +41,8 @@ const DESTINATIONS = [
           <RouterLink :to="{ name: 'faq' }" class="underline underline-offset-2 hover:text-brand-800">FAQ</RouterLink>
           ·
           <RouterLink :to="{ name: 'terms' }" class="underline underline-offset-2 hover:text-brand-800">Terms and Conditions</RouterLink>
+          ·
+          <RouterLink :to="{ name: 'privacy' }" class="underline underline-offset-2 hover:text-brand-800">Privacy Policy</RouterLink>
         </p>
       </div>
     </div>

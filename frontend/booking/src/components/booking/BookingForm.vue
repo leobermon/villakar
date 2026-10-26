@@ -13,6 +13,7 @@ import {
   type RouteType,
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
+import { trackBeginCheckout } from '@/analytics';
 import LegDetailsFields, { type LegKind } from '@/components/booking/LegDetailsFields.vue';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import PhoneField from '@/components/booking/PhoneField.vue';
@@ -156,6 +157,7 @@ async function submit() {
     });
     code = reservation.code;
     rememberReservationEmail(code, email);
+    trackBeginCheckout(option.value.price, option.value.vehicleType.name, paymentMethod.value);
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : 'Something went wrong. Please try again.';
     submitting.value = false;

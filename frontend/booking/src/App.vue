@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CookieNotice from '@/components/layout/CookieNotice.vue';
 import PalmBackdrop from '@/components/layout/PalmBackdrop.vue';
 import SiteFooter from '@/components/layout/SiteFooter.vue';
 </script>
@@ -11,5 +12,6 @@ import SiteFooter from '@/components/layout/SiteFooter.vue';
       <RouterView />
     </div>
     <SiteFooter />
+    <CookieNotice />
   </div>
 </template>

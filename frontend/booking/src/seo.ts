@@ -52,6 +52,10 @@ export const SEO_BY_ROUTE: Record<string, PageSeo> = {
     description:
       'Terms and conditions of VillaKar Transfers private transfers: our role as intermediary, flight delays and no-shows, liability and client responsibility.',
   },
+  privacy: {
+    title: 'Privacy Policy | VillaKar Transfers',
+    description: 'How VillaKar Transfers collects, uses and protects your information, and how to manage your cookie choices.',
+  },
   results: {
     title: 'Choose your vehicle | VillaKar Transfers',
     description: 'Choose your vehicle and complete your private transfer booking.',
@@ -70,7 +74,7 @@ export const SEO_BY_ROUTE: Record<string, PageSeo> = {
 };
 
 /** Páginas que se prerenderizan y salen en el sitemap. */
-export const INDEXABLE_PATHS = ['/', '/contact', '/faq', '/terms'] as const;
+export const INDEXABLE_PATHS = ['/', '/contact', '/faq', '/terms', '/privacy'] as const;
 
 export function seoForRoute(name: unknown): PageSeo {
   return (typeof name === 'string' && SEO_BY_ROUTE[name]) || HOME_SEO;
