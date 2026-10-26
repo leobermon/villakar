@@ -4,9 +4,10 @@ import type { LegDetails } from '@/api/booking';
 import { formatDateOnly, nextTimeSlotInCancun, todayInCancun } from '@/utils/format';
 import TimeSelect from '@/components/booking/TimeSelect.vue';
 import { SITE } from '@/config';
-import { openNativePicker } from '@/utils/picker';
 
 const serviceHours = SITE.serviceHours;
+/** Horas de vuelo de salida que se pueden elegir (la recogida en el hotel sigue limitada al horario de servicio). */
+const DEPARTURE_FLIGHT_HOURS = { start: '06:00', end: '23:00' } as const;
 
 export type LegKind = 'ARRIVAL' | 'DEPARTURE' | 'TRANSFER';
 
@@ -110,17 +111,19 @@ watch(
           <label :for="ids.flightTime" :class="labelClass">
             {{ props.kind === 'ARRIVAL' ? 'Landing time' : 'Departure time' }}
           </label>
-          <!-- En llegadas el servicio empieza al aterrizar: solo horas dentro del horario de servicio. -->
+          <!--
+            Mismo selector en llegadas y salidas. En llegadas el servicio empieza al aterrizar, así que solo
+            se ofrecen horas del horario de servicio; el vuelo de salida se ofrece de 6:00 am a 11:00 pm
+            (la recogida en el hotel sí debe caer dentro del horario de servicio).
+          -->
           <TimeSelect
-            v-if="props.kind === 'ARRIVAL'"
             :id="ids.flightTime"
             v-model="details.flightTime"
             required
-            :min="earliest"
-            :max="serviceHours.end"
+            :min="props.kind === 'ARRIVAL' ? earliest : DEPARTURE_FLIGHT_HOURS.start"
+            :max="props.kind === 'ARRIVAL' ? serviceHours.end : DEPARTURE_FLIGHT_HOURS.end"
             :select-class="inputClass"
           />
-          <input v-else :id="ids.flightTime" v-model="details.flightTime" type="time" required :class="[inputClass, 'cursor-pointer']" @click="openNativePicker" />
         </div>
         <div>
           <label :for="ids.terminal" :class="labelClass">Terminal</label>
