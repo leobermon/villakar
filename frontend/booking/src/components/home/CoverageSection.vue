@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router';
 import HeadingStripes from '@/components/home/HeadingStripes.vue';
+import { destinationPath } from '@/content/destinations';
 
 /**
  * Cobertura en Quintana Roo: las zonas principales como tarjetas, debajo del
@@ -13,6 +15,8 @@ interface CoverageArea {
   /** Dato corto en la tarjeta (tiempo aproximado o punto de encuentro). */
   badge: string;
   image: string;
+  /** Si tiene página de destino (content/destinations.ts), la tarjeta lleva a ella. */
+  slug?: string;
 }
 
 // Tiempos aproximados sin tráfico desde el aeropuerto de Cancún (CUN).
@@ -28,30 +32,35 @@ const AREAS: CoverageArea[] = [
     text: 'Every resort along Kukulcan Boulevard, from Punta Cancun to Punta Nizuc.',
     badge: 'About 20 min from the airport',
     image: '/destinations/cancun.jpg',
+    slug: 'cancun',
   },
   {
     name: 'Puerto Morelos',
     text: 'Quiet beaches and reef-front resorts just south of Cancun.',
     badge: 'About 25 min',
     image: '/destinations/puerto-morelos.jpg',
+    slug: 'puerto-morelos',
   },
   {
     name: 'Playa del Carmen',
     text: 'Fifth Avenue, Playacar and the resorts around town.',
     badge: 'About 45 min',
     image: '/destinations/playa-del-carmen.jpg',
+    slug: 'playa-del-carmen',
   },
   {
     name: 'Tulum',
     text: 'Beach-road boutique hotels and downtown Tulum.',
     badge: 'About 1 h 30 min',
     image: '/destinations/tulum.jpg',
+    slug: 'tulum',
   },
   {
     name: 'Akumal',
     text: 'Calm turtle bay and beach resorts, south of Playa del Carmen.',
     badge: 'About 1 h 15 min',
     image: '/destinations/akumal.jpg',
+    slug: 'akumal',
   },
 ];
 
@@ -80,8 +89,14 @@ const ALSO_SERVED = ['Puerto Juarez', 'Playa Mujeres', 'Costa Mujeres', 'Puerto 
       <li
         v-for="area in AREAS"
         :key="area.name"
-        class="flex flex-col overflow-hidden rounded-2xl border border-brand-100 bg-white"
+        class="flex"
       >
+        <component
+          :is="area.slug ? RouterLink : 'div'"
+          v-bind="area.slug ? { to: destinationPath(area.slug), 'aria-label': `${area.name}: route, time and photos` } : {}"
+          class="group flex w-full flex-col overflow-hidden rounded-2xl border border-brand-100 bg-white"
+          :class="area.slug ? 'transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-brand-950/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 motion-reduce:transition-none motion-reduce:hover:translate-y-0' : ''"
+        >
         <!-- Postal completa (4:3, sin recorte): el texto de la imagen forma parte del diseño. -->
         <div class="relative aspect-[4/3] overflow-hidden bg-brand-900">
           <img
@@ -90,14 +105,18 @@ const ALSO_SERVED = ['Puerto Juarez', 'Playa Mujeres', 'Costa Mujeres', 'Puerto 
             width="2000"
             height="1500"
             loading="lazy"
-            class="h-full w-full object-cover"
+            class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
         </div>
         <div class="flex-1 p-3">
           <span class="inline-block rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">{{ area.badge }}</span>
           <h3 class="mt-2 font-display text-sm font-semibold text-brand-950">{{ area.name }}</h3>
           <p class="mt-1 text-xs leading-snug text-brand-900/70">{{ area.text }}</p>
+          <span v-if="area.slug" class="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 group-hover:underline">
+            Route and details <span aria-hidden="true">→</span>
+          </span>
         </div>
+        </component>
       </li>
     </ul>
 

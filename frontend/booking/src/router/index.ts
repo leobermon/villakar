@@ -1,4 +1,5 @@
 import { createRouter, type RouterHistory } from 'vue-router';
+import { destinationBySlug } from '@/content/destinations';
 import { useBookingStore } from '@/stores/booking';
 import HomeView from '@/views/HomeView.vue';
 
@@ -36,6 +37,13 @@ export function createAppRouter(history: RouterHistory) {
       { path: '/contact', name: 'contact', component: () => import('@/views/ContactView.vue') },
       { path: '/faq', name: 'faq', component: () => import('@/views/FaqView.vue') },
       { path: '/terms', name: 'terms', component: () => import('@/views/TermsView.vue') },
+      {
+        // Una página por destino (ver content/destinations.ts); un destino que no existe regresa al inicio.
+        path: '/destinations/:slug',
+        name: 'destination',
+        component: () => import('@/views/DestinationView.vue'),
+        beforeEnter: (to) => (destinationBySlug(to.params.slug) ? true : { name: 'home' }),
+      },
       { path: '/privacy', name: 'privacy', component: () => import('@/views/PrivacyView.vue') },
       { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
     ],

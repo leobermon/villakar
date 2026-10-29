@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PaymentBadges from '@/components/layout/PaymentBadges.vue';
 import { SITE } from '@/config';
+import { DESTINATIONS as DESTINATION_PAGES, destinationPath } from '@/content/destinations';
 
 const year = new Date().getFullYear();
 
@@ -15,6 +16,9 @@ const DESTINATIONS = [
   'Akumal',
   'Tulum',
 ];
+
+/** Destinos que tienen su propia página: el nombre del pie de página se vuelve un enlace. */
+const PAGE_BY_NAME = new Map(DESTINATION_PAGES.map((destination) => [destination.shortName, destinationPath(destination.slug)]));
 </script>
 
 <template>
@@ -28,7 +32,10 @@ const DESTINATIONS = [
       <section>
         <h2 class="text-xs font-semibold tracking-wide text-brand-800 uppercase">Destinations we serve</h2>
         <ul class="mt-2 grid list-disc grid-cols-2 gap-x-6 gap-y-1 pl-4 text-sm text-brand-950 marker:text-brand-500 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
-          <li v-for="place in DESTINATIONS" :key="place">{{ place }}</li>
+          <li v-for="place in DESTINATIONS" :key="place">
+            <RouterLink v-if="PAGE_BY_NAME.get(place)" :to="PAGE_BY_NAME.get(place)!" class="underline-offset-2 hover:text-brand-700 hover:underline">{{ place }}</RouterLink>
+            <template v-else>{{ place }}</template>
+          </li>
         </ul>
       </section>
     </div>

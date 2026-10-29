@@ -36,6 +36,7 @@ for (const route of INDEXABLE_PATHS) {
   if (!page.includes(html.slice(0, 40))) throw new Error(`No se pudo escribir el contenido de ${route}`);
 
   const file = route === '/' ? 'index.html' : `${route.slice(1)}.html`;
+  fs.mkdirSync(path.dirname(path.join(dist, file)), { recursive: true });
   fs.writeFileSync(path.join(dist, file), page);
   console.log(`Prerenderizado ${route} -> dist/${file} (${Math.round(page.length / 1024)} KB)`);
 }

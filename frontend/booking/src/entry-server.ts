@@ -18,5 +18,5 @@ export async function render(path: string) {
   await router.push(path);
   await router.isReady();
   const html = await renderToString(app);
-  return { html, seo: seoForRoute(router.currentRoute.value.name) };
+  return { html, seo: seoForRoute(router.currentRoute.value.name, router.currentRoute.value.path) };
 }

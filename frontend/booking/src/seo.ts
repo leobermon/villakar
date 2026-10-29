@@ -4,6 +4,7 @@
  * (scripts/prerender.mjs escribe estas mismas etiquetas en el HTML estático de cada página).
  */
 
+import { DESTINATIONS, destinationBySlug, destinationPath } from '@/content/destinations';
 import { FAQ_ITEMS } from '@/content/faq';
 
 export interface PageSeo {
@@ -74,9 +75,27 @@ export const SEO_BY_ROUTE: Record<string, PageSeo> = {
 };
 
 /** Páginas que se prerenderizan y salen en el sitemap. */
-export const INDEXABLE_PATHS = ['/', '/contact', '/faq', '/terms', '/privacy'] as const;
+export const INDEXABLE_PATHS: string[] = [
+  '/',
+  '/contact',
+  '/faq',
+  '/terms',
+  '/privacy',
+  ...DESTINATIONS.map((destination) => destinationPath(destination.slug)),
+];
 
-export function seoForRoute(name: unknown): PageSeo {
+/** SEO de una página de destino (/destinations/:slug): se arma con los datos del destino. */
+function destinationSeo(path: string): PageSeo | undefined {
+  const destination = destinationBySlug(path.split('/').filter(Boolean)[1]);
+  if (!destination) return undefined;
+  return {
+    title: `Cancun Airport to ${destination.name} Private Transfer | VillaKar Transfers`,
+    description: `Private transfer from Cancun Airport to ${destination.name}: ${destination.time.toLowerCase()}, ${destination.distanceKm}. ${destination.summary} Book online with a fixed price in USD.`,
+  };
+}
+
+export function seoForRoute(name: unknown, path = ''): PageSeo {
+  if (name === 'destination') return destinationSeo(path) ?? HOME_SEO;
   return (typeof name === 'string' && SEO_BY_ROUTE[name]) || HOME_SEO;
 }
 
@@ -123,7 +142,7 @@ function setMeta(selector: string, attributes: Record<string, string>, content: 
 
 /** En el navegador: actualiza título y etiquetas al cambiar de página. */
 export function applySeo(routeName: unknown, path: string): void {
-  const seo = seoForRoute(routeName);
+  const seo = seoForRoute(routeName, path);
   const url = canonicalUrl(window.location.origin, path);
   document.title = seo.title;
   setMeta('meta[name="description"]', { name: 'description' }, seo.description);
