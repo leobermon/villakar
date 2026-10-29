@@ -39,7 +39,7 @@ const COPY: Record<EmailKind, EmailCopy> = {
     subject: (code) => `We received your reservation · ${code}`,
     heading: 'We received your reservation',
     intro: (name) => `Thanks, ${name}.`,
-    note: 'Your reservation is saved but it is not confirmed yet. We will confirm it as soon as your payment is completed, and you will receive another email. You can finish your booking any time from the link below.',
+    note: 'Your reservation is saved but it is not confirmed yet. We will confirm it as soon as your payment is completed, and you will receive another email. You can finish your booking at any time from the link below.',
     icon: '&#8987;',
     banner: '#b7791f',
     circle: '#d4a24c',
@@ -61,7 +61,7 @@ const COPY: Record<EmailKind, EmailCopy> = {
     subject: (code) => `Thank you for traveling with us · ${code}`,
     heading: 'Thank you for traveling with us',
     intro: (name) => `Thanks, ${name}!`,
-    note: 'Your transfer is complete. Thank you for choosing our website and our services; we hope you enjoyed the ride. We would love to take you on your next trip.',
+    note: 'Your transfer is complete. Thank you for choosing VillaKar Transfers. We hope you enjoyed the ride and would love to take you on your next trip.',
     icon: '&#10003;',
     banner: '#2f855a',
     circle: '#5fb07f',
@@ -69,10 +69,10 @@ const COPY: Record<EmailKind, EmailCopy> = {
     showCash: false,
   },
   RESERVATION_CANCELLED: {
-    subject: (code) => `Your reservation was cancelled · ${code}`,
-    heading: 'Your reservation was cancelled',
-    intro: (name) => `Hi ${name}.`,
-    note: 'This reservation has been cancelled and no further action is needed. If you did not ask for the cancellation or you have any questions, please contact us. You are welcome to book a new transfer any time.',
+    subject: (code) => `Your reservation was canceled · ${code}`,
+    heading: 'Your reservation was canceled',
+    intro: (name) => `Hello, ${name}.`,
+    note: 'This reservation has been canceled and no further action is needed. If you did not ask for the cancellation or you have any questions, please contact us. You are welcome to book a new transfer any time.',
     icon: '&#10005;',
     banner: '#b4443c',
     circle: '#d9776f',
@@ -197,7 +197,7 @@ export class ReservationEmailsService {
       company.name,
       '',
       copy.heading,
-      copy.intro(`${r.customer.firstName} ${r.customer.lastName}`.trim()),
+      copy.intro(r.customer.firstName.trim()),
       '',
       copy.note,
       '',
@@ -299,7 +299,7 @@ export class ReservationEmailsService {
             </td>
             <td valign="top">
               <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;">${esc(copy.heading)}</div>
-              <div style="font-size:14px;color:#f3f3f3;margin-top:4px;">${esc(copy.intro(`${r.customer.firstName} ${r.customer.lastName}`.trim()))}</div>
+              <div style="font-size:14px;color:#f3f3f3;margin-top:4px;">${esc(copy.intro(r.customer.firstName.trim()))}</div>
               <div style="font-size:11px;color:#f3f3f3;margin-top:12px;">Reservation code</div>
               <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;letter-spacing:3px;">${esc(r.code)}</div>
             </td>
@@ -360,7 +360,7 @@ function totalLabel(r: ReservationSummary, kind: EmailKind): string {
   // En el correo de servicio completado solo va "Price" y la cantidad.
   if (kind === 'RESERVATION_COMPLETED') return 'Price';
   if (r.paymentStatus === 'PAID') return r.paymentMethod ? `Paid · ${METHOD_LABEL[r.paymentMethod]}` : 'Paid';
-  return r.payInCash ? 'Pending to pay · Cash' : 'Total';
+  return r.payInCash ? 'Due in cash' : 'Total';
 }
 
 function cashNote(r: ReservationSummary): string | null {

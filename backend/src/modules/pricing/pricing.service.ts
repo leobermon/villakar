@@ -97,7 +97,7 @@ export class PricingService {
       this.resolveLocation(dto.destination, 'destination'),
     ]);
     if (origin.id === destination.id) {
-      throw new BadRequestException('Origin and destination must be different');
+      throw new BadRequestException('Your pickup and drop-off places must be different.');
     }
 
     const [originZone, destinationZone] = await Promise.all([
@@ -170,11 +170,11 @@ export class PricingService {
 
   private validateDates(dto: QuoteDto): void {
     if (dto.date < todayInCancun()) {
-      throw new BadRequestException('date cannot be in the past');
+      throw new BadRequestException('The date cannot be in the past.');
     }
     if (dto.tripType === TripType.ROUND_TRIP) {
-      if (!dto.returnDate) throw new BadRequestException('returnDate is required for round trips');
-      if (dto.returnDate < dto.date) throw new BadRequestException('returnDate must be on or after date');
+      if (!dto.returnDate) throw new BadRequestException('Please choose a return date.');
+      if (dto.returnDate < dto.date) throw new BadRequestException('The return date must be on or after the first date.');
     }
   }
 
@@ -182,7 +182,7 @@ export class PricingService {
     const hasAirport = location.airportCode !== undefined;
     const hasGoogleId = location.googlePlaceId !== undefined;
     if (hasAirport === hasGoogleId) {
-      throw new BadRequestException(`${field} must include exactly one of airportCode or googlePlaceId`);
+      throw new BadRequestException('Please choose a hotel from the list.');
     }
     return hasAirport
       ? this.places.findByCode(location.airportCode!)
@@ -196,7 +196,7 @@ function isAirport(place: ResolvedPlace, zone: ZoneMatch): boolean {
 
 function resolveRouteType(originIsAirport: boolean, destinationIsAirport: boolean): RouteType {
   if (originIsAirport && destinationIsAirport) {
-    throw new BadRequestException('Airport to airport transfers are not available');
+    throw new BadRequestException('Airport-to-airport transfers are not available.');
   }
   if (originIsAirport) return RouteType.AIRPORT_HOTEL;
   if (destinationIsAirport) return RouteType.HOTEL_AIRPORT;

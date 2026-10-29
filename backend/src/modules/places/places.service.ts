@@ -213,7 +213,7 @@ export class PlacesService {
    */
   async resolveGooglePlace(googlePlaceId: string, sessionToken?: string): Promise<ResolvedPlace> {
     if (!GOOGLE_PLACE_ID_PATTERN.test(googlePlaceId)) {
-      throw new BadRequestException('Invalid place id');
+      throw new BadRequestException('Please choose a hotel from the list.');
     }
 
     const cached = await this.findByGoogleId(googlePlaceId);
@@ -229,7 +229,7 @@ export class PlacesService {
 
     const { latitude, longitude } = details.location ?? {};
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      throw new BadRequestException('Place has no coordinates');
+      throw new BadRequestException('Please choose a different hotel from the list.');
     }
 
     const types = details.types ?? [];
@@ -292,7 +292,7 @@ export class PlacesService {
     }
 
     if (response.status === 400 || response.status === 404) {
-      throw new BadRequestException('Unknown place');
+      throw new BadRequestException('Please choose a hotel from the list.');
     }
     if (!response.ok) {
       this.logger.error(`Google Places responded ${response.status}: ${await response.text()}`);

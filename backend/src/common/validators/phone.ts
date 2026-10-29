@@ -13,7 +13,7 @@ export function IsInternationalPhone(options?: ValidationOptions): PropertyDecor
       name: 'isInternationalPhone',
       target: object.constructor,
       propertyName: propertyName as string,
-      options: { message: `${String(propertyName)} must be a valid phone number with its country code`, ...options },
+      options: { message: 'Please enter a valid phone number with its country code.', ...options },
       validator: {
         validate: (value: unknown) => typeof value === 'string' && E164.test(value) && isValidPhoneNumber(value),
       },

@@ -14,7 +14,7 @@ const hotel = computed(() => (typeof route.query.hotel === 'string' ? route.quer
     <main class="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <ContactForm
         title="Request a personalized quote"
-        intro="Hotel not on the list, a large group or a special route? Tell us about your trip and we will reply by email."
+        intro="Is your hotel not on the list, or do you have a large group or a special route? Tell us about your trip and we will reply by email."
         :hotel-name="hotel"
       />
     </main>

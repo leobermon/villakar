@@ -40,7 +40,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'Which vehicle do I need for my group and luggage?',
     answer:
-      'Our Sedan fits up to 2 passengers and 2 suitcases, the VIP SUV fits up to 4 passengers and 4 suitcases, and the Transit van fits up to 7 passengers and 7 suitcases. The booking form shows the vehicles that fit your group. If you are traveling with more than 7 people, contact us for a group quote.',
+      'Our Sedan fits up to 2 passengers and 2 suitcases, the V.I.P fits up to 4 passengers and 4 suitcases, and the Transit fits up to 7 passengers and 7 suitcases. The booking form shows the vehicles that fit your group. If you are traveling with more than 7 people, contact us for a group quote.',
   },
   {
     question: 'How can I pay for my transfer?',
@@ -60,6 +60,6 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'How do I get my confirmation, and what if I need to change my booking?',
     answer:
-      'Once your reservation is confirmed, you receive an email with your reservation code and trip details, and you can open and print it any time from the reservation page. If you need to change something, such as your flight or the number of passengers, contact us as soon as possible through our Contact page.',
+      'Once your reservation is confirmed, you receive an email with your reservation code and trip details, and you can open and print it at any time from the reservation page. If you need to change something, such as your flight or the number of passengers, contact us as soon as possible through our Contact page.',
   },
 ];

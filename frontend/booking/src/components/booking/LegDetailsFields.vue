@@ -154,7 +154,7 @@ watch(
       contact us.
     </p>
     <p v-if="props.kind === 'ARRIVAL'" class="mt-4 text-xs text-brand-900/60">
-      Your driver tracks your flight and waits for you at the terminal exit with a sign with your name.
+      Your driver tracks your flight and waits for you at the terminal exit holding a sign with your name.
       Service hours: {{ serviceHours.label }}, Cancun local time.
     </p>
     <p v-else-if="props.kind === 'DEPARTURE'" class="mt-4 text-xs text-brand-900/60">

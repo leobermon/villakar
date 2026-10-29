@@ -42,7 +42,7 @@ export class CustomerDto {
   phone: string;
 
   /** País del teléfono (ISO, p. ej. MX); se guarda como país del cliente. */
-  @IsIn(PHONE_COUNTRIES, { message: 'phoneCountry must be a valid country code' })
+  @IsIn(PHONE_COUNTRIES, { message: 'Please choose your phone country code.' })
   phoneCountry: string;
 }
 
@@ -53,15 +53,15 @@ export class CustomerDto {
  */
 export class LegDetailsDto {
   @IsOptional()
-  @Matches(TIME, { message: 'pickupTime must be HH:MM' })
+  @Matches(TIME, { message: 'Please choose a valid pickup time.' })
   pickupTime?: string;
 
   @IsOptional()
-  @Matches(TIME, { message: 'flightTime must be HH:MM' })
+  @Matches(TIME, { message: 'Please choose a valid flight time.' })
   flightTime?: string;
 
   @IsOptional()
-  @Matches(/^[A-Za-z0-9]{2,3}\s?\d{1,4}[A-Za-z]?$/, { message: 'flightNumber must look like AA1234' })
+  @Matches(/^[A-Za-z0-9]{2,3}\s?\d{1,4}[A-Za-z]?$/, { message: 'Please enter a valid flight number, for example AA1234.' })
   flightNumber?: string;
 
   @IsOptional()

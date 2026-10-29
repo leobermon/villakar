@@ -61,13 +61,13 @@ const PAYMENT_METHOD_LABEL = {
   TRANSFER: 'Bank transfer',
 } as const;
 
-/** Rótulo del monto: "Paid · PayPal" si ya se cobró, "Pending to pay · Cash" si se pagará en efectivo. */
+/** Rótulo del monto: "Paid · PayPal" si ya se cobró, "Due in cash" si se pagará en efectivo. */
 const paymentLabel = computed(() => {
   const current = reservation.value;
   if (!current) return 'Total';
   const method = current.paymentMethod ? PAYMENT_METHOD_LABEL[current.paymentMethod] : null;
   if (isPaid.value) return method ? `Paid · ${method}` : 'Paid';
-  if (current.payInCash) return 'Pending to pay · Cash';
+  if (current.payInCash) return 'Due in cash';
   return 'Total';
 });
 /** Confirmada: pagada en línea, o con pago en efectivo pendiente y no cancelada. */
@@ -90,7 +90,7 @@ async function handlePaymentReturn(): Promise<void> {
       const result = await capturePaypalPayment(token);
       if (!result.paid) notice.value = result.message ?? 'Your PayPal payment has not been completed.';
     } else if (payment === 'cancelled') {
-      notice.value = 'Payment was cancelled. Your reservation is saved; you can pay below.';
+      notice.value = 'Payment was canceled. Your reservation is saved; you can pay below.';
     } else if (payment === 'error') {
       notice.value = 'We could not open the payment page. Please try again.';
     }

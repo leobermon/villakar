@@ -115,7 +115,7 @@ export class ReservationsService {
 
     const expectedLegs = dto.tripType === TripType.ROUND_TRIP ? 2 : 1;
     if (dto.legs.length !== expectedLegs) {
-      throw new BadRequestException(`legs must contain ${expectedLegs} item(s) for this trip type`);
+      throw new BadRequestException('Something went wrong with your trip details. Please search again.');
     }
 
     // Ida: origen → destino en `date`. Regreso: destino → origen en `returnDate`.
@@ -310,7 +310,7 @@ function resolveLegTimes(
 ): { pickupAt: Date; flightAt: Date | null } {
   const label = index === 0 ? 'first transfer' : 'return transfer';
   const require = (value: string | undefined, field: string): string => {
-    if (!value?.trim()) throw new BadRequestException(`${field} is required for the ${label}`);
+    if (!value?.trim()) throw new BadRequestException(`Please complete the ${field.toLowerCase()} for your ${label}.`);
     return value;
   };
 
@@ -329,7 +329,7 @@ function resolveLegTimes(
   let pickupAt = localDateTime(date, withinServiceHours(require(details.pickupTime, 'Pickup time'), label));
   if (pickupAt >= flightAt) pickupAt = new Date(pickupAt.getTime() - 24 * HOUR_MS);
   if (flightAt.getTime() - pickupAt.getTime() > MAX_PICKUP_BEFORE_FLIGHT_MS) {
-    throw new BadRequestException(`Pickup time must be within 8 hours before your flight (${label})`);
+    throw new BadRequestException(`Your hotel pickup for the ${label} must be no more than 8 hours before your flight. Please choose a later time.`);
   }
   return { pickupAt, flightAt };
 }
@@ -348,7 +348,7 @@ export const SERVICE_HOURS = { start: '05:00', end: '20:00' } as const;
 function withinServiceHours(time: string, label: string): string {
   if (time < SERVICE_HOURS.start || time > SERVICE_HOURS.end) {
     throw new BadRequestException(
-      `Our service hours are 5:00 am to 8:00 pm (${label}). For other times, please contact us.`,
+      `Our service hours are 5:00 am to 8:00 pm. For other times, please contact us.`,
     );
   }
   return time;

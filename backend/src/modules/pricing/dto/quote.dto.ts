@@ -54,12 +54,12 @@ export class QuoteDto {
   destination: QuoteLocationDto;
 
   /** Fecha del primer servicio (YYYY-MM-DD, hora local de Cancún). Define la tarifa vigente. */
-  @Matches(DATE_ONLY, { message: 'date must be YYYY-MM-DD' })
+  @Matches(DATE_ONLY, { message: 'Please choose a valid date.' })
   date: string;
 
   /** Fecha del regreso, obligatoria en ROUND_TRIP. */
   @IsOptional()
-  @Matches(DATE_ONLY, { message: 'returnDate must be YYYY-MM-DD' })
+  @Matches(DATE_ONLY, { message: 'Please choose a valid return date.' })
   returnDate?: string;
 
   /** Total de pasajeros que ocupan asiento. */

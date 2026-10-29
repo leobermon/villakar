@@ -19,7 +19,7 @@ interface CoverageArea {
 const AREAS: CoverageArea[] = [
   {
     name: 'Cancun Airport',
-    text: 'Your driver waits at arrivals in Terminals 2, 3 and 4 with a sign with your name.',
+    text: 'Your driver waits at arrivals in Terminals 2, 3 and 4 holding a sign with your name.',
     badge: 'Meet & greet at arrivals',
     image: '/destinations/cancun-airport.jpg',
   },

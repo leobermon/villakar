@@ -22,8 +22,8 @@ const id = useId();
         :to="{ name: 'terms' }"
         target="_blank"
         class="font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800"
-      >Terms and Conditions</RouterLink>
-      including the Force Majeure and Third-Party Liability clause
+      >Terms and Conditions</RouterLink>,
+      including the Force Majeure and Third-Party Liability clauses
     </label>
   </div>
 </template>

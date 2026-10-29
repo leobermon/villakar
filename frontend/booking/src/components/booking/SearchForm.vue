@@ -32,9 +32,9 @@ const labels = computed(() => {
     case 'AIRPORT_HOTEL':
       return { hotel: 'Drop-off hotel', date: 'Arrival date', returnDate: 'Departure date' };
     case 'HOTEL_AIRPORT':
-      return { hotel: 'Pick-up hotel', date: 'Departure date', returnDate: 'Return date' };
+      return { hotel: 'Pickup hotel', date: 'Departure date', returnDate: 'Return date' };
     default:
-      return { hotel: 'Pick-up hotel', date: 'Pick-up date', returnDate: 'Return date' };
+      return { hotel: 'Pickup hotel', date: 'Pickup date', returnDate: 'Return date' };
   }
 });
 
@@ -127,7 +127,7 @@ function goToContact(query: string) {
       <!-- Aeropuerto fijo: siempre Cancún (origen o destino según la ruta) -->
       <div v-if="involvesAirport" class="lg:col-span-4" :class="search.route === 'HOTEL_AIRPORT' ? 'lg:order-2' : ''">
         <label :for="airportFieldId" class="mb-1.5 block text-xs font-semibold tracking-wide text-brand-800 uppercase">
-          {{ search.route === 'AIRPORT_HOTEL' ? 'Pick-up at' : 'Drop-off at' }}
+          {{ search.route === 'AIRPORT_HOTEL' ? 'Pickup at' : 'Drop-off at' }}
         </label>
         <div class="relative">
           <svg

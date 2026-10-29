@@ -15,7 +15,7 @@ import SiteHeader from '@/components/layout/SiteHeader.vue';
         <section class="mt-8 space-y-3">
           <h2 class="font-display text-lg font-semibold">1. Intermediary role</h2>
           <p>
-            VillaKarShuttle acts solely as an intermediary / booking agent for ground transportation and tour services
+            VillaKar Transfers acts solely as an intermediary and booking agent for ground transportation and tour services
             provided by third-party suppliers. We are not an airline, hotel, park, or government entity. We do not own or
             operate aircraft, airports, or archaeological sites.
           </p>
@@ -25,7 +25,7 @@ import SiteHeader from '@/components/layout/SiteHeader.vue';
         <section class="mt-8 space-y-3">
           <h2 class="font-display text-lg font-semibold">2. Flight changes, delays and no-shows – no liability</h2>
           <p>
-            Client is responsible for providing correct flight information. VillaKarShuttle is not responsible for and
+            Client is responsible for providing correct flight information. VillaKar Transfers is not responsible for and
             shall not be liable for:
           </p>
           <ol class="list-[lower-alpha] space-y-1 pl-6">
@@ -43,7 +43,7 @@ import SiteHeader from '@/components/layout/SiteHeader.vue';
         <section class="mt-8 space-y-3">
           <h2 class="font-display text-lg font-semibold">3. Force majeure and weather conditions</h2>
           <p>
-            VillaKarShuttle shall not be liable for failure or delay in performing services due to circumstances beyond
+            VillaKar Transfers shall not be liable for failure or delay in performing services due to circumstances beyond
             our reasonable control (Force Majeure), including but not limited to: adverse weather conditions (hurricane,
             tropical storm, heavy rain), natural disasters, sargassum alerts, government orders, road closures, accidents,
             traffic, airport closures, strikes, pandemics, or acts of authorities at archaeological sites or parks.
@@ -67,18 +67,18 @@ import SiteHeader from '@/components/layout/SiteHeader.vue';
           <p>
             Tours to parks (Xcaret, Xel-Ha, etc.), archaeological zones (Chichen Itza, Tulum, etc.) are operated by
             independent third parties. All park rules, closures, capacity limits, and itinerary changes are decided by
-            those operators. VillaKarShuttle is not responsible for their actions, closures, or changes.
+            those operators. VillaKar Transfers is not responsible for their actions, closures, or changes.
           </p>
         </section>
 
         <section class="mt-8 space-y-3">
           <h2 class="font-display text-lg font-semibold">5. Limitation of liability</h2>
           <p>
-            To the maximum extent permitted by law, VillaKarShuttle's total liability shall not exceed the total amount
+            To the maximum extent permitted by law, VillaKar Transfers's total liability shall not exceed the total amount
             paid by the client for the specific service booked. We shall not be liable for any indirect, incidental,
             consequential damages, lost flights, lost hotel nights, or loss of enjoyment.
           </p>
-          <p>Client acknowledges that ground transportation involves road risks and agrees to travel with travel insurance.</p>
+          <p>Client acknowledges that ground transportation involves road risks and agrees to have travel insurance.</p>
         </section>
 
         <section class="mt-8 space-y-3">

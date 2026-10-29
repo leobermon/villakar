@@ -70,7 +70,7 @@ async function handlePaymentReturn(): Promise<void> {
       const result = await captureLinkPaypal(orderId);
       if (!result.paid) notice.value = result.message ?? 'Your PayPal payment has not been completed.';
     } else if (payment === 'cancelled') {
-      notice.value = 'Payment was cancelled. You can try again below.';
+      notice.value = 'Payment was canceled. You can try again below.';
     }
   } catch (e) {
     notice.value = messageOf(e, 'We could not verify your payment yet. Please refresh in a moment.');
@@ -132,7 +132,7 @@ onMounted(async () => {
           <div class="mt-6 flex items-end justify-between rounded-2xl bg-brand-50 px-5 py-4">
             <span>
               <span class="block text-sm font-semibold text-brand-900/70">Amount to pay</span>
-              <span class="block text-xs font-semibold text-emerald-700">Tax Included</span>
+              <span class="block text-xs font-semibold text-emerald-700">Tax included</span>
             </span>
             <span class="font-display text-3xl font-bold text-brand-950">
               {{ formatUsd(link.amount) }} <span class="font-sans text-sm font-medium text-brand-900/60">USD</span>

@@ -10,7 +10,7 @@ const DESTINATIONS = [
   'Costa Mujeres',
   'Playa Mujeres',
   'Puerto Morelos',
-  'Bahía Petempich',
+  'Bahia Petempich',
   'Playa del Carmen',
   'Akumal',
   'Tulum',

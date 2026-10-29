@@ -37,7 +37,7 @@ export class CreateContactRequestDto {
   googlePlaceId?: string;
 
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'arrivalDate must be YYYY-MM-DD' })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Please choose a valid travel date.' })
   arrivalDate?: string;
 
   @IsOptional()

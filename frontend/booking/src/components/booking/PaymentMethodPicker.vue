@@ -42,8 +42,8 @@ watch(
       class="rounded-xl bg-accent-400/10 px-4 py-3 text-sm font-medium text-accent-600"
     >
       <template v-if="props.lastMinute && options.length">
-        Your pickup is less than {{ SITE.cashMinNoticeHours }} hours away, so it must be paid online, and online
-        payment is not available right now. Please contact us to book this last-minute transfer.
+        Your pickup is less than {{ SITE.cashMinNoticeHours }} hours away, so payment must be made online, but online
+        payment isn't available right now. Please contact us to book this last-minute transfer.
       </template>
       <template v-else>Payment is not available right now. Please contact us to complete your booking.</template>
     </p>
