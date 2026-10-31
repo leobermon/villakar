@@ -4,13 +4,13 @@ export function formatUsd(amount: number): string {
   return usd.format(amount);
 }
 
-/** Pesos enteros que equivalen a un monto en USD (siempre hacia arriba, igual que el cobro del servidor). */
+/** Pesos con centavos exactos que equivalen a un monto en USD (igual que el cobro del servidor). */
 export function usdToPesos(amountUsd: number, rate: number): number {
-  return Math.ceil(Math.round(amountUsd * rate * 100) / 100);
+  return Math.round(amountUsd * rate * 100) / 100;
 }
 
 export function formatMxn(pesos: number): string {
-  return `${new Intl.NumberFormat('en-US').format(pesos)} MXN`;
+  return `${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(pesos)} MXN`;
 }
 
 /** Hoy en Cancún como YYYY-MM-DD (para el mínimo de los campos de fecha). */

@@ -21,9 +21,9 @@ export interface CardCharge {
   sessionParams: Pick<Stripe.Checkout.SessionCreateParams, 'adaptive_pricing'>;
 }
 
-/** Pesos enteros (redondeados hacia arriba) que equivalen a un monto en USD con el tipo de cambio dado. */
-export function usdToPesos(usd: Prisma.Decimal, rate: number): number {
-  return usd.mul(rate).toDecimalPlaces(2).ceil().toNumber();
+/** Pesos (con centavos exactos) que equivalen a un monto en USD con el tipo de cambio dado. */
+export function usdToPesos(usd: Prisma.Decimal, rate: number): Prisma.Decimal {
+  return usd.mul(rate).toDecimalPlaces(2);
 }
 
 /**
@@ -40,7 +40,7 @@ export function buildCardCharge(usd: Prisma.Decimal, payments: PaymentSettings):
   const pesos = usdToPesos(usd, rate);
   return {
     currency,
-    unitAmount: pesos * 100,
+    unitAmount: pesos.mul(100).toDecimalPlaces(0).toNumber(),
     metadata: { usdTotal: usd.toFixed(2), mxnRate: String(rate) },
     note: `${usd.toFixed(2)} USD converted at ${rate} MXN per USD`,
     sessionParams: { adaptive_pricing: { enabled: false } },

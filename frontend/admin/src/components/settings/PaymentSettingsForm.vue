@@ -50,7 +50,7 @@ const rate = computed({
 const rateExample = computed(() => {
   const value = form.value?.usdToMxnRate;
   if (!value) return 'Vacío: la tarjeta solo se cobra en dólares.';
-  return `Una reserva de USD 100 se cobraría como ${new Intl.NumberFormat('es-MX').format(Math.ceil(100 * value))} MXN en Stripe (se redondea hacia arriba al peso).`;
+  return `Una reserva de USD 100 se cobraría como ${new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.round(100 * value * 100) / 100)} MXN en Stripe (con centavos exactos).`;
 });
 
 /** Lo que verá el cliente con la configuración actual del formulario. */

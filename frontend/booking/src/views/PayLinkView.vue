@@ -11,7 +11,7 @@ import {
 import { ApiError } from '@/api/client';
 import PaymentBadges from '@/components/layout/PaymentBadges.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
-import { formatMxn, formatUsd, usdToPesos } from '@/utils/format';
+import { formatUsd, usdToPesos } from '@/utils/format';
 
 /**
  * Página pública de un link de pago (/pay/<token>): el equipo se lo manda al cliente y aquí paga
@@ -173,8 +173,8 @@ onMounted(async () => {
                 @click="pay('card')"
               >
                 <span>
-                  <span class="block text-[15px] font-bold text-brand-950">{{ paying === 'card' ? 'Opening secure payment…' : pesos ? `Pay with credit or debit card · ${formatMxn(pesos)}` : 'Pay with credit or debit card' }}</span>
-                  <span class="block text-xs text-brand-900/60">{{ pesos ? `Charged in Mexican pesos at 1 USD = ${link.mxnRate} MXN · secured by Stripe` : 'Visa, Mastercard, American Express · secured by Stripe' }}</span>
+                  <span class="block text-[15px] font-bold text-brand-950">{{ paying === 'card' ? 'Opening secure payment…' : 'Pay with credit or debit card' }}</span>
+                  <span class="block text-xs text-brand-900/60">{{ pesos ? `Charged in MXN · 1 USD = ${link.mxnRate} MXN` : 'Visa, Mastercard, American Express · secured by Stripe' }}</span>
                 </span>
                 <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0" role="img" aria-label="Stripe">
                   <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#635bff" />
