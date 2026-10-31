@@ -4,11 +4,8 @@
  *
  * Las fotos viven en public/destinations/photos y vienen de Wikimedia Commons con licencia libre;
  * cada una lleva su crédito (autor y licencia), que se muestra al pie de la página.
- * Las rutas del mapa son esquemáticas (ver RouteMap.vue): sirven para ubicar el destino, no para navegar.
+ * El mapa de cada destino es una imagen generada con scripts/build-destination-maps.mjs (ver destinationMaps.ts).
  */
-
-/** [longitud, latitud] */
-export type LngLat = [number, number];
 
 export interface DestinationPhoto {
   /** Archivo dentro de public/destinations/photos. */
@@ -40,10 +37,6 @@ export interface Destination {
   distanceMi: string;
   /** Aclaración bajo el tiempo y la distancia. */
   note?: string;
-  /** Ubicación del destino en el mapa. */
-  coord: LngLat;
-  /** Ruta esquemática desde el aeropuerto (incluye el aeropuerto y el destino). */
-  route: LngLat[];
   hero: DestinationPhoto;
   gallery: DestinationPhoto[];
   paragraphs: string[];
@@ -53,81 +46,7 @@ export interface Destination {
   goodToKnow: string[];
 }
 
-export const AIRPORT: { name: string; coord: LngLat } = {
-  name: 'Cancun Airport (CUN)',
-  coord: [-86.8747, 21.0381],
-};
-
-/** Línea de costa del Caribe (de norte a sur), simplificada: el mar queda al este. */
-export const COAST: LngLat[] = [
-  [-86.8, 21.3],
-  [-86.82, 21.25],
-  [-86.82, 21.21],
-  [-86.8107, 21.1935],
-  [-86.78, 21.165],
-  [-86.745, 21.138],
-  [-86.745, 21.12],
-  [-86.752, 21.09],
-  [-86.76, 21.05],
-  [-86.77, 21.015],
-  [-86.777, 20.995],
-  [-86.795, 20.97],
-  [-86.82, 20.93],
-  [-86.85, 20.88],
-  [-86.866, 20.848],
-  [-86.9, 20.8],
-  [-86.95, 20.73],
-  [-87.0, 20.67],
-  [-87.045, 20.64],
-  [-87.07, 20.63],
-  [-87.1, 20.6],
-  [-87.15, 20.55],
-  [-87.2, 20.505],
-  [-87.25, 20.46],
-  [-87.29, 20.42],
-  [-87.305, 20.395],
-  [-87.34, 20.34],
-  [-87.39, 20.29],
-  [-87.43, 20.23],
-  [-87.45, 20.2],
-  [-87.47, 20.12],
-  [-87.5, 20.05],
-];
-
-/** Poblaciones de referencia que se dibujan en el mapa cuando caen dentro del encuadre. */
-export const TOWNS: Array<{ name: string; coord: LngLat }> = [
-  { name: 'Downtown Cancun', coord: [-86.8475, 21.1619] },
-  { name: 'Puerto Morelos', coord: [-86.8756, 20.8498] },
-  { name: 'Playa del Carmen', coord: [-87.0739, 20.6296] },
-  { name: 'Puerto Aventuras', coord: [-87.237, 20.509] },
-  { name: 'Akumal', coord: [-87.3144, 20.3944] },
-  { name: 'Tulum', coord: [-87.4654, 20.2114] },
-];
-
-/** Carretera 307 hacia el sur, con la que comparten tramo las rutas a Morelos, Playa, Akumal y Tulum. */
-const HIGHWAY_SOUTH: LngLat[] = [
-  [-86.8747, 21.0381],
-  [-86.884, 21.0],
-  [-86.887, 20.95],
-  [-86.887, 20.9],
-  [-86.883, 20.8498],
-  [-86.91, 20.79],
-  [-86.965, 20.72],
-  [-87.025, 20.67],
-  [-87.0845, 20.6296],
-  [-87.155, 20.56],
-  [-87.215, 20.5],
-  [-87.28, 20.45],
-  [-87.325, 20.3944],
-  [-87.365, 20.34],
-  [-87.41, 20.28],
-  [-87.4755, 20.2114],
-];
-
-/** Tramo de la carretera hasta la longitud/latitud del destino (se corta en el punto indicado). */
-function highwayTo(endIndex: number, destination: LngLat): LngLat[] {
-  return [...HIGHWAY_SOUTH.slice(0, endIndex), destination];
-}
+export const AIRPORT = { name: 'Cancun Airport (CUN)' } as const;
 
 const PHOTOS = '/destinations/photos/';
 export const photoUrl = (file: string) => PHOTOS + file;
@@ -144,15 +63,6 @@ export const DESTINATIONS: Destination[] = [
     distanceKm: '15–25 km',
     distanceMi: '10–15 mi',
     note: 'Depends on where your hotel is along the Hotel Zone.',
-    coord: [-86.7685, 21.0765],
-    route: [
-      [-86.8747, 21.0381],
-      [-86.845, 21.025],
-      [-86.8, 21.0155],
-      [-86.7775, 21.0],
-      [-86.7715, 21.04],
-      [-86.7685, 21.0765],
-    ],
     hero: {
       file: 'cancun-hero.jpg',
       alt: 'White-sand beach and turquoise water in Cancun, with hotels in the distance',
@@ -201,11 +111,9 @@ export const DESTINATIONS: Destination[] = [
     tagline: 'A quiet fishing town with a reef just off the beach',
     summary: 'A relaxed fishing town with a leaning lighthouse and a reef close to shore.',
     time: 'About 25 min',
-    distanceKm: '35 km',
-    distanceMi: '22 mi',
+    distanceKm: '26 km',
+    distanceMi: '16 mi',
     note: 'Driving time without traffic.',
-    coord: [-86.8756, 20.8498],
-    route: highwayTo(5, [-86.8756, 20.8498]),
     hero: {
       file: 'puerto-morelos-hero.jpg',
       alt: 'Small fishing boats in turquoise shallow water at Puerto Morelos',
@@ -257,8 +165,6 @@ export const DESTINATIONS: Destination[] = [
     distanceKm: '55 km',
     distanceMi: '34 mi',
     note: 'Driving time without traffic.',
-    coord: [-87.0739, 20.6296],
-    route: highwayTo(8, [-87.0739, 20.6296]),
     hero: {
       file: 'playa-del-carmen-hero.jpg',
       alt: 'The beach at Playa del Carmen with the pier in the distance',
@@ -307,11 +213,9 @@ export const DESTINATIONS: Destination[] = [
     tagline: 'A calm bay known for its sea turtles',
     summary: 'A peaceful bay where green sea turtles feed in the shallows.',
     time: 'About 1 h 15 min',
-    distanceKm: '100 km',
-    distanceMi: '62 mi',
+    distanceKm: '92 km',
+    distanceMi: '57 mi',
     note: 'Driving time without traffic.',
-    coord: [-87.3144, 20.3944],
-    route: highwayTo(12, [-87.3144, 20.3944]),
     hero: {
       file: 'akumal-hero.jpg',
       alt: 'Small boats resting in the calm water of Akumal bay at dusk',
@@ -360,11 +264,9 @@ export const DESTINATIONS: Destination[] = [
     tagline: 'Maya ruins above the Caribbean and a laid-back beach scene',
     summary: 'Cliff-top Maya ruins, beach-road boutique hotels and cenotes.',
     time: 'About 1 h 30 min',
-    distanceKm: '130 km',
-    distanceMi: '80 mi',
+    distanceKm: '118 km',
+    distanceMi: '73 mi',
     note: 'Driving time without traffic.',
-    coord: [-87.4654, 20.2114],
-    route: highwayTo(15, [-87.4654, 20.2114]),
     hero: {
       file: 'tulum-hero.jpg',
       alt: 'The Temple of the God of the Winds on a rocky cliff above the turquoise sea in Tulum',

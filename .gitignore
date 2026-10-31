@@ -6,3 +6,4 @@ backups/
 catalogo.sql
 dist-server/
 .env.local
+.map-tiles/
