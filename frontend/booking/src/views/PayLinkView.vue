@@ -174,7 +174,7 @@ onMounted(async () => {
               >
                 <span>
                   <span class="block text-[15px] font-bold text-brand-950">{{ paying === 'card' ? 'Opening secure payment…' : 'Pay with credit or debit card' }}</span>
-                  <span class="block text-xs text-brand-900/60">{{ pesos ? 'Charged in Mexican pesos (MXN)' : 'Visa, Mastercard, American Express · secured by Stripe' }}</span>
+                  <span class="block text-xs text-brand-900/60">{{ pesos ? 'Charged in Mexican pesos (MXN) · secured by Stripe' : 'Visa, Mastercard, American Express · secured by Stripe' }}</span>
                 </span>
                 <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0" role="img" aria-label="Stripe">
                   <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#635bff" />

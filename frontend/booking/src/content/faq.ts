@@ -45,7 +45,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'How can I pay for my transfer?',
     answer:
-      'You can pay online with a credit or debit card (Visa, Mastercard, American Express) or with PayPal, or choose to pay your driver in cash after the service. If your pickup is less than 8 hours away, payment must be made online to guarantee your reservation.',
+      'You can pay online with a credit or debit card (Visa, Mastercard, American Express), with Apple Pay or Google Pay when your device supports them, or with PayPal. You can also choose to pay your driver in cash after the service. Card payments are processed securely by Stripe and charged in Mexican pesos (MXN). If your pickup is less than 8 hours away, payment must be made online to guarantee your reservation.',
   },
   {
     question: 'Can I book a round trip or a transfer from my hotel to the airport?',
