@@ -9,8 +9,6 @@ import { SITE } from '@/config';
 const props = defineProps<{ available: PaymentMethodsAvailability | null; lastMinute?: boolean }>();
 const method = defineModel<PaymentMethod | null>({ required: true });
 
-const mxnRate = computed(() => props.available?.mxnRate ?? null);
-
 const options = computed(() =>
   [
     { value: 'card' as const, title: 'Credit or debit card', text: 'Visa, Mastercard, Amex · secured by Stripe' },
@@ -120,11 +118,6 @@ watch(
           </span>
         </label>
       </div>
-
-      <!-- Las tarjetas se cobran en pesos mexicanos: cualquier tarjeta mexicana o extranjera puede pagar en MXN. -->
-      <p v-if="method === 'card' && mxnRate" class="mt-3 rounded-2xl border border-brand-100 bg-white p-4 text-xs text-brand-900/70">
-        Your card will be charged in Mexican pesos (MXN). Your bank may add its own fees.
-      </p>
     </template>
   </fieldset>
 </template>
