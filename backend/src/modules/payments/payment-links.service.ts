@@ -19,6 +19,7 @@ import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { SettingsService } from '../settings/settings.service';
+import { buildCardCharge, chargeFromSession, type CardCurrency } from './card-currency';
 import { PaypalService } from './paypal.service';
 
 /** Stripe exige al menos 30 minutos de vida para una sesión de Checkout. */
@@ -30,6 +31,8 @@ export interface PublicPaymentLink {
   description: string;
   amount: number;
   currency: 'USD';
+  /** Pesos por dólar si se puede pagar con tarjeta en MXN; null si no. */
+  mxnRate: number | null;
   customerName: string;
   /** Código de la reserva a la que abona, si el link es de una orden. */
   reservationCode: string | null;
@@ -76,6 +79,7 @@ export class PaymentLinksService {
       description: link.description,
       amount: link.amount.toNumber(),
       currency: 'USD',
+      mxnRate: enabled.usdToMxnRate,
       customerName: link.customerName,
       reservationCode: link.reservation?.code ?? null,
       status: effectiveStatus(link),
@@ -90,10 +94,11 @@ export class PaymentLinksService {
 
   // ---------------- Stripe ----------------
 
-  async startStripe(token: string): Promise<{ url: string }> {
+  async startStripe(token: string, currency: CardCurrency = 'usd'): Promise<{ url: string }> {
     if (!this.stripeClient) throw new ServiceUnavailableException('Card payments are not available right now.');
     const link = await this.findPayable(token, 'card');
     const site = this.siteUrl();
+    const charge = buildCardCharge(link.amount, currency, await this.settings.get('payments'));
 
     let session: Stripe.Checkout.Session;
     try {
@@ -101,18 +106,22 @@ export class PaymentLinksService {
         mode: 'payment',
         customer_email: link.customerEmail ?? undefined,
         client_reference_id: link.token,
-        metadata: { paymentLinkToken: link.token },
+        ...charge.sessionParams,
+        metadata: { paymentLinkToken: link.token, ...charge.metadata },
         payment_intent_data: {
           description: link.description.slice(0, 250),
-          metadata: { paymentLinkToken: link.token },
+          metadata: { paymentLinkToken: link.token, ...charge.metadata },
         },
         line_items: [
           {
             quantity: 1,
             price_data: {
-              currency: 'usd',
-              unit_amount: link.amount.mul(100).toDecimalPlaces(0).toNumber(),
-              product_data: { name: link.description.slice(0, 120) },
+              currency: charge.currency,
+              unit_amount: charge.unitAmount,
+              product_data: {
+                name: link.description.slice(0, 120),
+                ...(charge.note ? { description: charge.note } : {}),
+              },
             },
           },
         ],
@@ -152,12 +161,14 @@ export class PaymentLinksService {
     if (!token) throw new BadRequestException('Unknown payment session');
     if (session.payment_status !== 'paid') return { token, paid: false };
 
+    const charge = chargeFromSession(session);
     await this.settle(token, PaymentProvider.STRIPE, session.id, {
-      amount: new Prisma.Decimal(session.amount_total ?? 0).div(100),
-      currency: session.currency ?? 'usd',
+      amount: charge.amount,
+      currency: charge.currency,
       payload: {
         sessionId: session.id,
         paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+        ...charge.extra,
       },
     });
     return { token, paid: true };

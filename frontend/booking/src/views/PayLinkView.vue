@@ -6,12 +6,13 @@ import {
   confirmLinkStripe,
   fetchPaymentLink,
   startLinkPayment,
+  type CardCurrency,
   type PaymentLinkInfo,
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
 import PaymentBadges from '@/components/layout/PaymentBadges.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
-import { formatUsd } from '@/utils/format';
+import { formatMxn, formatUsd, usdToPesos } from '@/utils/format';
 
 /**
  * Página pública de un link de pago (/pay/<token>): el equipo se lo manda al cliente y aquí paga
@@ -26,7 +27,9 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 /** Aviso sobre el último intento de pago (cancelado, pendiente, rechazado…). */
 const notice = ref<string | null>(null);
-const paying = ref<'card' | 'paypal' | null>(null);
+const paying = ref<'card' | 'card-mxn' | 'paypal' | null>(null);
+/** Lo que costaría en pesos (si el negocio ofrece pagar con tarjeta en MXN). */
+const pesos = computed(() => (link.value?.mxnRate ? usdToPesos(link.value.amount, link.value.mxnRate) : null));
 
 const expiresLabel = computed(() =>
   link.value
@@ -88,12 +91,12 @@ async function load(): Promise<void> {
   }
 }
 
-async function pay(method: 'card' | 'paypal'): Promise<void> {
+async function pay(method: 'card' | 'paypal', currency: CardCurrency = 'usd'): Promise<void> {
   if (paying.value || link.value?.status !== 'ACTIVE') return;
-  paying.value = method;
+  paying.value = currency === 'mxn' ? 'card-mxn' : method;
   notice.value = null;
   try {
-    window.location.assign(await startLinkPayment(token, method));
+    window.location.assign(await startLinkPayment(token, method, currency));
   } catch (e) {
     notice.value = messageOf(e, 'We could not open the payment page. Please try again.');
     paying.value = null;
@@ -173,6 +176,40 @@ onMounted(async () => {
                 <span>
                   <span class="block text-[15px] font-bold text-brand-950">{{ paying === 'card' ? 'Opening secure payment…' : 'Pay with credit or debit card' }}</span>
                   <span class="block text-xs text-brand-900/60">Visa, Mastercard, American Express · secured by Stripe</span>
+                </span>
+                <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0" role="img" aria-label="Stripe">
+                  <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#635bff" />
+                  <text x="24" y="20.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#fff">stripe</text>
+                </svg>
+              </button>
+              <button
+                v-if="link.methods.card && link.mxnRate && pesos"
+                type="button"
+                class="flex h-14 w-full items-center justify-between rounded-2xl border border-brand-300 bg-white px-5 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:opacity-60"
+                :disabled="paying !== null"
+                @click="pay('card', 'mxn')"
+              >
+                <span>
+                  <span class="block text-[15px] font-bold text-brand-950">{{ paying === 'card-mxn' ? 'Opening secure payment…' :  }}</span>
+                  <span class="block text-xs text-brand-900/60">For cards that do not accept US dollars · 1 USD = {{ link.mxnRate }} MXN</span>
+                </span>
+                <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0" role="img" aria-label="Stripe">
+                  <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#635bff" />
+                  <text x="24" y="20.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#fff">stripe</text>
+                </svg>
+              </button>
+              <button
+                v-if="link.methods.card && link.mxnRate && pesos"
+                type="button"
+                class="flex h-14 w-full items-center justify-between rounded-2xl border border-brand-300 bg-white px-5 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:opacity-60"
+                :disabled="paying !== null"
+                @click="pay('card', 'mxn')"
+              >
+                <span>
+                  <span class="block text-[15px] font-bold text-brand-950">{{
+                    paying === 'card-mxn' ? 'Opening secure payment…' : `Pay with card in Mexican pesos · ${formatMxn(pesos)}`
+                  }}</span>
+                  <span class="block text-xs text-brand-900/60">For cards that do not accept US dollars · 1 USD = {{ link.mxnRate }} MXN</span>
                 </span>
                 <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0" role="img" aria-label="Stripe">
                   <rect x="0.5" y="0.5" width="47" height="31" rx="4" fill="#635bff" />

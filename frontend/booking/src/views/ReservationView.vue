@@ -11,6 +11,7 @@ import {
   type CompanyInfo,
   lookupReservation,
   startPayment,
+  type CardCurrency,
   type PaymentMethod,
   type PaymentMethodsAvailability,
   type ReservationSummary,
@@ -22,7 +23,7 @@ import { SITE } from '@/config';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import TermsCheckbox from '@/components/booking/TermsCheckbox.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
-import { formatInstantCancun, formatLocalDateTime, formatLocalTime, formatUsd } from '@/utils/format';
+import { formatInstantCancun, formatLocalDateTime, formatLocalTime, formatMxn, formatUsd, usdToPesos } from '@/utils/format';
 import { formatInternational } from '@/utils/phone';
 import { recallReservationEmail, rememberReservationEmail } from '@/utils/reservationAccess';
 
@@ -39,6 +40,7 @@ const error = ref<string | null>(null);
 const notice = ref<string | null>(null);
 
 const paymentMethod = ref<PaymentMethod | null>(null);
+const cardCurrency = ref<CardCurrency>('usd');
 const availableMethods = ref<PaymentMethodsAvailability | null>(null);
 const acceptedTerms = ref(false);
 const paying = ref(false);
@@ -50,6 +52,15 @@ const hasContact = computed(() => Boolean(company.value.phone || company.value.w
 fetchCompanyInfo()
   .then((info) => (company.value = info))
   .catch(() => {});
+
+/** Texto del botón de pago: en pesos si se eligió tarjeta en MXN. */
+const payLabel = computed(() => {
+  const rate = availableMethods.value?.mxnRate;
+  if (reservation.value && paymentMethod.value === 'card' && cardCurrency.value === 'mxn' && rate) {
+    return `Pay ${formatMxn(usdToPesos(reservation.value.total, rate))}`;
+  }
+  return `Pay ${formatUsd(reservation.value?.total ?? 0)} USD`;
+});
 
 const isPaid = computed(() => reservation.value?.paymentStatus === 'PAID');
 
@@ -125,7 +136,7 @@ async function loadPaymentMethods(): Promise<void> {
   try {
     availableMethods.value = await fetchPaymentMethods();
   } catch {
-    availableMethods.value = { card: false, paypal: false, cash: false };
+    availableMethods.value = { card: false, paypal: false, cash: false, mxnRate: null };
   }
   paymentMethod.value = defaultPaymentMethod(availableMethods.value);
 }
@@ -141,7 +152,7 @@ async function pay(): Promise<void> {
       await load();
       paying.value = false;
     } else {
-      window.location.assign(await startPayment(paymentMethod.value, access));
+      window.location.assign(await startPayment(paymentMethod.value, access, cardCurrency.value));
     }
   } catch (e) {
     notice.value = e instanceof ApiError ? e.message : 'We could not open the payment page. Please try again.';
@@ -258,7 +269,13 @@ const inputClass =
         <p v-if="notice" role="status" class="mt-6 rounded-xl bg-mist-100 px-4 py-3 text-sm text-brand-900">{{ notice }}</p>
 
         <form v-if="reservation.canPay" class="mt-6 space-y-5 rounded-2xl border border-brand-100 bg-white p-5 sm:p-6" @submit.prevent="pay">
-          <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" :last-minute="reservation.lastMinute" />
+          <PaymentMethodPicker
+            v-model="paymentMethod"
+            v-model:currency="cardCurrency"
+            :available="availableMethods"
+            :last-minute="reservation.lastMinute"
+            :total="reservation.total"
+          />
           <TermsCheckbox v-model="acceptedTerms" />
           <button
             type="submit"
@@ -266,7 +283,7 @@ const inputClass =
             :disabled="paying || !paymentMethod"
           >
             <template v-if="paymentMethod === 'cash'">{{ paying ? 'Confirming…' : 'Confirm and pay in cash' }}</template>
-            <template v-else>{{ paying ? 'Redirecting to payment…' : `Pay ${formatUsd(reservation.total)} USD` }}</template>
+            <template v-else>{{ paying ? 'Redirecting to payment…' : payLabel }}</template>
           </button>
         </form>
 

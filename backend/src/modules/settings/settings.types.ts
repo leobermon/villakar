@@ -25,6 +25,8 @@ export interface PaymentSettings {
   cardEnabled: boolean;
   paypalEnabled: boolean;
   cashEnabled: boolean;
+  /** Pesos por 1 dólar para cobrar con tarjeta en MXN (Stripe). null = no se ofrece el cobro en pesos. */
+  usdToMxnRate: number | null;
 }
 
 export interface NotificationSettings {

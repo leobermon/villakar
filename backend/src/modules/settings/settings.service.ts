@@ -106,6 +106,7 @@ export class SettingsService {
         cardEnabled: true,
         paypalEnabled: true,
         cashEnabled: this.config.getOrThrow<boolean>('CASH_PAYMENTS_ENABLED'),
+        usdToMxnRate: null,
       },
       notifications: {
         senderName: sender.name || 'VillaKar Transfers',

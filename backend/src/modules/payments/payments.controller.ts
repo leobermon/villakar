@@ -16,7 +16,7 @@ import { ReservationAccessDto } from '../reservations/dto/lookup-reservation.dto
 import { ReservationsService } from '../reservations/reservations.service';
 import { SettingsService } from '../settings/settings.service';
 import { PaymentLedgerService } from './payment-ledger.service';
-import { PaypalCaptureDto, StripeConfirmDto } from './dto/payment-return.dto';
+import { PaypalCaptureDto, StripeCheckoutDto, StripeConfirmDto } from './dto/payment-return.dto';
 import { PaypalService } from './paypal.service';
 import { StripeService } from './stripe.service';
 
@@ -32,12 +32,14 @@ export class PaymentsController {
 
   /** Métodos de pago disponibles: el sitio muestra solo los configurados. */
   @Get('methods')
-  async methods(): Promise<{ card: boolean; paypal: boolean; cash: boolean }> {
+  async methods(): Promise<{ card: boolean; paypal: boolean; cash: boolean; mxnRate: number | null }> {
     const enabled = await this.settings.get('payments');
     return {
       card: enabled.cardEnabled && this.stripe.isConfigured,
       paypal: enabled.paypalEnabled && this.paypal.isConfigured,
       cash: enabled.cashEnabled,
+      // Tipo de cambio para ofrecer el pago con tarjeta en pesos (null = solo USD).
+      mxnRate: enabled.usdToMxnRate,
     };
   }
 
@@ -59,9 +61,9 @@ export class PaymentsController {
 
   @Post('stripe/checkout-session')
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  async createStripeSession(@Body() dto: ReservationAccessDto): Promise<{ url: string }> {
+  async createStripeSession(@Body() dto: StripeCheckoutDto): Promise<{ url: string }> {
     await this.requireMethod('card');
-    return this.stripe.createCheckoutSession(dto);
+    return this.stripe.createCheckoutSession(dto, dto.currency);
   }
 
   @Post('stripe/confirm')
