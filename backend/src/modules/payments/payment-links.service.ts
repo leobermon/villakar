@@ -106,6 +106,7 @@ export class PaymentLinksService {
         mode: 'payment',
         customer_email: link.customerEmail ?? undefined,
         client_reference_id: link.token,
+        ...charge.sessionParams,
         metadata: { paymentLinkToken: link.token, ...charge.metadata },
         payment_intent_data: {
           description: link.description.slice(0, 250),

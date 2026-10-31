@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type Stripe from 'stripe';
 import type { PaymentSettings } from '../settings/settings.types';
 
 /** Moneda en la que el cliente elige pagar con tarjeta (Stripe). El precio del sitio siempre es en USD. */
@@ -14,6 +15,11 @@ export interface CardCharge {
   metadata: Record<string, string>;
   /** Texto para la página de Stripe cuando se cobra en pesos (muestra el monto original y el tipo de cambio). */
   note: string | null;
+  /**
+   * Opciones extra de la sesión de Checkout. En pesos se apaga Adaptive Pricing: ya es la moneda de la cuenta,
+   * y así Stripe no la reconvierte a la moneda de un cliente de otro país.
+   */
+  sessionParams: Pick<Stripe.Checkout.SessionCreateParams, 'adaptive_pricing'>;
 }
 
 /** Pesos enteros (redondeados hacia arriba) que equivalen a un monto en USD con el tipo de cambio dado. */
@@ -27,7 +33,7 @@ export function usdToPesos(usd: Prisma.Decimal, rate: number): number {
  */
 export function buildCardCharge(usd: Prisma.Decimal, currency: CardCurrency, payments: PaymentSettings): CardCharge {
   if (currency === 'usd') {
-    return { currency, unitAmount: usd.mul(100).toDecimalPlaces(0).toNumber(), metadata: {}, note: null };
+    return { currency, unitAmount: usd.mul(100).toDecimalPlaces(0).toNumber(), metadata: {}, note: null, sessionParams: {} };
   }
   const rate = payments.usdToMxnRate;
   if (!rate) throw new BadRequestException('Payment in Mexican pesos is not available right now. Please pay in US dollars.');
@@ -36,7 +42,8 @@ export function buildCardCharge(usd: Prisma.Decimal, currency: CardCurrency, pay
     currency,
     unitAmount: pesos * 100,
     metadata: { usdTotal: usd.toFixed(2), mxnRate: String(rate) },
-    note: `$${usd.toFixed(2)} USD converted at ${rate} MXN per USD`,
+    note: `${usd.toFixed(2)} USD converted at ${rate} MXN per USD`,
+    sessionParams: { adaptive_pricing: { enabled: false } },
   };
 }
 

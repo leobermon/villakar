@@ -54,6 +54,7 @@ export class StripeService {
         mode: 'payment',
         customer_email: reservation.customerEmail,
         client_reference_id: reservation.code,
+        ...charge.sessionParams,
         metadata: { reservationCode: reservation.code, ...charge.metadata },
         payment_intent_data: {
           description: `Reservation ${reservation.code}`,
