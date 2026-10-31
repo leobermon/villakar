@@ -12,7 +12,7 @@ const SERVICES = [
     tagline: 'Chichen Itza, cenotes, Tulum and more',
     text: 'Explore the Riviera Maya with a private driver. Your group, your schedule, no crowded buses.',
     image: '/services/tours.jpg',
-    position: 'object-[35%_center]',
+    position: 'object-[center_40%]',
   },
   {
     key: 'large-group',
@@ -28,7 +28,7 @@ const SERVICES = [
     tagline: 'Weddings, parties and celebrations',
     text: 'Guest shuttles and arrivals for your big day, coordinated so everyone gets there smiling.',
     image: '/services/special-events.jpg',
-    position: 'object-[55%_center]',
+    position: 'object-[center_25%]',
   },
 ];
 </script>
@@ -59,8 +59,8 @@ const SERVICES = [
             <img
               :src="service.image"
               :alt="`${service.title}: ${service.tagline}`"
-              width="1800"
-              height="700"
+              width="2000"
+              height="1342"
               loading="lazy"
               :class="[
                 'h-full w-full object-cover transition duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100',
