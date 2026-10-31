@@ -1,11 +1,30 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import type { PaymentMethod, PaymentMethodsAvailability } from '@/api/booking';
+import type { CardCurrency, PaymentMethod, PaymentMethodsAvailability } from '@/api/booking';
 import { SITE } from '@/config';
+import { formatMxn, formatUsd, usdToPesos } from '@/utils/format';
 
-/** lastMinute: el servicio es en menos de 8 horas; el efectivo se muestra deshabilitado. */
-const props = defineProps<{ available: PaymentMethodsAvailability | null; lastMinute?: boolean }>();
+/**
+ * lastMinute: el servicio es en menos de 8 horas; el efectivo se muestra deshabilitado.
+ * total: lo que se va a pagar, en USD (para mostrar su equivalente en pesos al pagar con tarjeta).
+ */
+const props = defineProps<{ available: PaymentMethodsAvailability | null; lastMinute?: boolean; total?: number }>();
 const method = defineModel<PaymentMethod | null>({ required: true });
+/** Moneda del cobro con tarjeta (solo importa si se elige tarjeta). */
+const currency = defineModel<CardCurrency>('currency', { default: 'usd' });
+
+const mxnRate = computed(() => props.available?.mxnRate ?? null);
+const pesos = computed(() => (mxnRate.value && props.total ? usdToPesos(props.total, mxnRate.value) : null));
+
+// Sin tipo de cambio configurado solo se cobra en dólares. Con el navegador en español de México se propone pesos.
+watch(
+  mxnRate,
+  (rate, previous) => {
+    if (!rate) currency.value = 'usd';
+    else if (!previous && typeof navigator !== 'undefined' && /-mx$/i.test(navigator.language)) currency.value = 'mxn';
+  },
+  { immediate: true },
+);
 
 const options = computed(() =>
   [
@@ -116,6 +135,36 @@ watch(
           </span>
         </label>
       </div>
+
+      <!-- Tarjeta: en dólares o en pesos mexicanos (útil si la tarjeta no acepta dólares). -->
+      <fieldset v-if="method === 'card' && mxnRate" class="mt-3 rounded-2xl border border-brand-100 bg-white p-4">
+        <legend class="px-1 text-sm font-semibold text-brand-950">Currency for your card</legend>
+        <div class="mt-1 grid gap-2 sm:grid-cols-2">
+          <label
+            class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition"
+            :class="currency === 'usd' ? 'border-brand-500 ring-4 ring-brand-300/30' : 'border-brand-100 hover:border-brand-300'"
+          >
+            <input v-model="currency" type="radio" name="card-currency" value="usd" class="mt-1 accent-brand-600" />
+            <span>
+              <span class="block text-sm font-semibold text-brand-950">US dollars</span>
+              <span class="block text-xs text-brand-900/60">{{ props.total ? `${formatUsd(props.total)} USD` : 'The price shown' }}</span>
+            </span>
+          </label>
+          <label
+            class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition"
+            :class="currency === 'mxn' ? 'border-brand-500 ring-4 ring-brand-300/30' : 'border-brand-100 hover:border-brand-300'"
+          >
+            <input v-model="currency" type="radio" name="card-currency" value="mxn" class="mt-1 accent-brand-600" />
+            <span>
+              <span class="block text-sm font-semibold text-brand-950">Mexican pesos</span>
+              <span class="block text-xs text-brand-900/60">{{ pesos ? formatMxn(pesos) : 'Converted at checkout' }}</span>
+            </span>
+          </label>
+        </div>
+        <p class="mt-2 text-xs text-brand-900/60">
+          Choose pesos if your card does not accept US dollars. The amount is converted at 1 USD = {{ mxnRate }} MXN. Your bank may add its own fees.
+        </p>
+      </fieldset>
     </template>
   </fieldset>
 </template>

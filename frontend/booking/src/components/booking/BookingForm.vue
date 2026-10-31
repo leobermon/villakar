@@ -7,6 +7,7 @@ import {
   defaultPaymentMethod,
   fetchPaymentMethods,
   startPayment,
+  type CardCurrency,
   type LegDetails,
   type PaymentMethod,
   type PaymentMethodsAvailability,
@@ -35,6 +36,7 @@ const customer = reactive({ firstName: '', lastName: '', email: '' });
 const phone = ref<PhoneValue>({ country: defaultCountry(), number: '' });
 const specialRequests = ref('');
 const paymentMethod = ref<PaymentMethod | null>(null);
+const cardCurrency = ref<CardCurrency>('usd');
 const availableMethods = ref<PaymentMethodsAvailability | null>(null);
 const acceptedTerms = ref(false);
 const submitting = ref(false);
@@ -108,7 +110,7 @@ onMounted(async () => {
   try {
     availableMethods.value = await fetchPaymentMethods();
   } catch {
-    availableMethods.value = { card: false, paypal: false, cash: false };
+    availableMethods.value = { card: false, paypal: false, cash: false, mxnRate: null };
   }
   paymentMethod.value = defaultPaymentMethod(availableMethods.value);
 });
@@ -169,7 +171,7 @@ async function submit() {
       await chooseCashPayment({ code, email });
       await router.push({ name: 'reservation', params: { code } });
     } else {
-      window.location.assign(await startPayment(paymentMethod.value, { code, email }));
+      window.location.assign(await startPayment(paymentMethod.value, { code, email }, cardCurrency.value));
     }
   } catch {
     // La reserva ya existe: desde su página se puede reintentar el pago.
@@ -244,7 +246,13 @@ async function submit() {
         </div>
       </section>
 
-      <PaymentMethodPicker v-model="paymentMethod" :available="availableMethods" :last-minute="lastMinute" />
+      <PaymentMethodPicker
+        v-model="paymentMethod"
+        v-model:currency="cardCurrency"
+        :available="availableMethods"
+        :last-minute="lastMinute"
+        :total="option.price"
+      />
     </div>
 
     <!-- Resumen de lo que se va a pagar: ruta, fechas, pasajeros y vehículo, junto al total. -->

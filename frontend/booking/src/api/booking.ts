@@ -102,7 +102,11 @@ export function sendContactRequest(payload: ContactRequestPayload): Promise<{ id
 
 export type Terminal = 'T2' | 'T3' | 'T4';
 export type PaymentMethod = 'card' | 'paypal' | 'cash';
-export type PaymentMethodsAvailability = Record<PaymentMethod, boolean>;
+/** Moneda del cobro con tarjeta: el precio siempre es en USD; en MXN se convierte con el tipo de cambio del negocio. */
+export type CardCurrency = 'usd' | 'mxn';
+
+/** Qué métodos de pago hay; `mxnRate` (pesos por dólar) indica que la tarjeta también se puede cobrar en pesos. */
+export type PaymentMethodsAvailability = Record<PaymentMethod, boolean> & { mxnRate: number | null };
 
 /** Horas locales de Cancún ('HH:MM'). Qué campos aplican depende del tipo de tramo. */
 export interface LegDetails {
@@ -201,9 +205,16 @@ export function chooseCashPayment(access: ReservationAccess): Promise<{ confirme
 }
 
 /** Crea el cobro en línea con el proveedor y devuelve la URL a la que hay que redirigir. */
-export async function startPayment(method: Exclude<PaymentMethod, 'cash'>, access: ReservationAccess): Promise<string> {
+export async function startPayment(
+  method: Exclude<PaymentMethod, 'cash'>,
+  access: ReservationAccess,
+  currency: CardCurrency = 'usd',
+): Promise<string> {
   if (method === 'card') {
-    const { url } = await apiRequest<{ url: string }>('/payments/stripe/checkout-session', { method: 'POST', json: access });
+    const { url } = await apiRequest<{ url: string }>('/payments/stripe/checkout-session', {
+      method: 'POST',
+      json: { ...access, currency },
+    });
     return url;
   }
   const { approveUrl } = await apiRequest<{ approveUrl: string }>('/payments/paypal/orders', { method: 'POST', json: access });
@@ -231,6 +242,8 @@ export interface PaymentLinkInfo {
   description: string;
   amount: number;
   currency: 'USD';
+  /** Pesos por dólar si la tarjeta también se puede cobrar en MXN; null si no. */
+  mxnRate: number | null;
   customerName: string;
   /** Código de la reserva a la que abona, si el link es de una orden. */
   reservationCode: string | null;
@@ -245,10 +258,10 @@ export function fetchPaymentLink(token: string): Promise<PaymentLinkInfo> {
 }
 
 /** Crea el cobro del link con el proveedor y devuelve la URL a la que hay que redirigir. */
-export async function startLinkPayment(token: string, method: 'card' | 'paypal'): Promise<string> {
+export async function startLinkPayment(token: string, method: 'card' | 'paypal', currency: CardCurrency = 'usd'): Promise<string> {
   const path = `/payment-links/${encodeURIComponent(token)}`;
   if (method === 'card') {
-    const { url } = await apiRequest<{ url: string }>(`${path}/stripe`, { method: 'POST' });
+    const { url } = await apiRequest<{ url: string }>(`${path}/stripe`, { method: 'POST', json: { currency } });
     return url;
   }
   const { approveUrl } = await apiRequest<{ approveUrl: string }>(`${path}/paypal`, { method: 'POST' });

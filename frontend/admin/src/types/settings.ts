@@ -32,6 +32,8 @@ export interface PaymentSettings {
   paypalEnabled: boolean;
   /** CASH_PAYMENTS_ENABLED (backend). */
   cashEnabled: boolean;
+  /** Pesos por 1 dólar para cobrar con tarjeta en MXN. null = no se ofrece el cobro en pesos. */
+  usdToMxnRate: number | null;
 }
 
 /** Estado de un proveedor de pago (solo lectura: las claves viven en el servidor). */

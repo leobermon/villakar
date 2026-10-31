@@ -58,6 +58,12 @@ export class PaymentSettingsDto {
   @IsBoolean() cardEnabled!: boolean;
   @IsBoolean() paypalEnabled!: boolean;
   @IsBoolean() cashEnabled!: boolean;
+
+  @ValidateIf((_: object, value: unknown) => value !== null)
+  @IsNumber({ maxDecimalPlaces: 4 }, { message: 'El tipo de cambio debe ser un número.' })
+  @Min(1, { message: 'El tipo de cambio USD → MXN debe estar entre 1 y 100.' })
+  @Max(100, { message: 'El tipo de cambio USD → MXN debe estar entre 1 y 100.' })
+  usdToMxnRate!: number | null;
 }
 
 export class NotificationSettingsDto {
