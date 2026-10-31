@@ -126,7 +126,7 @@ watch(
 
       <!-- Las tarjetas se cobran en pesos mexicanos: cualquier tarjeta mexicana o extranjera puede pagar en MXN. -->
       <p v-if="method === 'card' && mxnRate" class="mt-3 rounded-2xl border border-brand-100 bg-white p-4 text-xs text-brand-900/70">
-        Cards are charged in Mexican pesos{{ pesos ? ` (${formatMxn(pesos)})` : '' }}, converted at 1 USD = {{ mxnRate }} MXN. Your bank may add its own fees.
+        Your card will be charged in Mexican pesos (MXN){{ pesos ? `: ${formatMxn(pesos)}` : '' }}. Your bank may add its own fees.
       </p>
     </template>
   </fieldset>
