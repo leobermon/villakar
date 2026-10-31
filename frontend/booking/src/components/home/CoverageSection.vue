@@ -64,7 +64,14 @@ const AREAS: CoverageArea[] = [
   },
 ];
 
-const ALSO_SERVED = ['Puerto Juarez', 'Playa Mujeres', 'Costa Mujeres', 'Puerto Aventuras'];
+/** Otras zonas que se atienden; las que tienen página de destino llevan un enlace. */
+const ALSO_SERVED: Array<{ name: string; slug?: string }> = [
+  { name: 'Puerto Juarez' },
+  { name: 'Playa Mujeres', slug: 'playa-mujeres' },
+  { name: 'Costa Mujeres', slug: 'costa-mujeres' },
+  { name: 'Bahia Petempich', slug: 'bahia-petempich' },
+  { name: 'Puerto Aventuras' },
+];
 
 </script>
 
@@ -121,7 +128,18 @@ const ALSO_SERVED = ['Puerto Juarez', 'Playa Mujeres', 'Costa Mujeres', 'Puerto 
     </ul>
 
     <p class="mt-6 text-sm text-brand-900/70">
-      We also serve {{ ALSO_SERVED.slice(0, -1).join(', ') }} and {{ ALSO_SERVED.at(-1) }}. Going somewhere else?
+      We also serve
+      <template v-for="(place, index) in ALSO_SERVED" :key="place.name">
+        <RouterLink
+          v-if="place.slug"
+          :to="destinationPath(place.slug)"
+          class="font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800"
+          >{{ place.name }}</RouterLink
+        ><template v-else>{{ place.name }}</template
+        ><template v-if="index < ALSO_SERVED.length - 2">, </template
+        ><template v-else-if="index === ALSO_SERVED.length - 2"> and </template>
+      </template
+      >. Going somewhere else?
       <RouterLink :to="{ name: 'contact' }" class="font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800">
         Ask us for a quote
       </RouterLink>

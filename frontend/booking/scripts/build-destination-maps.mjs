@@ -24,7 +24,10 @@ fs.mkdirSync(CACHE, { recursive: true });
 const AIRPORT = [-86.8747, 21.0381];
 const DESTS = {
   cancun: [-86.766, 21.07],
+  'bahia-petempich': [-86.8485, 20.925],
   'puerto-morelos': [-86.8742, 20.8497],
+  'playa-mujeres': [-86.8054, 21.2433],
+  'costa-mujeres': [-86.817, 21.2931],
   'playa-del-carmen': [-87.0739, 20.6296],
   akumal: [-87.3144, 20.3944],
   tulum: [-87.4654, 20.2114],

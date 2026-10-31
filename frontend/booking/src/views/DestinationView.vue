@@ -84,8 +84,14 @@ const photos = computed(() => [destination.value.hero, ...destination.value.gall
         <!-- Fotos -->
         <section class="mt-10" aria-labelledby="photos-title">
           <h2 id="photos-title" class="font-display text-2xl font-semibold text-brand-950">Photos of {{ destination.shortName }}</h2>
-          <ul class="mt-4 grid gap-4 sm:grid-cols-2">
-            <li v-for="photo in destination.gallery" :key="photo.file" class="overflow-hidden rounded-2xl border border-brand-100 bg-white">
+          <!-- Dos fotos grandes arriba y las demás en fila de tres; con la foto principal suman 6. -->
+          <ul class="mt-4 grid gap-4 sm:grid-cols-6">
+            <li
+              v-for="(photo, index) in destination.gallery"
+              :key="photo.file"
+              class="overflow-hidden rounded-2xl border border-brand-100 bg-white"
+              :class="index < 2 ? 'sm:col-span-3' : 'sm:col-span-2'"
+            >
               <img
                 :src="photoUrl(photo.file)"
                 :alt="photo.alt"
@@ -93,6 +99,7 @@ const photos = computed(() => [destination.value.hero, ...destination.value.gall
                 height="853"
                 loading="lazy"
                 class="aspect-[3/2] w-full object-cover"
+                :style="{ objectPosition: photo.position ?? 'center' }"
               />
               <p v-if="photo.caption" class="px-4 py-3 text-sm font-medium text-brand-900/80">{{ photo.caption }}</p>
             </li>
