@@ -2,17 +2,14 @@
 import { computed, watch } from 'vue';
 import type { PaymentMethod, PaymentMethodsAvailability } from '@/api/booking';
 import { SITE } from '@/config';
-import { formatMxn, usdToPesos } from '@/utils/format';
 
 /**
  * lastMinute: el servicio es en menos de 8 horas; el efectivo se muestra deshabilitado.
- * total: lo que se va a pagar, en USD (para mostrar su equivalente en pesos al pagar con tarjeta).
  */
-const props = defineProps<{ available: PaymentMethodsAvailability | null; lastMinute?: boolean; total?: number }>();
+const props = defineProps<{ available: PaymentMethodsAvailability | null; lastMinute?: boolean }>();
 const method = defineModel<PaymentMethod | null>({ required: true });
 
 const mxnRate = computed(() => props.available?.mxnRate ?? null);
-const pesos = computed(() => (mxnRate.value && props.total ? usdToPesos(props.total, mxnRate.value) : null));
 
 const options = computed(() =>
   [
@@ -126,7 +123,7 @@ watch(
 
       <!-- Las tarjetas se cobran en pesos mexicanos: cualquier tarjeta mexicana o extranjera puede pagar en MXN. -->
       <p v-if="method === 'card' && mxnRate" class="mt-3 rounded-2xl border border-brand-100 bg-white p-4 text-xs text-brand-900/70">
-        Your card will be charged in Mexican pesos (MXN){{ pesos ? `: ${formatMxn(pesos)}` : '' }}. Your bank may add its own fees.
+        Your card will be charged in Mexican pesos (MXN). Your bank may add its own fees.
       </p>
     </template>
   </fieldset>

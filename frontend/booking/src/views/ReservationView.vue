@@ -22,7 +22,7 @@ import { SITE } from '@/config';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import TermsCheckbox from '@/components/booking/TermsCheckbox.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
-import { formatInstantCancun, formatLocalDateTime, formatLocalTime, formatMxn, formatUsd, usdToPesos } from '@/utils/format';
+import { formatInstantCancun, formatLocalDateTime, formatLocalTime, formatUsd } from '@/utils/format';
 import { formatInternational } from '@/utils/phone';
 import { recallReservationEmail, rememberReservationEmail } from '@/utils/reservationAccess';
 
@@ -51,14 +51,8 @@ fetchCompanyInfo()
   .then((info) => (company.value = info))
   .catch(() => {});
 
-/** Texto del botón de pago: en pesos si se paga con tarjeta y hay tipo de cambio. */
-const payLabel = computed(() => {
-  const rate = availableMethods.value?.mxnRate;
-  if (reservation.value && paymentMethod.value === 'card' && rate) {
-    return `Pay ${formatMxn(usdToPesos(reservation.value.total, rate))}`;
-  }
-  return `Pay ${formatUsd(reservation.value?.total ?? 0)} USD`;
-});
+/** Texto del botón de pago: siempre en dólares, que es el precio que ve el cliente. */
+const payLabel = computed(() => `Pay ${formatUsd(reservation.value?.total ?? 0)} USD`);
 
 const isPaid = computed(() => reservation.value?.paymentStatus === 'PAID');
 
@@ -271,7 +265,6 @@ const inputClass =
             v-model="paymentMethod"
             :available="availableMethods"
             :last-minute="reservation.lastMinute"
-            :total="reservation.total"
           />
           <TermsCheckbox v-model="acceptedTerms" />
           <button

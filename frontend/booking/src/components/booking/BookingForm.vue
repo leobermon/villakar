@@ -248,7 +248,6 @@ async function submit() {
         v-model="paymentMethod"
         :available="availableMethods"
         :last-minute="lastMinute"
-        :total="option.price"
       />
     </div>
 
