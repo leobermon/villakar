@@ -11,7 +11,6 @@ import {
   type CompanyInfo,
   lookupReservation,
   startPayment,
-  type CardCurrency,
   type PaymentMethod,
   type PaymentMethodsAvailability,
   type ReservationSummary,
@@ -40,7 +39,6 @@ const error = ref<string | null>(null);
 const notice = ref<string | null>(null);
 
 const paymentMethod = ref<PaymentMethod | null>(null);
-const cardCurrency = ref<CardCurrency>('usd');
 const availableMethods = ref<PaymentMethodsAvailability | null>(null);
 const acceptedTerms = ref(false);
 const paying = ref(false);
@@ -53,10 +51,10 @@ fetchCompanyInfo()
   .then((info) => (company.value = info))
   .catch(() => {});
 
-/** Texto del botón de pago: en pesos si se eligió tarjeta en MXN. */
+/** Texto del botón de pago: en pesos si se paga con tarjeta y hay tipo de cambio. */
 const payLabel = computed(() => {
   const rate = availableMethods.value?.mxnRate;
-  if (reservation.value && paymentMethod.value === 'card' && cardCurrency.value === 'mxn' && rate) {
+  if (reservation.value && paymentMethod.value === 'card' && rate) {
     return `Pay ${formatMxn(usdToPesos(reservation.value.total, rate))}`;
   }
   return `Pay ${formatUsd(reservation.value?.total ?? 0)} USD`;
@@ -152,7 +150,7 @@ async function pay(): Promise<void> {
       await load();
       paying.value = false;
     } else {
-      window.location.assign(await startPayment(paymentMethod.value, access, cardCurrency.value));
+      window.location.assign(await startPayment(paymentMethod.value, access));
     }
   } catch (e) {
     notice.value = e instanceof ApiError ? e.message : 'We could not open the payment page. Please try again.';
@@ -271,7 +269,6 @@ const inputClass =
         <form v-if="reservation.canPay" class="mt-6 space-y-5 rounded-2xl border border-brand-100 bg-white p-5 sm:p-6" @submit.prevent="pay">
           <PaymentMethodPicker
             v-model="paymentMethod"
-            v-model:currency="cardCurrency"
             :available="availableMethods"
             :last-minute="reservation.lastMinute"
             :total="reservation.total"

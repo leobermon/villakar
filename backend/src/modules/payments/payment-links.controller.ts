@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { CardCurrencyDto, PaypalCaptureDto, StripeConfirmDto } from './dto/payment-return.dto';
+import { PaypalCaptureDto, StripeConfirmDto } from './dto/payment-return.dto';
 import { PaymentLinkResult, PaymentLinksService, PublicPaymentLink } from './payment-links.service';
 
 /** Página pública /pay/<token>: el cliente paga el link que le mandó el equipo. */
@@ -30,8 +30,8 @@ export class PaymentLinksController {
 
   @Post(':token/stripe')
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  startStripe(@Param('token') token: string, @Body() dto: CardCurrencyDto): Promise<{ url: string }> {
-    return this.links.startStripe(token, dto.currency);
+  startStripe(@Param('token') token: string): Promise<{ url: string }> {
+    return this.links.startStripe(token);
   }
 
   @Post(':token/paypal')

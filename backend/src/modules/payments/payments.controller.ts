@@ -16,7 +16,7 @@ import { ReservationAccessDto } from '../reservations/dto/lookup-reservation.dto
 import { ReservationsService } from '../reservations/reservations.service';
 import { SettingsService } from '../settings/settings.service';
 import { PaymentLedgerService } from './payment-ledger.service';
-import { PaypalCaptureDto, StripeCheckoutDto, StripeConfirmDto } from './dto/payment-return.dto';
+import { PaypalCaptureDto, StripeConfirmDto } from './dto/payment-return.dto';
 import { PaypalService } from './paypal.service';
 import { StripeService } from './stripe.service';
 
@@ -61,9 +61,9 @@ export class PaymentsController {
 
   @Post('stripe/checkout-session')
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  async createStripeSession(@Body() dto: StripeCheckoutDto): Promise<{ url: string }> {
+  async createStripeSession(@Body() dto: ReservationAccessDto): Promise<{ url: string }> {
     await this.requireMethod('card');
-    return this.stripe.createCheckoutSession(dto, dto.currency);
+    return this.stripe.createCheckoutSession(dto);
   }
 
   @Post('stripe/confirm')

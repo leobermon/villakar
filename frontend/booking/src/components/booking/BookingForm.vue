@@ -7,7 +7,6 @@ import {
   defaultPaymentMethod,
   fetchPaymentMethods,
   startPayment,
-  type CardCurrency,
   type LegDetails,
   type PaymentMethod,
   type PaymentMethodsAvailability,
@@ -36,7 +35,6 @@ const customer = reactive({ firstName: '', lastName: '', email: '' });
 const phone = ref<PhoneValue>({ country: defaultCountry(), number: '' });
 const specialRequests = ref('');
 const paymentMethod = ref<PaymentMethod | null>(null);
-const cardCurrency = ref<CardCurrency>('usd');
 const availableMethods = ref<PaymentMethodsAvailability | null>(null);
 const acceptedTerms = ref(false);
 const submitting = ref(false);
@@ -171,7 +169,7 @@ async function submit() {
       await chooseCashPayment({ code, email });
       await router.push({ name: 'reservation', params: { code } });
     } else {
-      window.location.assign(await startPayment(paymentMethod.value, { code, email }, cardCurrency.value));
+      window.location.assign(await startPayment(paymentMethod.value, { code, email }));
     }
   } catch {
     // La reserva ya existe: desde su página se puede reintentar el pago.
@@ -248,7 +246,6 @@ async function submit() {
 
       <PaymentMethodPicker
         v-model="paymentMethod"
-        v-model:currency="cardCurrency"
         :available="availableMethods"
         :last-minute="lastMinute"
         :total="option.price"

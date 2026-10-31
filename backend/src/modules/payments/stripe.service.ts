@@ -10,7 +10,7 @@ import Stripe from 'stripe';
 import { ReservationAccessDto } from '../reservations/dto/lookup-reservation.dto';
 import { ReservationsService } from '../reservations/reservations.service';
 import { SettingsService } from '../settings/settings.service';
-import { buildCardCharge, chargeFromSession, type CardCurrency } from './card-currency';
+import { buildCardCharge, chargeFromSession } from './card-currency';
 import { PaymentLedgerService } from './payment-ledger.service';
 import { PaymentLinksService } from './payment-links.service';
 
@@ -41,12 +41,12 @@ export class StripeService {
     return this.client !== null;
   }
 
-  async createCheckoutSession(access: ReservationAccessDto, currency: CardCurrency = 'usd'): Promise<{ url: string }> {
+  async createCheckoutSession(access: ReservationAccessDto): Promise<{ url: string }> {
     const stripe = this.stripe();
     const reservation = await this.reservations.findPayable(access);
     const site = this.siteUrl();
     const tripLabel = reservation.tripType === TripType.ROUND_TRIP ? 'Round trip' : 'One way';
-    const charge = buildCardCharge(reservation.total, currency, await this.settings.get('payments'));
+    const charge = buildCardCharge(reservation.total, await this.settings.get('payments'));
 
     let session: Stripe.Checkout.Session;
     try {

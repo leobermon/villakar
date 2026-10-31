@@ -19,7 +19,7 @@ import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { SettingsService } from '../settings/settings.service';
-import { buildCardCharge, chargeFromSession, type CardCurrency } from './card-currency';
+import { buildCardCharge, chargeFromSession } from './card-currency';
 import { PaypalService } from './paypal.service';
 
 /** Stripe exige al menos 30 minutos de vida para una sesión de Checkout. */
@@ -94,11 +94,11 @@ export class PaymentLinksService {
 
   // ---------------- Stripe ----------------
 
-  async startStripe(token: string, currency: CardCurrency = 'usd'): Promise<{ url: string }> {
+  async startStripe(token: string): Promise<{ url: string }> {
     if (!this.stripeClient) throw new ServiceUnavailableException('Card payments are not available right now.');
     const link = await this.findPayable(token, 'card');
     const site = this.siteUrl();
-    const charge = buildCardCharge(link.amount, currency, await this.settings.get('payments'));
+    const charge = buildCardCharge(link.amount, await this.settings.get('payments'));
 
     let session: Stripe.Checkout.Session;
     try {

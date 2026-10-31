@@ -82,8 +82,8 @@ const visibleToCustomer = computed(() =>
     <div class="rounded-xl border border-fog-200 p-4">
       <p class="font-semibold">Tarjeta en pesos mexicanos</p>
       <p class="mt-0.5 text-sm text-brand-900/65">
-        Los precios del sitio son en dólares. Si capturas un tipo de cambio, el cliente podrá elegir pagar con tarjeta en pesos (útil si su
-        tarjeta no acepta dólares). El pago se registra en dólares, igual que los demás.
+        Los precios del sitio son en dólares. Si capturas un tipo de cambio, todos los cobros con tarjeta se hacen en pesos (así cualquier
+        tarjeta puede pagar). El pago se registra en dólares, igual que los demás.
       </p>
       <div class="mt-3 max-w-sm">
         <FormField v-slot="{ id, describedBy }" label="Pesos por 1 dólar (USD → MXN)" :error="errorFor('usdToMxnRate')" :hint="rateExample" optional>

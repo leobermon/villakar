@@ -1,9 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type Stripe from 'stripe';
 import type { PaymentSettings } from '../settings/settings.types';
 
-/** Moneda en la que el cliente elige pagar con tarjeta (Stripe). El precio del sitio siempre es en USD. */
+/** Moneda del cobro con tarjeta (Stripe). El precio del sitio siempre es en USD. */
 export type CardCurrency = 'usd' | 'mxn';
 
 export interface CardCharge {
@@ -28,15 +27,16 @@ export function usdToPesos(usd: Prisma.Decimal, rate: number): number {
 }
 
 /**
- * Arma el cobro con tarjeta: en USD tal cual, o en MXN con el tipo de cambio que se capturó en el panel
- * (Configuración → Pagos). El registro del pago en el sistema siempre queda en USD (ver `usdChargeFrom`).
+ * Arma el cobro con tarjeta: en MXN con el tipo de cambio que se capturó en el panel (Configuración → Pagos).
+ * Si no hay tipo de cambio, se cobra en USD tal cual. El registro del pago en el sistema siempre queda en USD
+ * (ver `chargeFromSession`).
  */
-export function buildCardCharge(usd: Prisma.Decimal, currency: CardCurrency, payments: PaymentSettings): CardCharge {
-  if (currency === 'usd') {
-    return { currency, unitAmount: usd.mul(100).toDecimalPlaces(0).toNumber(), metadata: {}, note: null, sessionParams: {} };
-  }
+export function buildCardCharge(usd: Prisma.Decimal, payments: PaymentSettings): CardCharge {
   const rate = payments.usdToMxnRate;
-  if (!rate) throw new BadRequestException('Payment in Mexican pesos is not available right now. Please pay in US dollars.');
+  if (!rate) {
+    return { currency: 'usd', unitAmount: usd.mul(100).toDecimalPlaces(0).toNumber(), metadata: {}, note: null, sessionParams: {} };
+  }
+  const currency: CardCurrency = 'mxn';
   const pesos = usdToPesos(usd, rate);
   return {
     currency,
