@@ -18,7 +18,7 @@ const VEHICLE_TYPES = [
   {
     code: 'CARRITO',
     name: 'Carrito',
-    description: 'Volkswagen Teramont or similar',
+    description: 'Chevrolet Suburban or similar',
     maxPassengers: 4,
     maxLuggage: 4,
     imageUrl: '/vehicles/vip.webp',
