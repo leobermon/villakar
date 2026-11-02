@@ -2,6 +2,8 @@
 export const SITE = {
   name: 'VillaKar Transfers',
   maxPassengers: 7,
+  /** Perfil del negocio en Tripadvisor (opiniones de clientes). */
+  tripadvisorUrl: 'https://www.tripadvisor.com/Attraction_Review-g150807-d34763610-Reviews-Villakar_Transfers-Cancun_Yucatan_Peninsula.html',
   /** Servicio Hotel → Hotel en el buscador. Desactivado temporalmente; para volver a ofrecerlo, pasar a true. */
   hotelToHotelEnabled: false,
   /** Aeropuerto fijo de los traslados Airport → Hotel y Hotel → Airport. */

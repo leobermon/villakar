@@ -47,6 +47,8 @@ const PAGE_BY_NAME = new Map(DESTINATION_PAGES.map((destination) => [destination
           Prices in USD ·
           <RouterLink :to="{ name: 'faq' }" class="underline underline-offset-2 hover:text-brand-800">FAQ</RouterLink>
           ·
+          <a :href="SITE.tripadvisorUrl" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:text-brand-800">Reviews on Tripadvisor</a>
+          ·
           <RouterLink :to="{ name: 'terms' }" class="underline underline-offset-2 hover:text-brand-800">Terms and Conditions</RouterLink>
           ·
           <RouterLink :to="{ name: 'privacy' }" class="underline underline-offset-2 hover:text-brand-800">Privacy Policy</RouterLink>

@@ -11,7 +11,7 @@ const route = useRoute();
 <template>
   <header :class="transparent ? 'absolute inset-x-0 top-0 z-20 text-white' : 'border-b border-brand-100 bg-white text-brand-950'">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-      <RouterLink :to="{ name: 'home' }" class="flex items-center" :aria-label="`${SITE.name} home`">
+      <RouterLink :to="{ name: 'home' }" class="flex shrink-0 items-center" :aria-label="`${SITE.name} home`">
         <img :src="logoUrl" :alt="SITE.name" width="958" height="410" class="h-14 w-auto" />
       </RouterLink>
       <nav class="flex items-center gap-1" aria-label="Main">
@@ -19,25 +19,40 @@ const route = useRoute();
         <RouterLink
           v-if="route.name !== 'home'"
           :to="{ name: 'home' }"
-          class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition"
+          class="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold transition sm:px-3"
           :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 10.5 12 3l9 7.5" />
             <path d="M5 9.5V20h5v-6h4v6h5V9.5" />
           </svg>
-          Home
+          <span class="hidden sm:inline">Home</span>
+          <span class="sr-only sm:hidden">Home</span>
         </RouterLink>
+        <a
+          :href="SITE.tripadvisorUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold transition sm:px-3"
+          :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
+          aria-label="Read our reviews on Tripadvisor (opens in a new tab)"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+            <path d="m12 2.8 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 2.8Z" />
+          </svg>
+          <span class="hidden sm:inline">Reviews</span>
+          <span class="sr-only sm:hidden">Reviews on Tripadvisor</span>
+        </a>
         <RouterLink
           :to="{ name: 'faq' }"
-          class="rounded-lg px-3 py-2 text-sm font-semibold transition"
+          class="rounded-lg px-2 py-2 text-sm font-semibold transition sm:px-3"
           :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
         >
           FAQ
         </RouterLink>
         <RouterLink
           :to="{ name: 'contact' }"
-          class="rounded-lg px-3 py-2 text-sm font-semibold transition"
+          class="rounded-lg px-2 py-2 text-sm font-semibold transition sm:px-3"
           :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
         >
           Contact
