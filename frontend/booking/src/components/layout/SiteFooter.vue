@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PaymentBadges from '@/components/layout/PaymentBadges.vue';
+import TripadvisorIcon from '@/components/layout/TripadvisorIcon.vue';
 import { SITE } from '@/config';
 import { DESTINATIONS as DESTINATION_PAGES, destinationPath } from '@/content/destinations';
 
@@ -47,7 +48,9 @@ const PAGE_BY_NAME = new Map(DESTINATION_PAGES.map((destination) => [destination
           Prices in USD ·
           <RouterLink :to="{ name: 'faq' }" class="underline underline-offset-2 hover:text-brand-800">FAQ</RouterLink>
           ·
-          <a :href="SITE.tripadvisorUrl" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:text-brand-800">Reviews on Tripadvisor</a>
+          <a :href="SITE.tripadvisorUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 underline underline-offset-2 hover:text-brand-800"
+            ><TripadvisorIcon class="h-3.5 w-4 text-[#00a680]" />Reviews on Tripadvisor</a
+          >
           ·
           <RouterLink :to="{ name: 'terms' }" class="underline underline-offset-2 hover:text-brand-800">Terms and Conditions</RouterLink>
           ·

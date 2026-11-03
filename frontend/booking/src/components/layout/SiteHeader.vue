@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import logoUrl from '@/assets/logo.png';
 import { useRoute } from 'vue-router';
+import TripadvisorIcon from '@/components/layout/TripadvisorIcon.vue';
 import { SITE } from '@/config';
 
 defineProps<{ transparent?: boolean }>();
@@ -33,13 +34,10 @@ const route = useRoute();
           :href="SITE.tripadvisorUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold transition sm:px-3"
-          :class="transparent ? 'hover:bg-white/10' : 'text-brand-700 hover:bg-brand-50'"
+          class="ml-1 inline-flex items-center gap-2 rounded-full bg-[#34e0a1] px-2.5 py-1.5 text-sm font-bold text-black shadow-sm transition hover:bg-[#2bc78d] sm:px-3.5"
           aria-label="Read our reviews on Tripadvisor (opens in a new tab)"
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-            <path d="m12 2.8 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 2.8Z" />
-          </svg>
+          <TripadvisorIcon class="h-5 w-6 shrink-0" />
           <span class="hidden sm:inline">Reviews</span>
           <span class="sr-only sm:hidden">Reviews on Tripadvisor</span>
         </a>
