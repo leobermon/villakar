@@ -59,14 +59,17 @@ watch(() => route.hash, scrollToTerminal);
               </ol>
             </div>
             <figure class="md:col-span-3">
-              <img
-                :src="terminal.map"
-                :alt="terminal.mapAlt"
-                width="900"
-                height="1100"
-                class="mx-auto max-h-[34rem] w-auto rounded-2xl border border-brand-100 bg-white object-contain"
-              />
-              <figcaption class="mt-2 text-center text-xs text-brand-900/60">The red dashed line shows the path to follow.</figcaption>
+              <!-- Al tocar el mapa se abre grande (en el celular el texto es chico). -->
+              <a :href="terminal.map" target="_blank" rel="noopener" :aria-label="`Open the ${terminal.name} map full size`">
+                <img
+                  :src="terminal.map"
+                  :alt="terminal.mapAlt"
+                  width="900"
+                  height="1100"
+                  class="mx-auto max-h-[34rem] w-auto rounded-2xl border border-brand-100 bg-white object-contain"
+                />
+              </a>
+              <figcaption class="mt-2 text-center text-xs text-brand-900/60">The red dashed line shows the path to follow. Tap the map to enlarge it.</figcaption>
             </figure>
           </div>
         </section>
