@@ -20,7 +20,7 @@ export const AIRPORT_TERMINALS: AirportTerminal[] = [
     code: 'T2',
     id: 'terminal-2',
     name: 'Terminal 2',
-    map: '/airport/terminal-2.webp',
+    map: '/airport/terminal-2.svg',
     mapAlt: 'Map of Cancun Airport Terminal 2 showing the path from baggage claim to the exit',
     steps: [
       'Collect your bags at baggage claim.',
