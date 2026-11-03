@@ -190,6 +190,14 @@ export class ReservationEmailsService {
     return `${this.siteUrl()}/reservation/${code}`;
   }
 
+  /** Guía de dónde encontrar al chofer: solo si algún tramo sale del aeropuerto; abre en su terminal si se conoce. */
+  private airportGuideUrl(r: ReservationSummary): string | null {
+    const arrival = r.legs.find((leg) => /airport/i.test(leg.originName));
+    if (!arrival) return null;
+    const terminal = arrival.terminal ? `#terminal-${arrival.terminal.slice(1)}` : '';
+    return `${this.siteUrl()}/airport-pickup${terminal}`;
+  }
+
   private renderText(r: ReservationSummary, company: CompanySettings, kind: EmailKind): string {
     const copy = COPY[kind];
     const contact = contactLines(company);
@@ -210,6 +218,9 @@ export class ReservationEmailsService {
         ...(leg.flightNumber ? [`  Flight: ${flightLine(leg)}`] : []),
         '',
       ]),
+      ...(kind === 'RESERVATION_CONFIRMATION' && this.airportGuideUrl(r)
+        ? [`Where to meet your driver at the airport: ${this.airportGuideUrl(r)}`, '']
+        : []),
       `Vehicle: ${r.vehicleName}`,
       `Passengers: ${r.passengers}`,
       `${totalLabel(r, kind)}: ${usd(r.total)} USD`,
@@ -276,6 +287,16 @@ export class ReservationEmailsService {
         </td></tr>`
       : '';
 
+    const guideUrl = kind === 'RESERVATION_CONFIRMATION' ? this.airportGuideUrl(r) : null;
+    const guideBlock = guideUrl
+      ? `
+        <tr><td style="${card}padding:20px;">
+          <div style="font-size:17px;font-weight:700;color:${NAVY};">Meet your driver at Cancun Airport</div>
+          <div style="font-size:14px;line-height:1.5;color:${NAVY};margin-top:6px;">Your driver will be waiting at arrivals, holding a sign with your name. See the map of your terminal and the path from baggage claim to the pickup area.</div>
+          <div style="margin-top:14px;"><a href="${esc(guideUrl)}" style="display:inline-block;background:${BLUE};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 20px;border-radius:12px;">View the airport map</a></div>
+        </td></tr>
+        ${spacer}`
+      : '';
     const cash = copy.showCash ? cashNote(r) : null;
     const buttonUrl = copy.button.to === 'site' ? this.siteUrl() : this.reservationUrl(r.code);
 
@@ -311,6 +332,7 @@ export class ReservationEmailsService {
         ${cash ? `<tr><td style="background:${SAND};border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;color:${NAVY};">${esc(cash)}</td></tr>${spacer}` : ''}
 
         ${legs}
+        ${guideBlock}
 
         <tr><td style="${card}padding:20px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>

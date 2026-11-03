@@ -4,6 +4,7 @@
  * (scripts/prerender.mjs escribe estas mismas etiquetas en el HTML estático de cada página).
  */
 
+import { AIRPORT_PICKUP_PATH } from '@/content/airport';
 import { DESTINATIONS, destinationBySlug, destinationPath } from '@/content/destinations';
 import { FAQ_ITEMS } from '@/content/faq';
 
@@ -48,6 +49,11 @@ export const SEO_BY_ROUTE: Record<string, PageSeo> = {
       })),
     },
   },
+  'airport-pickup': {
+    title: 'Meet Your Driver at Cancun Airport | VillaKar Transfers',
+    description:
+      'Where to meet your VillaKar Transfers driver at Cancun Airport. Maps for Terminals 2, 3 and 4 showing the path from baggage claim to the pickup area.',
+  },
   terms: {
     title: 'Terms and Conditions | VillaKar Transfers',
     description:
@@ -79,6 +85,7 @@ export const INDEXABLE_PATHS: string[] = [
   '/',
   '/contact',
   '/faq',
+  AIRPORT_PICKUP_PATH,
   '/terms',
   '/privacy',
   ...DESTINATIONS.map((destination) => destinationPath(destination.slug)),

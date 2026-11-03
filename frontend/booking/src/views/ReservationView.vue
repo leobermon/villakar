@@ -304,6 +304,14 @@ const inputClass =
                 </dd>
               </div>
             </dl>
+            <!-- Recogida en el aeropuerto: guía con el mapa de la terminal. -->
+            <RouterLink
+              v-if="/airport/i.test(leg.originName)"
+              :to="{ name: 'airport-pickup', hash: leg.terminal ? `#terminal-${leg.terminal.slice(1)}` : undefined }"
+              class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800"
+            >
+              Where to meet your driver at the airport →
+            </RouterLink>
           </article>
 
           <dl class="grid gap-4 rounded-2xl border border-brand-100 bg-white p-5 text-sm sm:grid-cols-3 sm:p-6">

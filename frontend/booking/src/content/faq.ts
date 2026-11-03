@@ -20,7 +20,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'How will I find my driver at Cancun Airport?',
     answer:
-      'Your driver waits for you at arrivals in Terminals 2, 3 and 4, holding a sign with your name. Please enter your flight number when you book so we know when you land.',
+      'Your driver waits for you at arrivals in Terminals 2, 3 and 4, holding a sign with your name. Please enter your flight number when you book so we know when you land. See the maps for each terminal on our Airport pickup page.',
   },
   {
     question: 'How much does a transfer cost and what is included?',

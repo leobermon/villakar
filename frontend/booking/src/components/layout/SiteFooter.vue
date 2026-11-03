@@ -48,6 +48,8 @@ const PAGE_BY_NAME = new Map(DESTINATION_PAGES.map((destination) => [destination
           Prices in USD ·
           <RouterLink :to="{ name: 'faq' }" class="underline underline-offset-2 hover:text-brand-800">FAQ</RouterLink>
           ·
+          <RouterLink :to="{ name: 'airport-pickup' }" class="underline underline-offset-2 hover:text-brand-800">Airport pickup</RouterLink>
+          ·
           <a :href="SITE.tripadvisorUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 underline underline-offset-2 hover:text-brand-800"
             ><TripadvisorIcon class="h-3.5 w-4 text-[#00a680]" />Reviews on Tripadvisor</a
           >

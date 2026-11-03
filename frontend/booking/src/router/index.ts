@@ -10,7 +10,8 @@ import HomeView from '@/views/HomeView.vue';
 export function createAppRouter(history: RouterHistory) {
   return createRouter({
     history,
-    scrollBehavior: () => ({ top: 0 }),
+    // Con ancla (/airport-pickup#terminal-3) la página baja a esa sección; si no, arriba.
+    scrollBehavior: (to) => (to.hash ? { el: to.hash, top: 12 } : { top: 0 }),
     routes: [
       { path: '/', name: 'home', component: HomeView },
       {
@@ -36,6 +37,8 @@ export function createAppRouter(history: RouterHistory) {
       },
       { path: '/contact', name: 'contact', component: () => import('@/views/ContactView.vue') },
       { path: '/faq', name: 'faq', component: () => import('@/views/FaqView.vue') },
+      // Guía para encontrar al chofer en el aeropuerto (enlazada desde los correos y la reserva).
+      { path: '/airport-pickup', name: 'airport-pickup', component: () => import('@/views/AirportPickupView.vue') },
       { path: '/terms', name: 'terms', component: () => import('@/views/TermsView.vue') },
       {
         // Una página por destino (ver content/destinations.ts); un destino que no existe regresa al inicio.
