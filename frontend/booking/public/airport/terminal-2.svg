@@ -7,7 +7,7 @@
   <polygon points="452,326 500,346 497,360 456,342" fill="#ffffff"/>
 
   <!-- Edificio: lóbulo de llegadas -->
-  <polygon fill="#dcdcdc" stroke="#6b6b6b" stroke-width="1.5" points="274,93 292,106 296,119 322,114 350,123 372,125 376,142 365,149 389,196 406,211 426,250 423,266 391,291 372,295 330,331 305,337 309,352 294,346 276,316 195,291 148,287 129,263 141,252 141,190 160,160 175,135 190,131 211,116 231,106"/>
+  <polygon fill="#dcdcdc" stroke="#6b6b6b" stroke-width="1.5" points="311,77 351,87 381,113 408,138 438,164 449,199 438,235 427,269 417,304 387,331 347,340 309,349 269,359 229,349 199,323 172,298 142,272 131,237 142,201 153,167 163,132 193,105 233,96 271,87"/>
   <!-- Edificio principal -->
   <polygon fill="#d8d8d8" stroke="#555" stroke-width="2" points="306,338 330,331 378,292 515,368 302,889 272,885 120,790 232,523"/>
   <g fill="none" stroke="#555" stroke-width="2" stroke-linejoin="round"><path d="M232 523 L276 538 L276 568 L414 606"/><path d="M172 792 L276 862 L302 889"/></g>
@@ -29,12 +29,16 @@
   <g transform="translate(353 242) rotate(28)"><rect x="-8" y="-36" width="16" height="72" rx="8" fill="#0b3a66"/><g fill="#7cc4ec"><circle cy="-24" r="2.5"/><circle cy="-12" r="2.5"/><circle r="2.5"/><circle cy="12" r="2.5"/><circle cy="24" r="2.5"/></g><rect x="14" y="-20" width="26" height="30" rx="3" fill="#fdebc8" stroke="#e4b25d" stroke-width="1.5"/><rect x="10" y="12" width="16" height="14" rx="2" fill="#f5a623"/></g>
 
   <!-- Autobús -->
-  <g transform="translate(450 264) rotate(68) scale(0.5)">
-    <rect x="-34" y="-15" width="68" height="30" rx="8" fill="#f28c28" stroke="#2b2b2b" stroke-width="2"/>
-    <rect x="6" y="-11" width="22" height="22" rx="4" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
-    <rect x="-26" y="-11" width="28" height="22" rx="3" fill="#ffffff" fill-opacity=".35"/>
-    <circle cx="-18" cy="16" r="6" fill="#2b2b2b"/><circle cx="18" cy="16" r="6" fill="#2b2b2b"/>
-    <circle cx="-18" cy="-16" r="6" fill="#2b2b2b"/><circle cx="18" cy="-16" r="6" fill="#2b2b2b"/>
+  <g transform="translate(450 264) rotate(70) scale(0.42)">
+    <ellipse cx="0" cy="14" rx="40" ry="5" fill="#000" opacity=".12"/>
+    <path d="M-36 10 V-9 Q-36 -15 -30 -15 H6 L20 -4 H31 Q37 -4 37 2 V10 Z" fill="#f28c28" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M-36 3 H37" stroke="#ffffff" stroke-opacity=".45" stroke-width="3"/>
+    <rect x="-29" y="-11" width="11" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <rect x="-14" y="-11" width="13" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <path d="M6 -11 L16 -4 H6 Z" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5" stroke-linejoin="round"/>
+    <rect x="33" y="-1" width="4" height="4" rx="1" fill="#ffe07a"/>
+    <circle cx="-21" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="-21" cy="10" r="3" fill="#cfcfcf"/>
+    <circle cx="22" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="22" cy="10" r="3" fill="#cfcfcf"/>
   </g>
   <text transform="translate(478 252) rotate(72)" font-size="17" font-weight="700" fill="#0b3a66">BUS</text>
 
@@ -61,29 +65,39 @@
   <g transform="translate(190 752)"><rect x="-22" y="-22" width="44" height="46" rx="6" fill="#f5a623" stroke="#b8721a" stroke-width="2"/><rect x="-12" y="-12" width="24" height="16" rx="3" fill="#fff"/><rect x="-12" y="9" width="24" height="5" rx="2" fill="#b8721a"/></g>
 
   <!-- Aviones en plataforma (distintos colores) -->
-  <g transform="translate(183 86) rotate(38) scale(1.75) translate(-12 -12)" fill="#e76f51"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(296 62) rotate(-165) scale(1.75) translate(-12 -12)" fill="#2a9d8f"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(392 106) rotate(128) scale(1.5833333333333333) translate(-12 -12)" fill="#1d3557"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g>
-  <g transform="translate(130 150) rotate(-40) scale(1.75) translate(-12 -12)" fill="#e9a820"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(433 206) rotate(135) scale(1.75) translate(-12 -12)" fill="#6a4c93"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(122 293) rotate(-25) scale(1.5) translate(-12 -12)" fill="#0077b6"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g>
-  <g transform="translate(250 393) rotate(112) scale(1.8333333333333333) translate(-12 -12)" fill="#d62828"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(200 492) rotate(58) scale(1.8333333333333333) translate(-12 -12)" fill="#43aa8b"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(166 579) rotate(-48) scale(1.75) translate(-12 -12)" fill="#f4845f"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(128 667) rotate(-42) scale(1.6666666666666667) translate(-12 -12)" fill="#3a86ff"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g>
+  <g transform="translate(170 74) rotate(140.19442890773482) scale(1.6666666666666667) translate(-12 -12)" fill="#e76f51"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(296 52) rotate(-177.9299693469589) scale(1.6666666666666667) translate(-12 -12)" fill="#2a9d8f"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(418 82) rotate(-136.7357045889284) scale(1.6666666666666667) translate(-12 -12)" fill="#1d3557"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(112 150) rotate(110.90798047100967) scale(1.6666666666666667) translate(-12 -12)" fill="#e9a820"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(466 196) rotate(-97.12501634890181) scale(1.6666666666666667) translate(-12 -12)" fill="#6a4c93"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(96 288) rotate(70.15930191603165) scale(1.6666666666666667) translate(-12 -12)" fill="#0077b6"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(226 398) rotate(19.573125830410195) scale(1.6666666666666667) translate(-12 -12)" fill="#d62828"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(196 492) rotate(123.17851165939275) scale(1.6666666666666667) translate(-12 -12)" fill="#43aa8b"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(166 580) rotate(98.48894388050472) scale(1.6666666666666667) translate(-12 -12)" fill="#f4845f"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g><g transform="translate(128 668) rotate(80.75388725443676) scale(1.6666666666666667) translate(-12 -12)" fill="#3a86ff"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></g>
 
   <!-- Camionetas en la calle (distintos colores) -->
-  <g transform="translate(558 490) rotate(110) scale(1)">
-    <rect x="-34" y="-15" width="68" height="30" rx="8" fill="#e63946" stroke="#2b2b2b" stroke-width="2"/>
-    <rect x="6" y="-11" width="22" height="22" rx="4" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
-    <rect x="-26" y="-11" width="28" height="22" rx="3" fill="#ffffff" fill-opacity=".35"/>
-    <circle cx="-18" cy="16" r="6" fill="#2b2b2b"/><circle cx="18" cy="16" r="6" fill="#2b2b2b"/>
-    <circle cx="-18" cy="-16" r="6" fill="#2b2b2b"/><circle cx="18" cy="-16" r="6" fill="#2b2b2b"/>
-  </g><g transform="translate(490 662) rotate(110) scale(1)">
-    <rect x="-34" y="-15" width="68" height="30" rx="8" fill="#2a9d8f" stroke="#2b2b2b" stroke-width="2"/>
-    <rect x="6" y="-11" width="22" height="22" rx="4" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
-    <rect x="-26" y="-11" width="28" height="22" rx="3" fill="#ffffff" fill-opacity=".35"/>
-    <circle cx="-18" cy="16" r="6" fill="#2b2b2b"/><circle cx="18" cy="16" r="6" fill="#2b2b2b"/>
-    <circle cx="-18" cy="-16" r="6" fill="#2b2b2b"/><circle cx="18" cy="-16" r="6" fill="#2b2b2b"/>
-  </g><g transform="translate(426 840) rotate(110) scale(1)">
-    <rect x="-34" y="-15" width="68" height="30" rx="8" fill="#f28c28" stroke="#2b2b2b" stroke-width="2"/>
-    <rect x="6" y="-11" width="22" height="22" rx="4" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
-    <rect x="-26" y="-11" width="28" height="22" rx="3" fill="#ffffff" fill-opacity=".35"/>
-    <circle cx="-18" cy="16" r="6" fill="#2b2b2b"/><circle cx="18" cy="16" r="6" fill="#2b2b2b"/>
-    <circle cx="-18" cy="-16" r="6" fill="#2b2b2b"/><circle cx="18" cy="-16" r="6" fill="#2b2b2b"/>
+  <g transform="translate(576 492) rotate(110) scale(0.95)">
+    <ellipse cx="0" cy="14" rx="40" ry="5" fill="#000" opacity=".12"/>
+    <path d="M-36 10 V-9 Q-36 -15 -30 -15 H6 L20 -4 H31 Q37 -4 37 2 V10 Z" fill="#e63946" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M-36 3 H37" stroke="#ffffff" stroke-opacity=".45" stroke-width="3"/>
+    <rect x="-29" y="-11" width="11" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <rect x="-14" y="-11" width="13" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <path d="M6 -11 L16 -4 H6 Z" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5" stroke-linejoin="round"/>
+    <rect x="33" y="-1" width="4" height="4" rx="1" fill="#ffe07a"/>
+    <circle cx="-21" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="-21" cy="10" r="3" fill="#cfcfcf"/>
+    <circle cx="22" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="22" cy="10" r="3" fill="#cfcfcf"/>
+  </g><g transform="translate(508 668) rotate(110) scale(0.95)">
+    <ellipse cx="0" cy="14" rx="40" ry="5" fill="#000" opacity=".12"/>
+    <path d="M-36 10 V-9 Q-36 -15 -30 -15 H6 L20 -4 H31 Q37 -4 37 2 V10 Z" fill="#2a9d8f" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M-36 3 H37" stroke="#ffffff" stroke-opacity=".45" stroke-width="3"/>
+    <rect x="-29" y="-11" width="11" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <rect x="-14" y="-11" width="13" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <path d="M6 -11 L16 -4 H6 Z" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5" stroke-linejoin="round"/>
+    <rect x="33" y="-1" width="4" height="4" rx="1" fill="#ffe07a"/>
+    <circle cx="-21" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="-21" cy="10" r="3" fill="#cfcfcf"/>
+    <circle cx="22" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="22" cy="10" r="3" fill="#cfcfcf"/>
+  </g><g transform="translate(444 846) rotate(110) scale(0.95)">
+    <ellipse cx="0" cy="14" rx="40" ry="5" fill="#000" opacity=".12"/>
+    <path d="M-36 10 V-9 Q-36 -15 -30 -15 H6 L20 -4 H31 Q37 -4 37 2 V10 Z" fill="#f28c28" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M-36 3 H37" stroke="#ffffff" stroke-opacity=".45" stroke-width="3"/>
+    <rect x="-29" y="-11" width="11" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <rect x="-14" y="-11" width="13" height="9" rx="2" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5"/>
+    <path d="M6 -11 L16 -4 H6 Z" fill="#cfeaf7" stroke="#2b2b2b" stroke-width="1.5" stroke-linejoin="round"/>
+    <rect x="33" y="-1" width="4" height="4" rx="1" fill="#ffe07a"/>
+    <circle cx="-21" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="-21" cy="10" r="3" fill="#cfcfcf"/>
+    <circle cx="22" cy="10" r="7.5" fill="#2b2b2b"/><circle cx="22" cy="10" r="3" fill="#cfcfcf"/>
   </g>
 
   <!-- Estacionamiento -->
