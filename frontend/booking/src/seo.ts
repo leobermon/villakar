@@ -7,6 +7,7 @@
 import { AIRPORT_PICKUP_PATH } from '@/content/airport';
 import { DESTINATIONS, destinationBySlug, destinationPath } from '@/content/destinations';
 import { FAQ_ITEMS } from '@/content/faq';
+import { SITE } from '@/config';
 
 export interface PageSeo {
   title: string;
@@ -22,10 +23,36 @@ export const SITE_NAME = 'VillaKar Transfers';
 /** Foto que aparece al compartir el enlace en WhatsApp, Facebook, etc. */
 export const SHARE_IMAGE = '/hero/slide-family-beach.jpg';
 
+const SITE_URL = 'https://villakartransfers.com';
+
+/** Negocio de traslados sin local abierto al público: se declara por zonas de servicio, no por dirección. */
+const BUSINESS_LD = {
+  '@type': 'TaxiService',
+  '@id': `${SITE_URL}/#business`,
+  name: SITE_NAME,
+  url: SITE_URL,
+  telephone: '+529984947720',
+  email: 'contact@villakartransfers.com',
+  image: `${SITE_URL}${SHARE_IMAGE}`,
+  description:
+    'Private airport transfers from Cancun International Airport to Cancun, Playa del Carmen, Akumal, Tulum and Puerto Morelos. Fixed prices in USD, book online.',
+  areaServed: ['Cancun', 'Playa del Carmen', 'Akumal', 'Tulum', 'Puerto Morelos'].map((name) => ({ '@type': 'City', name })),
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: SITE.serviceHours.start,
+    closes: SITE.serviceHours.end,
+  },
+  sameAs: [SITE.tripadvisorUrl],
+};
+
+const businessJsonLd = { '@context': 'https://schema.org', ...BUSINESS_LD };
+
 export const HOME_SEO: PageSeo = {
   title: 'Cancun Airport Private Transfers | VillaKar Transfers',
   description:
     'Private airport transfers from Cancun Airport to Cancun, Playa del Carmen, Tulum and the Riviera Maya. Fixed prices in USD, book online in minutes.',
+  jsonLd: businessJsonLd,
 };
 
 export const SEO_BY_ROUTE: Record<string, PageSeo> = {
@@ -34,6 +61,7 @@ export const SEO_BY_ROUTE: Record<string, PageSeo> = {
     title: 'Contact and Group Quotes | VillaKar Transfers',
     description:
       'Need a quote for a large group, a tour or a hotel outside our online zones? Contact VillaKar Transfers and we will reply with a personalized quote.',
+    jsonLd: businessJsonLd,
   },
   faq: {
     title: 'FAQ: Cancun Airport Transfers | VillaKar Transfers',
@@ -98,6 +126,28 @@ function destinationSeo(path: string): PageSeo | undefined {
   return {
     title: `Cancun Airport to ${destination.name} Private Transfer | VillaKar Transfers`,
     description: `Private transfer from Cancun Airport to ${destination.name}: ${destination.time.toLowerCase()}, ${destination.distanceKm}. ${destination.summary} Book online with a fixed price in USD.`,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Service',
+          name: `Private transfer from Cancun Airport to ${destination.name}`,
+          serviceType: 'Airport transfer',
+          description: destination.summary,
+          provider: { '@id': `${SITE_URL}/#business` },
+          areaServed: { '@type': 'Place', name: destination.name },
+          url: `${SITE_URL}${path}`,
+        },
+        BUSINESS_LD,
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+            { '@type': 'ListItem', position: 2, name: destination.name, item: `${SITE_URL}${path}` },
+          ],
+        },
+      ],
+    },
   };
 }
 
