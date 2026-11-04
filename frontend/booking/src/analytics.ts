@@ -78,7 +78,12 @@ export function initAnalytics(): void {
   const script = document.createElement('script');
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
-  document.head.appendChild(script);
+  // gtag.js (~190 KB) se pide cuando la página ya cargó y el navegador está libre: no compite con la foto principal.
+  // Los eventos que ocurran antes quedan en dataLayer y se envían al cargar.
+  const load = () => document.head.appendChild(script);
+  const whenIdle = () => ('requestIdleCallback' in window ? window.requestIdleCallback(load, { timeout: 4000 }) : setTimeout(load, 2000));
+  if (document.readyState === 'complete') whenIdle();
+  else window.addEventListener('load', whenIdle, { once: true });
 }
 
 export function trackPageView(path: string): void {

@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
       <img
         :src="slide.src"
         alt=""
-        :fetchpriority="i === 0 ? 'high' : 'auto'"
+        :fetchpriority="i === 0 ? 'high' : 'low'"
         class="absolute inset-0 h-full w-full object-cover"
         :style="{ objectPosition: slide.position, transform: slide.zoom ? `scale(${slide.zoom})` : undefined }"
       />
