@@ -1,10 +1,16 @@
 /**
- * Google Analytics 4. Solo corre en el navegador (el prerenderizado no toca `window`).
- * El ID de medición viene de VITE_GA_ID; si está vacío no se carga nada.
+ * Google Analytics 4 y Google Tag Manager. Solo corren en el navegador (el prerenderizado no toca `window`).
+ * Analytics: el ID de medición viene de VITE_GA_ID; si está vacío no se carga.
+ * Tag Manager: solo en producción; el ID viene de VITE_GTM_ID (por defecto el contenedor del sitio).
+ * Los dos comparten el mismo dataLayer y el mismo Consent Mode: sin permiso del visitante no guardan cookies.
+ * Importante: la etiqueta de GA4 NO debe repetirse dentro de GTM mientras Analytics se cargue desde aquí
+ * (contaría cada visita y compra dos veces).
  */
 import { ref } from 'vue';
 
 const GA_ID = import.meta.env.VITE_GA_ID ?? '';
+const GTM_ID = import.meta.env.VITE_GTM_ID || 'GTM-K9NWSJPD';
+const GTM_ON = import.meta.env.PROD && Boolean(GTM_ID);
 const CONSENT_KEY = 'cookie_consent';
 
 export type Consent = 'granted' | 'denied';
@@ -49,41 +55,60 @@ declare global {
 }
 
 function enabled(): boolean {
-  return typeof window !== 'undefined' && Boolean(GA_ID);
+  return typeof window !== 'undefined' && (Boolean(GA_ID) || GTM_ON);
 }
 
 function track(event: string, params: Record<string, unknown> = {}): void {
   if (enabled()) window.gtag?.('event', event, params);
 }
 
-/** Carga gtag.js y desactiva el page_view automático (en una SPA se envía en cada cambio de ruta). */
-export function initAnalytics(): void {
-  if (!enabled() || window.gtag) return;
+/** dataLayer y gtag() compartidos, con el Consent Mode ya fijado antes de que cargue cualquier etiqueta. */
+function setupDataLayer(): void {
+  if (window.gtag) return;
   window.dataLayer = window.dataLayer ?? [];
   window.gtag = function gtag() {
-    // gtag.js necesita el objeto `arguments`, no un arreglo.
+    // gtag.js y GTM necesitan el objeto `arguments`, no un arreglo.
     // eslint-disable-next-line prefer-rest-params
     window.dataLayer!.push(arguments as unknown as GtagArgs);
   };
-  // Consent Mode: sin permiso, GA4 no guarda cookies; si el visitante ya aceptó antes, arranca concedido.
+  // Consent Mode: sin permiso, no se guardan cookies; si el visitante ya aceptó antes, arranca concedido.
   window.gtag('consent', 'default', {
     analytics_storage: consent.value === 'granted' ? 'granted' : 'denied',
     ad_storage: 'denied',
     ad_user_data: 'denied',
     ad_personalization: 'denied',
   });
-  window.gtag('js', new Date());
-  window.gtag('config', GA_ID, { send_page_view: false });
+}
 
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
-  // gtag.js (~190 KB) se pide cuando la página ya cargó y el navegador está libre: no compite con la foto principal.
-  // Los eventos que ocurran antes quedan en dataLayer y se envían al cargar.
-  const load = () => document.head.appendChild(script);
+/** Pide el script cuando la página ya cargó y el navegador está libre: no compite con la foto principal. */
+function loadWhenIdle(src: string): void {
+  const load = () => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = src;
+    document.head.appendChild(script);
+  };
   const whenIdle = () => ('requestIdleCallback' in window ? window.requestIdleCallback(load, { timeout: 4000 }) : setTimeout(load, 2000));
+  // Los eventos que ocurran antes quedan en dataLayer y se envían al cargar.
   if (document.readyState === 'complete') whenIdle();
   else window.addEventListener('load', whenIdle, { once: true });
+}
+
+/** Carga Analytics (sin el page_view automático: en una SPA se envía en cada cambio de ruta) y Tag Manager. */
+export function initAnalytics(): void {
+  if (!enabled()) return;
+  setupDataLayer();
+
+  if (GA_ID) {
+    window.gtag!('js', new Date());
+    window.gtag!('config', GA_ID, { send_page_view: false });
+    loadWhenIdle(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`);
+  }
+
+  if (GTM_ON) {
+    window.dataLayer!.push({ 'gtm.start': Date.now(), event: 'gtm.js' } as unknown as GtagArgs);
+    loadWhenIdle(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`);
+  }
 }
 
 export function trackPageView(path: string): void {

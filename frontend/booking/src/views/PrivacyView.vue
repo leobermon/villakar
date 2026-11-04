@@ -37,7 +37,7 @@ const CONTACT_EMAIL = 'reservations@villakartransfers.com';
               <strong>Messages:</strong> what you send us through the contact form or by email.
             </li>
             <li>
-              <strong>Usage data (optional):</strong> if you accept cookies, Google Analytics tells us which pages are
+              <strong>Usage data (optional):</strong> if you accept cookies, Google Analytics (through Google Tag Manager) tells us which pages are
               visited, from which country and device type, and whether a booking was completed. We do not use it to
               identify you personally.
             </li>
@@ -63,7 +63,7 @@ const CONTACT_EMAIL = 'reservations@villakartransfers.com';
             <li>The drivers and transportation partners who carry out your transfer.</li>
             <li>Stripe and PayPal, to process your payment.</li>
             <li>Our email provider, to send your confirmations and messages.</li>
-            <li>Google, for hotel search suggestions (Google Maps) and, with your consent, for website analytics.</li>
+            <li>Google, for hotel search suggestions (Google Maps) and, with your consent, for website analytics and tag management (Google Analytics and Google Tag Manager).</li>
             <li>Authorities, when the law requires it.</li>
           </ul>
           <p>
@@ -75,7 +75,7 @@ const CONTACT_EMAIL = 'reservations@villakartransfers.com';
         <section class="mt-8 space-y-3">
           <h2 class="font-display text-lg font-semibold">5. Cookies</h2>
           <p>
-            The booking itself does not need cookies. We ask for your permission before using Google Analytics cookies,
+            The booking itself does not need cookies. We ask for your permission before using Google Analytics and Google Tag Manager cookies,
             which only help us measure and improve the site. Until you choose, no analytics cookies are stored. If you
             decline, the site works exactly the same.
           </p>
