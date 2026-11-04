@@ -4,6 +4,13 @@ export const SITE = {
   maxPassengers: 7,
   /** Perfil del negocio en Tripadvisor (opiniones de clientes). */
   tripadvisorUrl: 'https://www.tripadvisor.com/Attraction_Review-g150807-d34763610-Reviews-Villakar_Transfers-Cancun_Yucatan_Peninsula.html',
+  /** WhatsApp del negocio: número en formato internacional sin "+" (52 = México) y mensaje que llega escrito al abrir el chat. */
+  whatsapp: {
+    phone: '529984947720',
+    message: "Hi VillaKar Transfers! I'd like information about a private transfer from Cancun Airport.",
+    /** Mensaje del botón de la página de contacto. */
+    contactMessage: 'Hi VillaKar Transfers! I would like to get in touch with you.',
+  },
   /** Servicio Hotel → Hotel en el buscador. Desactivado temporalmente; para volver a ofrecerlo, pasar a true. */
   hotelToHotelEnabled: false,
   /** Aeropuerto fijo de los traslados Airport → Hotel y Hotel → Airport. */

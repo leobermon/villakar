@@ -201,6 +201,7 @@ export class ReservationEmailsService {
   private renderText(r: ReservationSummary, company: CompanySettings, kind: EmailKind): string {
     const copy = COPY[kind];
     const contact = contactLines(company);
+    const whatsappUrl = whatsappHelpUrl(r, company);
     const lines = [
       company.name,
       '',
@@ -218,17 +219,27 @@ export class ReservationEmailsService {
         ...(leg.flightNumber ? [`  Flight: ${flightLine(leg)}`] : []),
         '',
       ]),
-      ...(kind === 'RESERVATION_CONFIRMATION' && this.airportGuideUrl(r)
-        ? [`Where to meet your driver at the airport: ${this.airportGuideUrl(r)}`, '']
-        : []),
       `Vehicle: ${r.vehicleName}`,
       `Passengers: ${r.passengers}`,
       `${totalLabel(r, kind)}: ${usd(r.total)} USD`,
       `Lead passenger: ${leadPassenger(r)}`,
       ...(r.specialRequests ? [`Special requests: ${r.specialRequests}`] : []),
+      ...(kind === 'RESERVATION_CONFIRMATION' && this.airportGuideUrl(r)
+        ? ['', `Where to meet your driver at the airport: ${this.airportGuideUrl(r)}`]
+        : []),
       '',
       `${copy.button.label}: ${copy.button.to === 'site' ? this.siteUrl() : this.reservationUrl(r.code)}`,
-      ...(contact.length ? ['', `Need help? Contact ${company.name}`, ...contact.map(([label, value]) => `${label}: ${value}`)] : []),
+      ...(contact.length || whatsappUrl
+        ? [
+            '',
+            `Need help? Contact ${company.name}`,
+            ...contact.flatMap(([label, value]) => [
+              `${label}: ${value}`,
+              ...(label === 'Phone' && whatsappUrl ? [`WhatsApp: ${whatsappUrl}`] : []),
+            ]),
+            ...(whatsappUrl && !contact.some(([label]) => label === 'Phone') ? [`WhatsApp: ${whatsappUrl}`] : []),
+          ]
+        : []),
       '',
       `${company.name} · Cancun & Riviera Maya`,
     ];
@@ -273,7 +284,14 @@ export class ReservationEmailsService {
       .join('');
 
     const contact = contactLines(company);
-    const contactBlock = contact.length
+    const whatsappUrl = whatsappHelpUrl(r, company);
+    // Botón con el icono de WhatsApp (PNG: Gmail y Outlook no muestran SVG). Va al lado del teléfono.
+    const whatsappButton = (margin: string) =>
+      whatsappUrl
+        ? `<a href="${esc(whatsappUrl)}" style="display:inline-block;${margin}background:#61d566;color:${NAVY};text-decoration:none;font-weight:700;font-size:13px;padding:5px 14px 5px 7px;border-radius:999px;vertical-align:middle;"><img src="${esc(this.siteUrl())}/email/whatsapp.png" width="20" height="20" alt="" style="vertical-align:middle;border:0;margin-right:6px;"><span style="vertical-align:middle;">WhatsApp</span></a>`
+        : '';
+    const hasPhone = contact.some(([title]) => title === 'Phone');
+    const contactBlock = contact.length || whatsappUrl
       ? `
         ${spacer}
         <tr><td style="${card}padding:20px;">
@@ -281,21 +299,22 @@ export class ReservationEmailsService {
           ${contact
             .map(
               ([title, text, href]) => `<div style="${label}margin-top:12px;">${esc(title)}</div>
-          <div style="${value}">${href ? `<a href="${esc(href)}" style="color:${NAVY};text-decoration:none;">${esc(text)}</a>` : esc(text)}</div>`,
+          <div style="${value}">${href ? `<a href="${esc(href)}" style="color:${NAVY};text-decoration:none;vertical-align:middle;">${esc(text)}</a>` : esc(text)}${title === 'Phone' ? whatsappButton('margin-left:10px;') : ''}</div>`,
             )
             .join('')}
+          ${hasPhone ? '' : `<div style="margin-top:16px;">${whatsappButton('')}</div>`}
         </td></tr>`
       : '';
 
     const guideUrl = kind === 'RESERVATION_CONFIRMATION' ? this.airportGuideUrl(r) : null;
     const guideBlock = guideUrl
       ? `
+        ${spacer}
         <tr><td style="${card}padding:20px;">
           <div style="font-size:17px;font-weight:700;color:${NAVY};">Meet your driver at Cancun Airport</div>
           <div style="font-size:14px;line-height:1.5;color:${NAVY};margin-top:6px;">Your driver will be waiting at arrivals, holding a sign with your name. See the map of your terminal and the path from baggage claim to the pickup area.</div>
-          <div style="margin-top:14px;"><a href="${esc(guideUrl)}" style="display:inline-block;background:${BLUE};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 20px;border-radius:12px;">View the airport map</a></div>
-        </td></tr>
-        ${spacer}`
+          <div style="margin-top:14px;"><a href="${esc(guideUrl)}" style="display:inline-block;background:#eaf4fb;color:${BLUE};border:1px solid ${BLUE};text-decoration:none;font-weight:700;font-size:12px;padding:6px 14px;border-radius:10px;">View the airport map</a></div>
+        </td></tr>`
       : '';
     const cash = copy.showCash ? cashNote(r) : null;
     const buttonUrl = copy.button.to === 'site' ? this.siteUrl() : this.reservationUrl(r.code);
@@ -332,7 +351,6 @@ export class ReservationEmailsService {
         ${cash ? `<tr><td style="background:${SAND};border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;color:${NAVY};">${esc(cash)}</td></tr>${spacer}` : ''}
 
         ${legs}
-        ${guideBlock}
 
         <tr><td style="${card}padding:20px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -344,6 +362,7 @@ export class ReservationEmailsService {
           <div style="${value}">${esc(leadPassenger(r))}</div>
           ${r.specialRequests ? `<div style="${label}margin-top:14px;">Special requests</div><div style="font-size:14px;color:${NAVY};margin-top:2px;white-space:pre-line;">${esc(r.specialRequests)}</div>` : ''}
         </td></tr>
+        ${guideBlock}
         ${contactBlock}
 
         <tr><td align="center" style="padding-top:24px;">
@@ -401,12 +420,24 @@ function leadPassenger(r: ReservationSummary): string {
 function contactLines(company: CompanySettings): [string, string, string | null][] {
   const lines: [string, string, string | null][] = [];
   if (company.phone) lines.push(['Phone', company.phone, `tel:${company.phone.replace(/[^+\d]/g, '')}`]);
-  if (company.whatsapp && company.whatsapp !== company.phone) {
-    lines.push(['WhatsApp', company.whatsapp, `https://wa.me/${company.whatsapp.replace(/\D/g, '')}`]);
-  }
   if (company.email) lines.push(['Email', company.email, `mailto:${company.email}`]);
   if (company.hours) lines.push(['Office hours', company.hours, null]);
   return lines;
+}
+
+/**
+ * Enlace de WhatsApp para pedir ayuda con esta reservación: abre el chat con el mensaje ya escrito
+ * (incluye el código y el nombre del cliente). Usa el teléfono de contacto de Configuración → Empresa (si cambia
+ * ahí, cambia aquí); el campo WhatsApp solo sirve de respaldo cuando no hay teléfono.
+ */
+function whatsappHelpUrl(r: ReservationSummary, company: CompanySettings): string | null {
+  const digits = (company.phone || company.whatsapp).replace(/\D/g, '');
+  if (!digits) return null;
+  // Un número de 10 dígitos es mexicano sin lada de país.
+  const number = digits.length === 10 ? `52${digits}` : digits;
+  const name = `${r.customer.firstName.trim()} ${r.customer.lastName.trim()}`;
+  const text = `Hi ${company.name}! I need help with my service. Reservation code: ${r.code}. Name: ${name}.`;
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 }
 
 const DATE_TIME = new Intl.DateTimeFormat('en-US', {

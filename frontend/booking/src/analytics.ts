@@ -90,6 +90,11 @@ export function trackPageView(path: string): void {
   track('page_view', { page_path: path, page_location: window.location.origin + path, page_title: document.title });
 }
 
+/** El visitante tocó el botón de WhatsApp. */
+export function trackWhatsAppClick(): void {
+  track('contact', { method: 'whatsapp' });
+}
+
 /** El cliente pidió precios y recibió opciones de vehículo. */
 export function trackQuote(route: string, tripType: string, passengers: number): void {
   track('search', { search_term: route, trip_type: tripType, passengers });

@@ -2,6 +2,7 @@
 import CookieNotice from '@/components/layout/CookieNotice.vue';
 import PalmBackdrop from '@/components/layout/PalmBackdrop.vue';
 import SiteFooter from '@/components/layout/SiteFooter.vue';
+import WhatsAppButton from '@/components/layout/WhatsAppButton.vue';
 </script>
 
 <template>
@@ -12,6 +13,7 @@ import SiteFooter from '@/components/layout/SiteFooter.vue';
       <RouterView />
     </div>
     <SiteFooter />
+    <WhatsAppButton />
     <CookieNotice />
   </div>
 </template>
