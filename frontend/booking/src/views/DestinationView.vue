@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import RouteMap from '@/components/destinations/RouteMap.vue';
+import ResponsiveImage from '@/components/ResponsiveImage.vue';
 import SiteHeader from '@/components/layout/SiteHeader.vue';
 import { AIRPORT, DESTINATIONS, destinationBySlug, destinationPath, photoUrl } from '@/content/destinations';
 
@@ -17,7 +18,7 @@ const photos = computed(() => [destination.value.hero, ...destination.value.gall
     <main>
       <!-- Portada del destino: foto, título y los datos clave del viaje -->
       <section class="relative isolate overflow-hidden bg-brand-900 text-white">
-        <img
+        <ResponsiveImage
           :src="photoUrl(destination.hero.file)"
           :alt="destination.hero.alt"
           width="1280"
@@ -92,9 +93,10 @@ const photos = computed(() => [destination.value.hero, ...destination.value.gall
               class="overflow-hidden rounded-2xl border border-brand-100 bg-white"
               :class="index < 2 ? 'sm:col-span-3' : 'sm:col-span-2'"
             >
-              <img
+              <ResponsiveImage
                 :src="photoUrl(photo.file)"
                 :alt="photo.alt"
+                sizes="(min-width: 1024px) 512px, (min-width: 640px) 50vw, 100vw"
                 width="1280"
                 height="853"
                 loading="lazy"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import ResponsiveImage from '@/components/ResponsiveImage.vue';
 
 /**
  * Fondo de la portada en forma de slider: varias fotos que se funden entre sí.
@@ -73,14 +74,14 @@ onBeforeUnmount(() => {
       :aria-hidden="i !== current"
     >
       <!-- Si la foto está alejada, el resto del recuadro se rellena con ella misma desenfocada. -->
-      <img
+      <ResponsiveImage
         v-if="slide.zoom && slide.zoom < 1"
         :src="slide.src"
         alt=""
         class="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl"
         :style="{ objectPosition: slide.position }"
       />
-      <img
+      <ResponsiveImage
         :src="slide.src"
         alt=""
         :fetchpriority="i === 0 ? 'high' : 'low'"

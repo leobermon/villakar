@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
 import HeadingStripes from '@/components/home/HeadingStripes.vue';
+import ResponsiveImage from '@/components/ResponsiveImage.vue';
 import { destinationPath } from '@/content/destinations';
 
 /**
@@ -106,9 +107,10 @@ const ALSO_SERVED: Array<{ name: string; slug?: string }> = [
         >
         <!-- Postal completa (4:3, sin recorte): el texto de la imagen forma parte del diseño. -->
         <div class="relative aspect-[4/3] overflow-hidden bg-brand-900">
-          <img
+          <ResponsiveImage
             :src="area.image"
             :alt="area.name"
+            sizes="(min-width: 1280px) 200px, (min-width: 1024px) 16vw, (min-width: 768px) 30vw, 48vw"
             width="2000"
             height="1500"
             loading="lazy"

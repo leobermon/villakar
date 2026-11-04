@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import HeadingStripes from '@/components/home/HeadingStripes.vue';
+import ResponsiveImage from '@/components/ResponsiveImage.vue';
 
 /**
  * Servicios especiales en la portada (sobre la flota). Las fotos viven en
@@ -56,9 +57,10 @@ const SERVICES = [
         >
           <!-- Foto casi completa (proporción cercana a la original) para que no se vea con zoom. -->
           <div class="relative aspect-[9/4] overflow-hidden bg-brand-900">
-            <img
+            <ResponsiveImage
               :src="service.image"
               :alt="`${service.title}: ${service.tagline}`"
+              sizes="(min-width: 1280px) 400px, (min-width: 768px) 33vw, 100vw"
               width="2000"
               height="1342"
               loading="lazy"

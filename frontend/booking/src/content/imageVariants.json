@@ -1,0 +1,302 @@
+{
+  "/hero/slide-airport.jpg": [
+    640,
+    1024,
+    1600
+  ],
+  "/hero/slide-chichen.jpg": [
+    640,
+    1024,
+    1600
+  ],
+  "/hero/slide-family-beach.jpg": [
+    640,
+    1024,
+    1600
+  ],
+  "/destinations/akumal.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/destinations/cancun-airport.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/destinations/cancun.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/destinations/playa-del-carmen.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/destinations/puerto-morelos.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/destinations/tulum.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/services/large-group.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/services/special-events.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/services/tours.jpg": [
+    480,
+    800,
+    1000
+  ],
+  "/destinations/photos/akumal-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/akumal-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/akumal-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/akumal-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/akumal-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/akumal-hero.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/bahia-petempich-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/bahia-petempich-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/bahia-petempich-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/bahia-petempich-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/bahia-petempich-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/bahia-petempich-hero.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/cancun-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/cancun-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/cancun-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/cancun-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/cancun-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/cancun-hero.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/costa-mujeres-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/costa-mujeres-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/costa-mujeres-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/costa-mujeres-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/costa-mujeres-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/costa-mujeres-hero.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-del-carmen-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-del-carmen-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-del-carmen-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-del-carmen-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-del-carmen-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-del-carmen-hero.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-mujeres-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-mujeres-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-mujeres-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-mujeres-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-mujeres-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/playa-mujeres-hero.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/puerto-morelos-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/puerto-morelos-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/puerto-morelos-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/puerto-morelos-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/puerto-morelos-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/puerto-morelos-hero.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/tulum-1.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/tulum-2.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/tulum-3.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/tulum-4.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/tulum-5.jpg": [
+    480,
+    800,
+    1280
+  ],
+  "/destinations/photos/tulum-hero.jpg": [
+    480,
+    800,
+    1280
+  ]
+}
