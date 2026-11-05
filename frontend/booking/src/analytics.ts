@@ -9,8 +9,8 @@
 import { ref } from 'vue';
 
 const GA_ID = import.meta.env.VITE_GA_ID ?? '';
-// Tag Manager (GTM-K9NWSJPD) se carga con el fragmento de index.html; aquí solo se comparte su dataLayer.
-const GTM_ON = import.meta.env.PROD;
+const GTM_ID = import.meta.env.VITE_GTM_ID || 'GTM-K9NWSJPD';
+const GTM_ON = import.meta.env.PROD && Boolean(GTM_ID);
 const CONSENT_KEY = 'cookie_consent';
 
 export type Consent = 'granted' | 'denied';
@@ -105,7 +105,10 @@ export function initAnalytics(): void {
     loadWhenIdle(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`);
   }
 
-  // Tag Manager ya lo carga el fragmento de index.html (así Google lo detecta en el HTML); aquí no se repite.
+  if (GTM_ON) {
+    window.dataLayer!.push({ 'gtm.start': Date.now(), event: 'gtm.js' } as unknown as GtagArgs);
+    loadWhenIdle(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`);
+  }
 }
 
 export function trackPageView(path: string): void {
