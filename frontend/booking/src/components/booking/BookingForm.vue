@@ -14,6 +14,7 @@ import {
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
 import { trackBeginCheckout } from '@/analytics';
+import { trackEvent } from '@/tracker';
 import LegDetailsFields, { type LegKind } from '@/components/booking/LegDetailsFields.vue';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
 import PhoneField from '@/components/booking/PhoneField.vue';
@@ -96,6 +97,33 @@ const lastMinute = computed(() => {
   return hoursUntilCancun(`${date}T${time}`) < SITE.cashMinNoticeHours;
 });
 
+// Analítica propia: llegó al formulario, qué vehículo elige y qué campos llega a tocar (una vez por visita).
+function tripFields() {
+  return { route: quote.value.routeType ?? undefined, tripType: quote.value.tripType, hotel: store.search.hotel?.mainText, passengers: quote.value.passengers };
+}
+onMounted(() => trackEvent('checkout_view', { ...tripFields(), label: option.value.vehicleType.name, amount: option.value.price }));
+
+function chooseVehicle(rateId: number) {
+  store.selectOption(rateId);
+  const chosen = store.selectedOption;
+  if (chosen) trackEvent('vehicle_select', { ...tripFields(), label: chosen.vehicleType.name, amount: chosen.price });
+}
+
+const FIELD_NAMES: Record<string, string> = {
+  [ids.first]: 'first_name',
+  [ids.last]: 'last_name',
+  [ids.email]: 'email',
+  [ids.phone]: 'phone',
+  [ids.notes]: 'special_requests',
+};
+function onFocusIn(event: FocusEvent) {
+  const el = event.target as HTMLElement | null;
+  if (!el || !/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) return;
+  const type = (el as HTMLInputElement).type;
+  const field = FIELD_NAMES[el.id] ?? el.getAttribute('name') ?? (type === 'checkbox' ? 'checkbox' : type === 'radio' ? 'payment_or_option' : 'leg_details');
+  trackEvent('field_focus', { ...tripFields(), label: field }, true);
+}
+
 // Si el cliente vuelve con "Atrás" desde Stripe / PayPal, el navegador puede
 // restaurar la página congelada con el botón deshabilitado.
 function resetOnRestore(event: PageTransitionEvent) {
@@ -131,6 +159,7 @@ async function submit() {
   if (submitting.value || !paymentMethod.value || !acceptedTerms.value) return;
   submitting.value = true;
   error.value = null;
+  trackEvent('booking_submit', { ...tripFields(), label: paymentMethod.value, amount: option.value.price });
 
   let code: string;
   const email = customer.email.trim();
@@ -179,7 +208,7 @@ async function submit() {
 </script>
 
 <template>
-  <form class="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-start" @submit.prevent="submit">
+  <form class="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-start" @submit.prevent="submit" @focusin="onFocusIn">
     <div class="space-y-6">
       <section>
         <h1 class="font-display text-2xl font-semibold sm:text-3xl">Choose your vehicle</h1>
@@ -191,7 +220,7 @@ async function submit() {
             :option="vehicle"
             :trip-type="quote.tripType"
             :selected="store.selectedRateId === vehicle.rateId"
-            @select="store.selectOption"
+            @select="chooseVehicle"
           />
         </div>
       </section>

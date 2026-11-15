@@ -2,7 +2,7 @@
 export interface NavItem {
   name: string;
   label: string;
-  icon: 'orders' | 'payments' | 'emails' | 'contacts' | 'rates' | 'vehicles' | 'zones' | 'users' | 'settings' | 'audit';
+  icon: 'orders' | 'payments' | 'emails' | 'contacts' | 'rates' | 'vehicles' | 'zones' | 'users' | 'settings' | 'audit' | 'analytics';
   ready: boolean;
   /** Solo lo ven administradores y superadministradores. */
   adminOnly?: boolean;
@@ -21,6 +21,7 @@ export const NAVIGATION: NavGroup[] = [
     items: [
       { name: 'orders', label: 'Órdenes', icon: 'orders', ready: true },
       { name: 'payments', label: 'Pagos', icon: 'payments', ready: true },
+      { name: 'analytics', label: 'Analítica', icon: 'analytics', ready: true },
     ],
   },
   {

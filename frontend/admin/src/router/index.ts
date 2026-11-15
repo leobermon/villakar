@@ -37,6 +37,12 @@ export const router = createRouter({
       meta: { title: 'Pagos' },
     },
     {
+      path: '/analytics',
+      name: 'analytics',
+      component: () => import('@/views/analytics/AnalyticsView.vue'),
+      meta: { title: 'Analítica' },
+    },
+    {
       path: '/emails',
       name: 'emails',
       component: () => import('@/views/emails/EmailsView.vue'),

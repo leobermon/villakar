@@ -41,6 +41,11 @@ const CONTACT_EMAIL = 'reservations@villakartransfers.com';
               visited, from which country and device type, and whether a booking was completed. We do not use it to
               identify you personally.
             </li>
+            <li>
+              <strong>Anonymous site statistics:</strong> we also record, without cookies, which pages and buttons are used, which hotels and
+              routes are searched, and how far a visit gets in the booking form. This is tied only to a random number that disappears when you close
+              the tab; it does not include your name, email, phone or IP address. It is turned off if your browser sends a "Do Not Track" signal.
+            </li>
           </ul>
         </section>
 

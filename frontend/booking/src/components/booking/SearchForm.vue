@@ -3,6 +3,7 @@ import { computed, reactive, useId, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import type { RouteType } from '@/api/booking';
 import { trackQuote } from '@/analytics';
+import { trackEvent } from '@/tracker';
 import { SITE } from '@/config';
 import { useBookingStore } from '@/stores/booking';
 import { todayInCancun } from '@/utils/format';
@@ -46,6 +47,20 @@ watch(() => search.secondHotel, () => (errors.secondHotel = null));
 watch(() => search.date, () => (errors.date = null));
 watch(() => search.returnDate, () => (errors.returnDate = null));
 
+// Analítica propia: qué ruta (llegada / salida) y qué hoteles eligen.
+watch(
+  () => search.route,
+  (route) => trackEvent('route_change', { route }),
+);
+watch(
+  () => search.hotel,
+  (hotel) => hotel && trackEvent('hotel_selected', { route: search.route, hotel: hotel.mainText, label: 'main' }),
+);
+watch(
+  () => search.secondHotel,
+  (hotel) => hotel && trackEvent('hotel_selected', { route: search.route, hotel: hotel.mainText, label: 'second' }),
+);
+
 // Quien sale de un hotel casi siempre necesita un solo traslado: al elegir
 // Hotel → Airport u Hotel → Hotel se propone "One way" (se puede volver a cambiar).
 watch(
@@ -79,13 +94,33 @@ function validate(): boolean {
 
 async function submit() {
   if (!validate()) return;
+  const summary = {
+    route: search.route,
+    tripType: search.tripType,
+    hotel: search.hotel?.mainText,
+    passengers: search.passengers,
+  };
+  const daysAhead = Math.round((new Date(`${search.date}T00:00:00Z`).getTime() - new Date(`${minDate}T00:00:00Z`).getTime()) / 86_400_000);
+  trackEvent('quote_submit', {
+    ...summary,
+    props: { daysAhead, hotel2: search.secondHotel?.mainText },
+  });
   if (await store.fetchQuote()) {
+    const quote = store.quote;
+    const prices = (quote?.options ?? []).map((option) => option.price);
+    trackEvent('quote_result', {
+      ...summary,
+      label: quote?.serviceable ? 'serviceable' : 'contact',
+      amount: prices.length ? Math.min(...prices) : undefined,
+      props: quote?.serviceable ? undefined : { reason: quote?.reason },
+    });
     trackQuote(search.route, search.tripType, search.passengers);
     await router.push({ name: 'results' });
   }
 }
 
 function goToContact(query: string) {
+  trackEvent('click', { label: 'hotel_not_listed', hotel: query || undefined });
   router.push({ name: 'contact', query: query ? { hotel: query } : {} });
 }
 </script>

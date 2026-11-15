@@ -17,6 +17,7 @@ import {
 } from '@/api/booking';
 import { ApiError } from '@/api/client';
 import { trackPurchase } from '@/analytics';
+import { trackEvent } from '@/tracker';
 import logoUrl from '@/assets/logo.png';
 import { SITE } from '@/config';
 import PaymentMethodPicker from '@/components/booking/PaymentMethodPicker.vue';
@@ -114,6 +115,10 @@ async function load(): Promise<void> {
     const confirmed = current.status !== 'CANCELLED' && current.status !== 'NO_SHOW' && (current.paymentStatus === 'PAID' || current.payInCash);
     if (confirmed) {
       trackPurchase(current.code, current.total, current.vehicleName, current.paymentMethod ?? 'UNKNOWN', current.createdAt);
+      // Una sola vez por reserva y solo si es reciente (igual que Analytics); el código nunca se envía.
+      if (Date.now() - new Date(current.createdAt).getTime() < 24 * 60 * 60 * 1000) {
+        trackEvent('purchase', { label: current.paymentMethod ?? 'UNKNOWN', amount: current.total }, true);
+      }
     }
     if (reservation.value.canPay && !availableMethods.value) await loadPaymentMethods();
   } catch (e) {

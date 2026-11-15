@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, useId } from 'vue';
 import { sendContactRequest, type ContactRequestPayload } from '@/api/booking';
+import { trackEvent } from '@/tracker';
 import { ApiError } from '@/api/client';
 import PhoneField from '@/components/booking/PhoneField.vue';
 import { todayInCancun } from '@/utils/format';
@@ -50,6 +51,7 @@ async function submit() {
   };
   try {
     await sendContactRequest(payload);
+    trackEvent('contact_submit', { hotel: payload.hotelName, passengers: payload.passengers });
     sent.value = true;
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : 'Something went wrong. Please try again.';

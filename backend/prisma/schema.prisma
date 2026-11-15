@@ -409,24 +409,24 @@ model Payment {
 }
 
 model PaymentLink {
-  id            BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
-  token         String            @unique(map: "uq_payment_links_token") @db.VarChar(32)
-  reservationId BigInt?           @map("reservation_id") @db.UnsignedBigInt
-  customerName  String            @map("customer_name") @db.VarChar(160)
-  customerEmail String?           @map("customer_email") @db.VarChar(190)
-  customerPhone String?           @map("customer_phone") @db.VarChar(30)
-  description   String            @db.VarChar(255)
-  amount        Decimal           @db.Decimal(10, 2)
-  currency      String            @default("USD") @db.Char(3)
-  status        PaymentLinkStatus @default(ACTIVE)
+  id                BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  token             String            @unique(map: "uq_payment_links_token") @db.VarChar(32)
+  reservationId     BigInt?           @map("reservation_id") @db.UnsignedBigInt
+  customerName      String            @map("customer_name") @db.VarChar(160)
+  customerEmail     String?           @map("customer_email") @db.VarChar(190)
+  customerPhone     String?           @map("customer_phone") @db.VarChar(30)
+  description       String            @db.VarChar(255)
+  amount            Decimal           @db.Decimal(10, 2)
+  currency          String            @default("USD") @db.Char(3)
+  status            PaymentLinkStatus @default(ACTIVE)
   /// Proveedor del último intento de cobro desde la página pública del link.
-  provider          PaymentProvider? @map("provider")
-  providerPaymentId String?          @map("provider_payment_id") @db.VarChar(191)
-  expiresAt     DateTime          @map("expires_at") @db.DateTime(0)
-  paidAt        DateTime?         @map("paid_at") @db.DateTime(0)
-  createdBy     BigInt?           @map("created_by") @db.UnsignedBigInt
-  createdAt     DateTime          @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime          @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  provider          PaymentProvider?  @map("provider")
+  providerPaymentId String?           @map("provider_payment_id") @db.VarChar(191)
+  expiresAt         DateTime          @map("expires_at") @db.DateTime(0)
+  paidAt            DateTime?         @map("paid_at") @db.DateTime(0)
+  createdBy         BigInt?           @map("created_by") @db.UnsignedBigInt
+  createdAt         DateTime          @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
 
   reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull, map: "fk_payment_links_res")
   author      User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull, map: "fk_payment_links_user")
@@ -519,20 +519,20 @@ model EmailLog {
 
 /// Historial de movimientos hechos en el panel (solo lo ven los superadministradores).
 model AuditLog {
-  id            BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  userId        BigInt?  @map("user_id") @db.UnsignedBigInt
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  userId     BigInt?  @map("user_id") @db.UnsignedBigInt
   /// Nombre y correo al momento del movimiento (se conservan aunque el usuario cambie).
-  userName      String   @map("user_name") @db.VarChar(120)
-  userEmail     String   @map("user_email") @db.VarChar(190)
+  userName   String   @map("user_name") @db.VarChar(120)
+  userEmail  String   @map("user_email") @db.VarChar(190)
   /// Ej. ORDER_STATUS, LEG_STATUS, PAYMENT_MANUAL, PAYMENT_VERIFIED, PAYMENT_REJECTED, PAYMENT_LINK_CREATED
-  action        String   @db.VarChar(40)
-  entityType    String   @map("entity_type") @db.VarChar(30)
-  entityId      BigInt?  @map("entity_id") @db.UnsignedBigInt
+  action     String   @db.VarChar(40)
+  entityType String   @map("entity_type") @db.VarChar(30)
+  entityId   BigInt?  @map("entity_id") @db.UnsignedBigInt
   /// Código de la orden relacionada, para buscar.
-  orderCode     String?  @map("order_code") @db.VarChar(20)
-  summary       String   @db.VarChar(500)
-  details       Json?
-  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  orderCode  String?  @map("order_code") @db.VarChar(20)
+  summary    String   @db.VarChar(500)
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(0)
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull, map: "fk_audit_logs_user")
 
@@ -540,4 +540,31 @@ model AuditLog {
   @@index([userId], map: "idx_audit_logs_user")
   @@index([orderCode], map: "idx_audit_logs_order")
   @@map("audit_logs")
+}
+
+/// Eventos anónimos del sitio de reservas (clics, búsquedas, pasos del formulario). Sin cookies, sin IP ni datos personales.
+model SiteEvent {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  /// Identificador aleatorio de la visita (vive solo mientras la pestaña está abierta).
+  sid        String   @db.VarChar(36)
+  /// Ej. page_view, click, hotel_selected, quote_submit, quote_result, vehicle_select, checkout_view, field_focus, booking_submit, purchase.
+  name       String   @db.VarChar(40)
+  path       String?  @db.VarChar(190)
+  /// AIRPORT_HOTEL (llegada), HOTEL_AIRPORT (salida) o HOTEL_HOTEL.
+  route      String?  @db.VarChar(20)
+  tripType   String?  @map("trip_type") @db.VarChar(12)
+  hotel      String?  @db.VarChar(190)
+  /// Qué botón, qué campo o qué vehículo, según el evento.
+  label      String?  @db.VarChar(80)
+  amount     Decimal? @db.Decimal(10, 2)
+  passengers Int?     @db.UnsignedTinyInt
+  device     String?  @db.VarChar(10)
+  source     String?  @db.VarChar(80)
+  props      Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  @@index([createdAt], map: "idx_site_events_created")
+  @@index([name, createdAt], map: "idx_site_events_name")
+  @@index([sid], map: "idx_site_events_sid")
+  @@map("site_events")
 }
