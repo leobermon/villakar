@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, HttpCode, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, Ip, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { AnalyticsService } from './analytics.service';
@@ -12,8 +12,8 @@ export class AnalyticsController {
   @Post('vk')
   @HttpCode(204)
   @Throttle({ default: { ttl: 60_000, limit: 120 } })
-  async track(@Body() dto: TrackEventDto, @Headers('user-agent') userAgent?: string): Promise<void> {
-    await this.analytics.record(dto, userAgent);
+  async track(@Body() dto: TrackEventDto, @Headers('user-agent') userAgent?: string, @Ip() ip?: string): Promise<void> {
+    await this.analytics.record(dto, userAgent, ip);
   }
 
   /** Estadísticas para el panel (cualquier usuario con sesión). */

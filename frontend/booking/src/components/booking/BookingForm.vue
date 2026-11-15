@@ -99,7 +99,7 @@ const lastMinute = computed(() => {
 
 // Analítica propia: llegó al formulario, qué vehículo elige y qué campos llega a tocar (una vez por visita).
 function tripFields() {
-  return { route: quote.value.routeType ?? undefined, tripType: quote.value.tripType, hotel: store.search.hotel?.mainText, passengers: quote.value.passengers };
+  return { route: quote.value.routeType ?? undefined, tripType: quote.value.tripType, hotel: store.search.hotel?.mainText, passengers: quote.value.passengers, serviceDate: store.search.date, returnDate: quote.value.tripType === 'ROUND_TRIP' ? store.search.returnDate : undefined };
 }
 onMounted(() => trackEvent('checkout_view', { ...tripFields(), label: option.value.vehicleType.name, amount: option.value.price }));
 

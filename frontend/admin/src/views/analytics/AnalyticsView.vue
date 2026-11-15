@@ -28,6 +28,26 @@ interface Stats {
   daily: Array<{ day: string; visits: number; quotes: number; bookings: number }>;
   sources: Array<{ label: string; visitors: number }>;
   devices: Array<{ label: string; visitors: number }>;
+  countries: Array<{ country: string; visits: number; quotes: number }>;
+  cities: Array<{ country: string; city: string; visits: number; quotes: number }>;
+  hours: Array<{ hour: number; quotes: number; visits: number }>;
+  recent: Array<{
+    at: string;
+    country: string | null;
+    city: string | null;
+    tz: string | null;
+    route: string | null;
+    tripType: string | null;
+    hotel: string | null;
+    serviceable: boolean;
+    amount: number | null;
+    passengers: number | null;
+    serviceDate: string | null;
+    returnDate: string | null;
+  }>;
+  serviceDates: Array<{ date: string; quotes: number; arrivals: number; departures: number }>;
+  serviceMonths: Array<{ month: string; quotes: number }>;
+  stays: Array<{ nights: number; quotes: number }>;
 }
 
 const ROUTE_LABEL: Record<string, string> = {
@@ -56,6 +76,37 @@ function clickLabel(label: string): string {
   if (label.startsWith('external:')) return `Enlace externo: ${label.slice(9)}`;
   return label;
 }
+
+const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
+/** "🇺🇸 Estados Unidos" a partir del código de país; "Desconocido" si no se pudo ubicar. */
+function countryName(code: string | null): string {
+  if (!code || code === '??') return 'Desconocido';
+  const flag = [...code.toUpperCase()].map((ch) => String.fromCodePoint(127397 + ch.charCodeAt(0))).join('');
+  try {
+    return `${flag} ${regionNames.of(code.toUpperCase()) ?? code}`;
+  } catch {
+    return code;
+  }
+}
+/** Fecha y hora en horario de Cancún (UTC-5 todo el año). */
+function cancunTime(iso: string): string {
+  const shifted = new Date(new Date(iso.endsWith('Z') ? iso : `${iso}Z`).getTime() - 5 * 3_600_000);
+  const hh = String(shifted.getUTCHours()).padStart(2, '0');
+  const mm = String(shifted.getUTCMinutes()).padStart(2, '0');
+  return `${shifted.toISOString().slice(5, 10).replace('-', '/')} ${hh}:${mm}`;
+}
+const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+/** '2026-12-20' → '20 dic 2026'. */
+function shortDate(day: string | null): string {
+  if (!day) return '—';
+  const [y, m, d] = day.split('-').map(Number);
+  return `${d} ${MONTHS[(m ?? 1) - 1]} ${y}`;
+}
+function monthLabel(key: string): string {
+  const [y, m] = key.split('-').map(Number);
+  return `${MONTHS[(m ?? 1) - 1]} ${y}`;
+}
+const hourLabel = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 function isoDay(date: Date): string {
   return new Date(date.getTime() - 5 * 3_600_000).toISOString().slice(0, 10);
@@ -131,6 +182,10 @@ const routeSum = computed(() => routeTotals.value.reduce((sum, r) => sum + r.tot
 
 const maxField = computed(() => Math.max(1, ...(stats.value?.fields ?? []).map((f) => f.visitors)));
 const maxClick = computed(() => Math.max(1, ...(stats.value?.clicks ?? []).map((c) => c.clicks)));
+const maxMonth = computed(() => Math.max(1, ...(stats.value?.serviceMonths ?? []).map((m) => m.quotes)));
+const maxStay = computed(() => Math.max(1, ...(stats.value?.stays ?? []).map((s) => s.quotes)));
+const maxHour = computed(() => Math.max(1, ...(stats.value?.hours ?? []).map((h) => h.quotes)));
+const maxCountry = computed(() => Math.max(1, ...(stats.value?.countries ?? []).map((c) => c.quotes)));
 const maxDaily = computed(() => Math.max(1, ...(stats.value?.daily ?? []).map((d) => d.visits)));
 const fieldsSorted = computed(() => [...(stats.value?.fields ?? [])].sort((a, b) => b.visitors - a.visitors));
 
@@ -269,6 +324,154 @@ const hintClass = 'mt-0.5 text-xs text-brand-900/60';
           </ul>
         </section>
       </div>
+
+      <div class="grid gap-4 lg:grid-cols-2">
+        <!-- País y ciudad -->
+        <section :class="cardClass">
+          <h2 :class="h2Class">De dónde cotizan</h2>
+          <p :class="hintClass">Ubicación aproximada del visitante (por su conexión). Quienes usan VPN pueden aparecer en otro país.</p>
+          <p v-if="stats.countries.length === 0" class="mt-4 text-sm text-brand-900/60">Sin datos en el periodo.</p>
+          <ul class="mt-4 space-y-2.5">
+            <li v-for="row in stats.countries" :key="row.country">
+              <div class="flex items-baseline justify-between gap-3 text-sm">
+                <span class="min-w-0 truncate font-medium text-brand-950">{{ countryName(row.country) }}</span>
+                <span class="shrink-0 text-xs text-brand-900/70"><strong class="text-sm text-brand-950">{{ row.quotes }}</strong> cotizaciones · {{ row.visits }} visitas</span>
+              </div>
+              <div class="mt-1 h-2 overflow-hidden rounded-full bg-fog-100">
+                <div class="h-full rounded-full bg-brand-500" :style="{ width: `${pct(row.quotes, maxCountry)}%` }" />
+              </div>
+            </li>
+          </ul>
+          <template v-if="stats.cities.length">
+            <h3 class="mt-5 text-xs font-semibold text-brand-900/70">Ciudades</h3>
+            <ul class="mt-2 space-y-1.5 text-sm">
+              <li v-for="row in stats.cities" :key="`${row.country}-${row.city}`" class="flex justify-between gap-3">
+                <span class="min-w-0 truncate text-brand-950">{{ row.city }} <span class="text-brand-900/60">· {{ countryName(row.country) }}</span></span>
+                <span class="shrink-0 text-xs text-brand-900/70"><strong class="text-sm text-brand-950">{{ row.quotes }}</strong> cot. · {{ row.visits }} vis.</span>
+              </li>
+            </ul>
+          </template>
+        </section>
+
+        <!-- Hora del día -->
+        <section :class="cardClass">
+          <h2 :class="h2Class">A qué hora cotizan</h2>
+          <p :class="hintClass">Hora de Cancún. Cada barra son las cotizaciones de esa hora.</p>
+          <div class="mt-4 flex h-40 items-end gap-0.5" role="img" aria-label="Cotizaciones por hora del día">
+            <div v-for="h in stats.hours" :key="h.hour" class="group relative flex h-full flex-1 items-end">
+              <div
+                class="w-full rounded-t bg-brand-400 transition group-hover:bg-brand-600"
+                :style="{ height: h.quotes ? `${Math.max(4, pct(h.quotes, maxHour))}%` : '2px' }"
+                :class="h.quotes ? '' : 'bg-fog-200'"
+              />
+              <span class="pointer-events-none absolute -top-5 left-1/2 hidden -translate-x-1/2 rounded bg-brand-950 px-1.5 py-0.5 text-[10px] whitespace-nowrap text-white group-hover:block">
+                {{ hourLabel(h.hour) }} · {{ h.quotes }}
+              </span>
+            </div>
+          </div>
+          <div class="mt-1 flex justify-between text-[10px] text-brand-900/60">
+            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- Fechas del servicio -->
+      <section :class="cardClass">
+        <h2 :class="h2Class">Fechas del servicio que cotizan</h2>
+        <p :class="hintClass">La fecha de llegada o de salida que eligen (no el día en que cotizan). Sirve para ver qué fechas y meses tienen más demanda.</p>
+        <p v-if="stats.serviceDates.length === 0" class="mt-4 text-sm text-brand-900/60">Sin cotizaciones con fecha en el periodo.</p>
+        <div v-else class="mt-4 grid gap-6 lg:grid-cols-3">
+          <div>
+            <h3 class="text-xs font-semibold text-brand-900/70">Por mes del servicio</h3>
+            <ul class="mt-2 space-y-2.5">
+              <li v-for="row in stats.serviceMonths" :key="row.month">
+                <div class="flex items-baseline justify-between text-sm">
+                  <span class="font-medium text-brand-950">{{ monthLabel(row.month) }}</span><strong>{{ row.quotes }}</strong>
+                </div>
+                <div class="mt-1 h-2 overflow-hidden rounded-full bg-fog-100">
+                  <div class="h-full rounded-full bg-brand-500" :style="{ width: `${pct(row.quotes, maxMonth)}%` }" />
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xs font-semibold text-brand-900/70">Fechas más cotizadas</h3>
+            <table class="mt-2 w-full text-left text-sm">
+              <thead class="text-xs text-brand-900/60">
+                <tr>
+                  <th class="py-1 pr-2 font-semibold">Fecha</th>
+                  <th class="px-2 py-1 text-right font-semibold">Cot.</th>
+                  <th class="px-2 py-1 text-right font-semibold">Llegadas</th>
+                  <th class="py-1 pl-2 text-right font-semibold">Salidas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in stats.serviceDates" :key="row.date" class="border-t border-fog-100">
+                  <td class="py-1.5 pr-2 font-medium text-brand-950">{{ shortDate(row.date) }}</td>
+                  <td class="px-2 py-1.5 text-right font-semibold">{{ row.quotes }}</td>
+                  <td class="px-2 py-1.5 text-right">{{ row.arrivals }}</td>
+                  <td class="py-1.5 pl-2 text-right">{{ row.departures }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h3 class="text-xs font-semibold text-brand-900/70">Noches entre ida y regreso (viajes redondos)</h3>
+            <p v-if="stats.stays.length === 0" class="mt-2 text-sm text-brand-900/60">Sin viajes redondos.</p>
+            <ul class="mt-2 space-y-2.5">
+              <li v-for="row in stats.stays" :key="row.nights">
+                <div class="flex items-baseline justify-between text-sm">
+                  <span class="font-medium text-brand-950">{{ row.nights }} {{ row.nights === 1 ? 'noche' : 'noches' }}</span><strong>{{ row.quotes }}</strong>
+                </div>
+                <div class="mt-1 h-2 overflow-hidden rounded-full bg-fog-100">
+                  <div class="h-full rounded-full bg-brand-400" :style="{ width: `${pct(row.quotes, maxStay)}%` }" />
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Últimas cotizaciones -->
+      <section :class="cardClass">
+        <h2 :class="h2Class">Últimas cotizaciones</h2>
+        <p :class="hintClass">Hora de Cancún. "Zona" es la zona horaria del navegador del visitante.</p>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full min-w-[56rem] text-left text-sm">
+            <thead class="text-xs text-brand-900/60">
+              <tr>
+                <th class="py-2 pr-3 font-semibold">Cuándo</th>
+                <th class="px-3 py-2 font-semibold">Desde</th>
+                <th class="px-3 py-2 font-semibold">Tipo</th>
+                <th class="px-3 py-2 font-semibold">Hotel</th>
+                <th class="px-3 py-2 font-semibold">Fecha del servicio</th>
+                <th class="px-3 py-2 text-right font-semibold">Pasajeros</th>
+                <th class="py-2 pl-3 text-right font-semibold">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="stats.recent.length === 0">
+                <td colspan="7" class="py-6 text-center text-brand-900/60">Sin cotizaciones en el periodo.</td>
+              </tr>
+              <tr v-for="(row, i) in stats.recent" :key="i" class="border-t border-fog-100">
+                <td class="py-2 pr-3 font-medium whitespace-nowrap text-brand-950">{{ cancunTime(row.at) }}</td>
+                <td class="px-3 py-2">
+                  {{ row.city ? `${row.city}, ` : '' }}{{ countryName(row.country) }}
+                  <span v-if="row.tz" class="block text-xs text-brand-900/55">Zona: {{ row.tz }}</span>
+                </td>
+                <td class="px-3 py-2">{{ row.route === 'AIRPORT_HOTEL' ? 'Llegada' : row.route === 'HOTEL_AIRPORT' ? 'Salida' : 'Entre hoteles' }}<span class="block text-xs text-brand-900/55">{{ row.tripType === 'ROUND_TRIP' ? 'Redondo' : 'Sencillo' }}</span></td>
+                <td class="px-3 py-2">{{ row.hotel ?? '—' }}</td>
+                <td class="px-3 py-2 whitespace-nowrap">
+                  {{ shortDate(row.serviceDate) }}
+                  <span v-if="row.returnDate" class="block text-xs text-brand-900/55">Regreso: {{ shortDate(row.returnDate) }}</span>
+                </td>
+                <td class="px-3 py-2 text-right">{{ row.passengers ?? '—' }}</td>
+                <td class="py-2 pl-3 text-right" :class="row.serviceable ? '' : 'text-accent-600'">{{ row.serviceable ? `Desde ${usd(row.amount)}` : 'Sin precio' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <!-- Hoteles -->
       <section :class="cardClass">

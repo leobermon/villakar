@@ -558,13 +558,22 @@ model SiteEvent {
   label      String?  @db.VarChar(80)
   amount     Decimal? @db.Decimal(10, 2)
   passengers Int?     @db.UnsignedTinyInt
+  /// Fecha elegida para el servicio (llegada o salida) y fecha de regreso en viajes redondos.
+  serviceDate DateTime? @map("service_date") @db.Date
+  returnDate  DateTime? @map("return_date") @db.Date
   device     String?  @db.VarChar(10)
   source     String?  @db.VarChar(80)
+  /// País (código ISO de 2 letras) y ciudad aproximados, calculados al recibir el evento. La IP no se guarda.
+  country    String?  @db.Char(2)
+  city       String?  @db.VarChar(80)
+  /// Zona horaria del navegador del visitante (ej. America/New_York).
+  tz         String?  @db.VarChar(40)
   props      Json?
   createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(0)
 
   @@index([createdAt], map: "idx_site_events_created")
   @@index([name, createdAt], map: "idx_site_events_name")
   @@index([sid], map: "idx_site_events_sid")
+  @@index([serviceDate], map: "idx_site_events_service_date")
   @@map("site_events")
 }

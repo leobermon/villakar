@@ -16,6 +16,9 @@ export interface TrackFields {
   label?: string;
   amount?: number;
   passengers?: number;
+  /** Fecha elegida para el servicio y de regreso (YYYY-MM-DD). */
+  serviceDate?: string;
+  returnDate?: string;
   props?: Record<string, unknown>;
 }
 
@@ -82,8 +85,11 @@ export function trackEvent(name: string, fields: TrackFields = {}, once = false)
       label: fields.label?.slice(0, 80),
       amount: fields.amount === undefined ? undefined : Math.round(fields.amount * 100) / 100,
       passengers: fields.passengers,
+      serviceDate: fields.serviceDate || undefined,
+      returnDate: fields.returnDate || undefined,
       device: window.innerWidth < 768 ? 'mobile' : 'desktop',
       source: detectSource(),
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
       props: fields.props,
     };
     void fetch(`${API_BASE}/vk`, {

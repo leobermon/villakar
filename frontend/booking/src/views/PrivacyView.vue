@@ -44,7 +44,7 @@ const CONTACT_EMAIL = 'reservations@villakartransfers.com';
             <li>
               <strong>Anonymous site statistics:</strong> we also record, without cookies, which pages and buttons are used, which hotels and
               routes are searched, and how far a visit gets in the booking form. This is tied only to a random number that disappears when you close
-              the tab; it does not include your name, email, phone or IP address. It is turned off if your browser sends a "Do Not Track" signal.
+              the tab; it does not include your name, email or phone. We also keep your approximate location (country and city, worked out from your connection) and your time zone; your IP address itself is never stored. It is turned off if your browser sends a "Do Not Track" signal.
             </li>
           </ul>
         </section>

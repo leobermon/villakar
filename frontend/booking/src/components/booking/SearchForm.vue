@@ -99,6 +99,8 @@ async function submit() {
     tripType: search.tripType,
     hotel: search.hotel?.mainText,
     passengers: search.passengers,
+    serviceDate: search.date,
+    returnDate: search.tripType === 'ROUND_TRIP' ? search.returnDate : undefined,
   };
   const daysAhead = Math.round((new Date(`${search.date}T00:00:00Z`).getTime() - new Date(`${minDate}T00:00:00Z`).getTime()) / 86_400_000);
   trackEvent('quote_submit', {
