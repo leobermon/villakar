@@ -332,7 +332,9 @@ async function submit() {
       <p class="text-right text-xs text-brand-900/60">
         USD · {{ quote.tripType === 'ROUND_TRIP' ? 'round trip' : 'one way' }}, per vehicle
       </p>
-      <p class="text-right text-xs font-semibold text-emerald-700">Tax included</p>
+      <p class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-center text-xs font-semibold text-emerald-800">
+        ✔ Taxes included · Final price
+      </p>
 
       <p v-if="error" role="alert" class="mt-4 rounded-xl bg-accent-400/10 px-4 py-3 text-sm font-medium text-accent-600">
         {{ error }}

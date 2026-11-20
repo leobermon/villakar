@@ -28,6 +28,11 @@ export const FAQ_ITEMS: FaqItem[] = [
       'You see the final price for your route and group before you pay. Prices are in US dollars and are per vehicle, so the whole group is included: you do not pay per person. The price you see when you book is the price you pay.',
   },
   {
+    question: 'Are taxes included? Will I pay anything extra?',
+    answer:
+      'Yes, our prices already include all taxes. You only pay the price shown when you book: no taxes or hidden fees are added at checkout. The only extra charges would be optional ones you ask for, such as additional waiting time.',
+  },
+  {
     question: 'How long is the drive from Cancun Airport to my hotel?',
     answer:
       'Approximate driving times without traffic: Cancun Hotel Zone about 20 minutes, Puerto Morelos about 25 minutes, Playa del Carmen about 45 minutes, Akumal about 1 hour 15 minutes and Tulum about 1 hour 30 minutes. Traffic and weather can add some time.',

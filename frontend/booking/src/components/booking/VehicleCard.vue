@@ -75,6 +75,7 @@ const emit = defineEmits<{ select: [rateId: number] }>();
         <p class="font-display text-base font-bold text-brand-950 sm:text-lg">
           {{ formatUsd(props.option.price) }} <span class="font-sans text-[11px] font-medium text-brand-900/60">USD</span>
         </p>
+        <p class="text-[10px] font-semibold leading-tight text-emerald-700 sm:text-[11px]">Taxes included</p>
         <button
           type="button"
           class="mt-1 h-8 w-full rounded-lg text-xs font-bold transition sm:mt-1.5"
