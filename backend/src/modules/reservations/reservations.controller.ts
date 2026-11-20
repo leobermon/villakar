@@ -1,19 +1,27 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { ReservationEmailsService } from '../notifications/reservation-emails.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { ReservationAccessDto } from './dto/lookup-reservation.dto';
 import { ReservationsService, ReservationSummary } from './reservations.service';
 
 @Controller('reservations')
 export class ReservationsController {
-  constructor(private readonly reservations: ReservationsService) {}
+  constructor(
+    private readonly reservations: ReservationsService,
+    private readonly emails: ReservationEmailsService,
+  ) {}
 
   /** Crea la reserva (PENDING / UNPAID). El precio se recalcula aquí, no se toma del navegador. */
   @Post()
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   async create(@Body() dto: CreateReservationDto): Promise<ReservationSummary> {
-    // Al reservar no sale correo: el cliente recibe el de confirmación cuando la reserva se confirma.
-    return this.reservations.create(dto);
+    // Al reservar no sale correo al cliente: recibe el de confirmación cuando la reserva se confirma.
+    const summary = await this.reservations.create(dto);
+    // Sí sale un aviso interno al equipo ("Nuevo servicio reservado"). Sin await: no retrasa la respuesta
+    // y nunca lanza.
+    void this.emails.notifyTeamNewBooking(summary);
+    return summary;
   }
 
   /** Consulta por código + email. Es POST para que el email no quede en URLs ni en logs. */

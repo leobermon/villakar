@@ -158,6 +158,102 @@ export class ReservationEmailsService {
     }
   }
 
+  /**
+   * Aviso interno para el equipo: "Nuevo servicio reservado" con los detalles. Sale cuando el cliente
+   * crea la reserva (aunque aún no haya pagado) y llega al buzón del propio remitente (o a lo que
+   * diga NEW_BOOKING_ALERT_TO). No va al cliente ni se anota en el registro de correos del cliente.
+   * Nunca lanza: un aviso fallido no debe afectar la reserva.
+   */
+  async notifyTeamNewBooking(summary: ReservationSummary): Promise<void> {
+    try {
+      const setting = (this.config.get<string>('NEW_BOOKING_ALERT_TO') ?? '').trim();
+      if (setting.toLowerCase() === 'off') return;
+
+      const { senderEmail } = await this.settings.get('notifications');
+      const recipients = (setting ? setting.split(',') : [senderEmail]).map((a) => a.trim()).filter(Boolean);
+      if (!recipients.length) return;
+
+      const result = await this.mail.trySend({
+        to: recipients.join(', '),
+        subject: `Nuevo servicio reservado · ${summary.code}`,
+        html: this.renderTeamHtml(summary),
+        text: this.renderTeamText(summary),
+      });
+      if (!result.ok) this.logger.warn(`Team alert for ${summary.code} not sent: ${result.error}`);
+    } catch (error) {
+      this.logger.error(`Team alert for reservation ${summary.code} failed: ${String(error)}`);
+    }
+  }
+
+  private renderTeamText(r: ReservationSummary): string {
+    return [
+      'NUEVO SERVICIO RESERVADO',
+      '',
+      `Código: ${r.code}`,
+      `Estado: ${STATUS_ES[r.status] ?? r.status} · Pago: ${PAYMENT_ES[r.paymentStatus] ?? r.paymentStatus}${r.payInCash ? ' (pagará en efectivo)' : ''}`,
+      `Reservado: ${formatInstantCancun(r.createdAt)} (hora de Cancún)`,
+      '',
+      `Cliente: ${r.customer.firstName} ${r.customer.lastName}`,
+      `Correo: ${r.customer.email}`,
+      `Teléfono: ${r.customer.phone ?? '—'}`,
+      '',
+      ...r.legs.flatMap((leg) => [
+        `${legLabelEs(r, leg.legNumber).toUpperCase()}: ${leg.originName} → ${leg.destinationName}`,
+        `  Recogida: ${formatLocal(leg.pickupAt)}`,
+        ...(leg.flightNumber ? [`  Vuelo: ${flightLine(leg)}`] : []),
+        '',
+      ]),
+      `Vehículo: ${r.vehicleName}`,
+      `Pasajeros: ${r.passengers}`,
+      `Viaje: ${r.tripType === 'ROUND_TRIP' ? 'Redondo' : 'Sencillo'}`,
+      `Total: ${usd(r.total)} USD`,
+      ...(r.specialRequests ? ['', `Peticiones especiales: ${r.specialRequests}`] : []),
+    ].join('\n');
+  }
+
+  private renderTeamHtml(r: ReservationSummary): string {
+    const row = (label: string, value: string) =>
+      `<tr><td style="padding:6px 12px 6px 0;color:${MUTED};font-size:13px;vertical-align:top;white-space:nowrap;">${esc(label)}</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:${NAVY};">${value}</td></tr>`;
+    const legs = r.legs
+      .map(
+        (leg) => `
+      <tr><td colspan="2" style="padding:14px 0 4px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:${BLUE};">${esc(legLabelEs(r, leg.legNumber))}</td></tr>
+      ${row('Ruta', `${esc(leg.originName)} → ${esc(leg.destinationName)}`)}
+      ${row('Recogida', esc(formatLocal(leg.pickupAt)))}
+      ${leg.flightNumber ? row('Vuelo', esc(flightLine(leg))) : ''}`,
+      )
+      .join('');
+    return `<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Nuevo servicio reservado · ${esc(r.code)}</title></head>
+<body style="margin:0;background:${CREAM};font-family:Arial,Helvetica,sans-serif;color:${NAVY};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+      <tr><td style="background:${BLUE};border-radius:14px 14px 0 0;padding:16px 20px;color:#ffffff;">
+        <div style="font-size:12px;letter-spacing:1px;">AVISO INTERNO</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;margin-top:2px;">Nuevo servicio reservado</div>
+        <div style="font-size:18px;letter-spacing:3px;font-weight:700;margin-top:6px;">${esc(r.code)}</div>
+      </td></tr>
+      <tr><td style="background:#ffffff;border:1px solid ${BORDER};border-top:0;border-radius:0 0 14px 14px;padding:12px 20px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${row('Estado', `${esc(STATUS_ES[r.status] ?? r.status)} · Pago: ${esc(PAYMENT_ES[r.paymentStatus] ?? r.paymentStatus)}${r.payInCash ? ' (pagará en efectivo)' : ''}`)}
+          ${row('Reservado', esc(`${formatInstantCancun(r.createdAt)} (hora de Cancún)`))}
+          ${row('Cliente', esc(`${r.customer.firstName} ${r.customer.lastName}`))}
+          ${row('Correo', esc(r.customer.email))}
+          ${row('Teléfono', esc(r.customer.phone ?? '—'))}
+          ${legs}
+          <tr><td colspan="2" style="padding-top:10px;border-top:1px solid ${BORDER};"></td></tr>
+          ${row('Vehículo', esc(r.vehicleName))}
+          ${row('Pasajeros', String(r.passengers))}
+          ${row('Viaje', r.tripType === 'ROUND_TRIP' ? 'Redondo' : 'Sencillo')}
+          ${row('Total', `${esc(usd(r.total))} USD`)}
+          ${r.specialRequests ? row('Peticiones', `<span style="font-weight:400;white-space:pre-line;">${esc(r.specialRequests)}</span>`) : ''}
+        </table>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+  }
+
   /** Arma el correo, lo envía y deja el resultado en el registro de correos. */
   private async deliver(reservationId: bigint, kind: EmailKind): Promise<SendResult> {
     const summary = await this.reservations.findSummaryById(reservationId);
@@ -376,6 +472,26 @@ export class ReservationEmailsService {
   }
 }
 
+const STATUS_ES: Record<string, string> = {
+  PENDING: 'Pendiente',
+  CONFIRMED: 'Confirmada',
+  COMPLETED: 'Completada',
+  CANCELLED: 'Cancelada',
+  NO_SHOW: 'No se presentó',
+};
+const PAYMENT_ES: Record<string, string> = {
+  UNPAID: 'Sin pagar',
+  PAID: 'Pagada',
+  PARTIALLY_REFUNDED: 'Reembolso parcial',
+  REFUNDED: 'Reembolsada',
+  FAILED: 'Pago fallido',
+};
+
+function legLabelEs(r: ReservationSummary, legNumber: number): string {
+  if (r.legs.length === 1) return 'Servicio';
+  return legNumber === 1 ? 'Ida' : 'Regreso';
+}
+
 function legLabel(r: ReservationSummary, legNumber: number): string {
   if (r.legs.length === 1) return 'Your transfer';
   return legNumber === 1 ? 'Outbound' : 'Return';
@@ -454,6 +570,22 @@ const TIME = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digi
 /** 'YYYY-MM-DDTHH:MM' (hora local de Cancún) → "Tue, Oct 20, 2026, 11:05 AM". */
 function formatLocal(value: string): string {
   return DATE_TIME.format(new Date(`${value}:00Z`));
+}
+
+const DATE_TIME_CANCUN = new Intl.DateTimeFormat('es-MX', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: 'America/Cancun',
+});
+
+/** Instante ISO (UTC) → fecha y hora de Cancún, para saber cuándo se hizo la reserva. */
+function formatInstantCancun(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '—' : DATE_TIME_CANCUN.format(date);
 }
 
 /** 'YYYY-MM-DDTHH:MM' → "11:05 AM". */

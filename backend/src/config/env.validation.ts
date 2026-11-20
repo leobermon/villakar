@@ -127,6 +127,15 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   MAIL_COPY_TO?: string;
+
+  /**
+   * Quién recibe el aviso interno "Nuevo servicio reservado" cuando un cliente crea una reserva.
+   * Una o varias direcciones separadas por coma. Vacío = el mismo correo remitente (reservations@…),
+   * así llega a su propio buzón. Poner "off" desactiva el aviso.
+   */
+  @IsOptional()
+  @IsString()
+  NEW_BOOKING_ALERT_TO?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
