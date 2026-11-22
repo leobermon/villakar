@@ -298,5 +298,20 @@
     480,
     800,
     1280
+  ],
+  "/hero/slide-bf-family-beach.jpg": [
+    640,
+    1024,
+    1600
+  ],
+  "/hero/slide-bf-airport.jpg": [
+    640,
+    1024,
+    1600
+  ],
+  "/hero/slide-bf-chichen.jpg": [
+    640,
+    1024,
+    1600
   ]
 }

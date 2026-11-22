@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HeroSlider from '@/components/home/HeroSlider.vue';
 import SearchForm from '@/components/booking/SearchForm.vue';
+import BlackFridayBanner from '@/components/home/BlackFridayBanner.vue';
 import CoverageSection from '@/components/home/CoverageSection.vue';
 import FleetSection from '@/components/home/FleetSection.vue';
 import ServicesSection from '@/components/home/ServicesSection.vue';
@@ -51,6 +52,8 @@ const HIGHLIGHTS = [
     <div class="relative z-10 mx-auto -mt-32 max-w-7xl px-4 sm:px-6">
       <SearchForm />
     </div>
+
+    <BlackFridayBanner />
 
     <ServicesSection />
 

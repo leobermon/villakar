@@ -15,11 +15,32 @@ interface Slide {
   zoom?: number;
 }
 
-const SLIDES: Slide[] = [
+/** Fotos normales de la portada. */
+const REGULAR_SLIDES: Slide[] = [
   { src: '/hero/slide-family-beach.jpg', position: '68% center' },
   { src: '/hero/slide-airport.jpg', position: '55% center' },
   { src: '/hero/slide-chichen.jpg', position: '60% center' },
 ];
+
+/**
+ * Copias de las mismas fotos con el cartel de Black Friday ($10 USD off, código BFRIDAY) dibujado encima.
+ * Se muestran hasta que vence el cupón (BLACK_FRIDAY_ENDS, hora de Cancún) y después vuelven las normales.
+ */
+const BLACK_FRIDAY_SLIDES: Slide[] = [
+  { src: '/hero/slide-bf-family-beach.jpg', position: '68% center' },
+  { src: '/hero/slide-bf-airport.jpg', position: '55% center' },
+  { src: '/hero/slide-bf-chichen.jpg', position: '60% center' },
+];
+const BLACK_FRIDAY_ENDS = '2026-11-27';
+
+/**
+ * El cartel va dibujado dentro de la foto. En pantallas chicas la foto se recorta mucho y el título
+ * queda encima, así que ahí se usan las fotos normales (el segmento de Black Friday de la portada cubre la promo).
+ */
+const PROMO_MIN_WIDTH = '(min-width: 1024px)';
+
+// Con cartel al renderizar (también en el prerender); al montar se ajusta según cupón vigente y tamaño de pantalla.
+const SLIDES = ref<Slide[]>(BLACK_FRIDAY_SLIDES);
 
 const INTERVAL_MS = 6000;
 
@@ -27,7 +48,7 @@ const current = ref(0);
 let timer: ReturnType<typeof setInterval> | undefined;
 
 function goTo(index: number) {
-  current.value = (index + SLIDES.length) % SLIDES.length;
+  current.value = (index + SLIDES.value.length) % SLIDES.value.length;
 }
 
 function start() {
@@ -54,6 +75,8 @@ function onVisibility() {
 }
 
 onMounted(() => {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Cancun' }).format(new Date());
+  if (today > BLACK_FRIDAY_ENDS || !window.matchMedia(PROMO_MIN_WIDTH).matches) SLIDES.value = REGULAR_SLIDES;
   start();
   document.addEventListener('visibilitychange', onVisibility);
 });
