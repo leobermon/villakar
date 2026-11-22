@@ -63,7 +63,9 @@ export function toOrder(row: OrderRow) {
 export type AdminOrder = ReturnType<typeof toOrder>;
 
 export const paymentInclude = {
-  reservation: { select: { code: true, customer: { select: { firstName: true, lastName: true } } } },
+  reservation: {
+    select: { code: true, subtotal: true, discount: true, couponCode: true, customer: { select: { firstName: true, lastName: true } } },
+  },
 } satisfies Prisma.PaymentInclude;
 
 export type PaymentRow = Prisma.PaymentGetPayload<{ include: typeof paymentInclude }>;
@@ -77,6 +79,10 @@ export function toPayment(row: PaymentRow) {
     provider: row.provider,
     type: row.type,
     amount: row.amount.toNumber(),
+    // Cupón de la orden: precio original, descuento y código (null si no usó cupón).
+    orderSubtotal: row.reservation.subtotal.toNumber(),
+    couponDiscount: row.reservation.discount.toNumber(),
+    couponCode: row.reservation.couponCode,
     currency: 'USD' as const,
     status: row.status,
     // La referencia del equipo, o el id del proveedor (sesión de Stripe, orden de PayPal).

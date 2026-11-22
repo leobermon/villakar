@@ -15,6 +15,11 @@ export interface Payment {
   provider: PaymentProvider;
   type: PaymentType;
   amount: number;
+  /** Precio original de la orden, antes del cupón. */
+  orderSubtotal: number;
+  /** Descuento del cupón en USD (0 si no usó). */
+  couponDiscount: number;
+  couponCode: string | null;
   currency: 'USD';
   status: PaymentRecordStatus;
   /** Id del proveedor (Stripe/PayPal) o referencia bancaria de la transferencia. */

@@ -244,6 +244,12 @@ const labelClass = 'mb-0.5 block text-[11px] font-semibold text-brand-900/70';
           <p v-if="row.receivedBy" class="text-xs text-brand-900/55">{{ row.receivedBy }}</p>
         </template>
         <template #cell-amount="{ row }">
+          <template v-if="row.type === 'CHARGE' && row.couponCode && row.couponDiscount > 0">
+            <p class="text-xs whitespace-nowrap text-brand-900/55 tabular-nums line-through">{{ formatUsd(row.orderSubtotal) }}</p>
+            <p class="text-xs font-semibold whitespace-nowrap text-emerald-700 tabular-nums">
+              −{{ formatUsd(row.couponDiscount) }} · {{ row.couponCode }}
+            </p>
+          </template>
           <span class="font-semibold whitespace-nowrap tabular-nums" :class="row.type === 'REFUND' ? 'text-accent-600' : ''">
             {{ row.type === 'REFUND' ? '−' : '' }}{{ formatUsd(row.amount) }}
           </span>

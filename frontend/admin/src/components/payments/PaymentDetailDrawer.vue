@@ -125,6 +125,14 @@ const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
             <span class="text-brand-900/65"> · {{ payment.customerName }}</span>
           </dd>
         </div>
+        <div v-if="payment.couponCode && payment.couponDiscount > 0" class="sm:col-span-2">
+          <dt class="text-xs text-brand-900/60">Cupón aplicado</dt>
+          <dd class="font-medium tabular-nums">
+            <span class="text-brand-900/60 line-through">{{ formatUsd(payment.orderSubtotal) }}</span>
+            <span class="ml-2 font-semibold text-emerald-700">−{{ formatUsd(payment.couponDiscount) }} ({{ payment.couponCode }})</span>
+            <span class="ml-2">= {{ formatUsd(payment.orderSubtotal - payment.couponDiscount) }}</span>
+          </dd>
+        </div>
         <div v-if="order">
           <dt class="text-xs text-brand-900/60">Total de la orden · saldo</dt>
           <dd class="font-medium">{{ formatUsd(order.total) }} · {{ formatUsd(store.balanceOf(order.id)) }} por cobrar</dd>
