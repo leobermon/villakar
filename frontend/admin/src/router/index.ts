@@ -62,6 +62,12 @@ export const router = createRouter({
     },
     { path: '/rates', name: 'rates', component: () => import('@/views/rates/RatesView.vue'), meta: { title: 'Tarifas' } },
     {
+      path: '/coupons',
+      name: 'coupons',
+      component: () => import('@/views/coupons/CouponsView.vue'),
+      meta: { title: 'Cupones' },
+    },
+    {
       path: '/vehicles',
       name: 'vehicles',
       component: () => import('@/views/vehicles/VehiclesView.vue'),

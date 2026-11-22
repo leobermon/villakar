@@ -14,6 +14,7 @@ import {
 import { formatLocalDateTime, localDateTime, nowInCancun } from '../../common/utils/time';
 import { phoneMatchesCountry } from '../../common/validators/phone';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CouponsService } from '../coupons/coupons.service';
 import { PricingService } from '../pricing/pricing.service';
 import { SettingsService } from '../settings/settings.service';
 import { CreateReservationDto, LegDetailsDto } from './dto/create-reservation.dto';
@@ -49,6 +50,10 @@ export interface ReservationSummary {
   routeType: RouteType;
   vehicleName: string;
   passengers: number;
+  /** Precio antes del cupón; total = subtotal − discount. */
+  subtotal: number;
+  discount: number;
+  couponCode: string | null;
   total: number;
   currency: 'USD';
   customer: { firstName: string; lastName: string; email: string; phone: string | null };
@@ -98,6 +103,7 @@ export class ReservationsService {
     private readonly prisma: PrismaService,
     private readonly pricing: PricingService,
     private readonly settings: SettingsService,
+    private readonly coupons: CouponsService,
   ) {}
 
   async create(dto: CreateReservationDto): Promise<ReservationSummary> {
@@ -148,48 +154,63 @@ export class ReservationsService {
     const holdMinutes = booking.holdMinutes;
     const specialRequests = dto.specialRequests?.trim() || null;
 
+    const email = normalizeEmail(dto.customer.email);
+    const couponCode = dto.couponCode?.trim() || null;
+
+    // Reserva y uso del cupón van en una sola transacción: si el cupón ya no se puede usar, no queda reserva.
     const reservation = await this.withUniqueCode((code) =>
-      this.prisma.reservation.create({
-        data: {
-          code,
-          customer: {
-            create: {
-              firstName: dto.customer.firstName.trim(),
-              lastName: dto.customer.lastName.trim(),
-              email: normalizeEmail(dto.customer.email),
-              phone: dto.customer.phone,
-              countryCode: dto.customer.phoneCountry,
+      this.prisma.$transaction(async (tx) => {
+        const applied = couponCode ? await this.coupons.lockAndApply(tx, couponCode, dto.tripType, email, price) : null;
+        const discount = applied?.discount ?? new Prisma.Decimal(0);
+
+        const created = await tx.reservation.create({
+          data: {
+            code,
+            customer: {
+              create: {
+                firstName: dto.customer.firstName.trim(),
+                lastName: dto.customer.lastName.trim(),
+                email,
+                phone: dto.customer.phone,
+                countryCode: dto.customer.phoneCountry,
+              },
             },
+            tripType: dto.tripType,
+            routeType: trip.routeType,
+            vehicleType: { connect: { id: rate.vehicleTypeId } },
+            zoneRate: { connect: { id: rate.id } },
+            adults: dto.passengers,
+            subtotal: price,
+            discount,
+            couponCode: applied?.coupon.code ?? null,
+            total: price.minus(discount),
+            source: ReservationSource.WEB,
+            specialRequests,
+            expiresAt: new Date(Date.now() + holdMinutes * 60_000),
+            legs: {
+              create: legs.map(({ segment, times, details }, index) => ({
+                legNumber: index + 1,
+                originPlace: { connect: { id: segment.from.id } },
+                originZone: { connect: { id: segment.fromZone.id } },
+                originName: segment.from.name,
+                destinationPlace: { connect: { id: segment.to.id } },
+                destinationZone: { connect: { id: segment.toZone.id } },
+                destinationName: segment.to.name,
+                pickupAt: times.pickupAt,
+                flightTime: times.flightAt,
+                flightNumber: segment.kind === 'TRANSFER' ? null : normalizeFlightNumber(details.flightNumber!),
+                airline: segment.kind === 'TRANSFER' ? null : details.airline!.trim(),
+                terminal: segment.kind === 'TRANSFER' ? null : (details.terminal ?? null),
+              })),
+            },
+            statusHistory: { create: { toStatus: ReservationStatus.PENDING, comment: 'Created on website' } },
           },
-          tripType: dto.tripType,
-          routeType: trip.routeType,
-          vehicleType: { connect: { id: rate.vehicleTypeId } },
-          zoneRate: { connect: { id: rate.id } },
-          adults: dto.passengers,
-          subtotal: price,
-          total: price,
-          source: ReservationSource.WEB,
-          specialRequests,
-          expiresAt: new Date(Date.now() + holdMinutes * 60_000),
-          legs: {
-            create: legs.map(({ segment, times, details }, index) => ({
-              legNumber: index + 1,
-              originPlace: { connect: { id: segment.from.id } },
-              originZone: { connect: { id: segment.fromZone.id } },
-              originName: segment.from.name,
-              destinationPlace: { connect: { id: segment.to.id } },
-              destinationZone: { connect: { id: segment.toZone.id } },
-              destinationName: segment.to.name,
-              pickupAt: times.pickupAt,
-              flightTime: times.flightAt,
-              flightNumber: segment.kind === 'TRANSFER' ? null : normalizeFlightNumber(details.flightNumber!),
-              airline: segment.kind === 'TRANSFER' ? null : details.airline!.trim(),
-              terminal: segment.kind === 'TRANSFER' ? null : (details.terminal ?? null),
-            })),
-          },
-          statusHistory: { create: { toStatus: ReservationStatus.PENDING, comment: 'Created on website' } },
-        },
-        include: reservationInclude,
+          include: reservationInclude,
+        });
+        if (applied) {
+          await tx.couponRedemption.create({ data: { couponId: applied.coupon.id, reservationId: created.id, email } });
+        }
+        return created;
       }),
     );
 
@@ -392,6 +413,9 @@ function toSummary(reservation: ReservationWithDetails): ReservationSummary {
     routeType: reservation.routeType,
     vehicleName: reservation.vehicleType.name,
     passengers: reservation.adults + reservation.children + reservation.infants,
+    subtotal: reservation.subtotal.toNumber(),
+    discount: reservation.discount.toNumber(),
+    couponCode: reservation.couponCode,
     total: reservation.total.toNumber(),
     currency: 'USD',
     customer: {

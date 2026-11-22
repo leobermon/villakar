@@ -32,6 +32,9 @@ const ACTION_LABEL: Record<string, string> = {
   PAYMENT_REJECTED: 'Cobro rechazado',
   PAYMENT_LINK_CREATED: 'Link de pago creado',
   PAYMENT_LINK_CANCELLED: 'Link de pago cancelado',
+  COUPON_CREATED: 'Cupón creado',
+  COUPON_UPDATED: 'Cupón editado',
+  COUPON_TOGGLED: 'Cupón activado o desactivado',
 };
 
 /** Con cuántos movimientos se llena la tabla; si hay más, se afinan los filtros. */

@@ -7,6 +7,7 @@ import {
   defaultPaymentMethod,
   fetchPaymentMethods,
   startPayment,
+  validateCoupon,
   type LegDetails,
   type PaymentMethod,
   type PaymentMethodsAvailability,
@@ -41,7 +42,39 @@ const acceptedTerms = ref(false);
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
-const ids = { first: useId(), last: useId(), email: useId(), phone: useId(), notes: useId() };
+// Código de descuento: el servidor lo valida al aplicarlo y otra vez al crear la reserva.
+const couponInput = ref('');
+const coupon = ref<{ code: string; discount: number } | null>(null);
+const couponError = ref<string | null>(null);
+const applyingCoupon = ref(false);
+
+/** Descuento mostrado: nunca más que el precio (el total no baja de 0). */
+const discount = computed(() => (coupon.value ? Math.min(coupon.value.discount, option.value.price) : 0));
+const finalTotal = computed(() => option.value.price - discount.value);
+
+async function applyCoupon() {
+  const code = couponInput.value.trim();
+  if (!code || applyingCoupon.value) return;
+  applyingCoupon.value = true;
+  couponError.value = null;
+  try {
+    const email = customer.email.trim();
+    coupon.value = await validateCoupon({ code, tripType: quote.value.tripType, email: email || undefined });
+    couponInput.value = '';
+  } catch (e) {
+    coupon.value = null;
+    couponError.value = e instanceof ApiError ? e.message : 'Something went wrong. Please try again.';
+  } finally {
+    applyingCoupon.value = false;
+  }
+}
+
+function removeCoupon() {
+  coupon.value = null;
+  couponError.value = null;
+}
+
+const ids = { first: useId(), last: useId(), email: useId(), phone: useId(), notes: useId(), coupon: useId() };
 const inputClass =
   'h-11 w-full rounded-xl border border-brand-100 bg-white px-3 text-[15px] outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-300/30';
 const labelClass = 'mb-1.5 block text-xs font-semibold tracking-wide text-brand-800 uppercase';
@@ -159,7 +192,7 @@ async function submit() {
   if (submitting.value || !paymentMethod.value || !acceptedTerms.value) return;
   submitting.value = true;
   error.value = null;
-  trackEvent('booking_submit', { ...tripFields(), label: paymentMethod.value, amount: option.value.price });
+  trackEvent('booking_submit', { ...tripFields(), label: paymentMethod.value, amount: finalTotal.value });
 
   let code: string;
   const email = customer.email.trim();
@@ -183,10 +216,11 @@ async function submit() {
       },
       legs: legs.value.map((leg, index) => legPayload(leg.kind, legDetails[index])),
       specialRequests: specialRequests.value.trim() || undefined,
+      couponCode: coupon.value?.code,
     });
     code = reservation.code;
     rememberReservationEmail(code, email);
-    trackBeginCheckout(option.value.price, option.value.vehicleType.name, paymentMethod.value);
+    trackBeginCheckout(reservation.total, option.value.vehicleType.name, paymentMethod.value);
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : 'Something went wrong. Please try again.';
     submitting.value = false;
@@ -325,9 +359,57 @@ async function submit() {
         </div>
       </dl>
 
+      <!-- Código de descuento -->
+      <div class="mt-4 border-t border-brand-100 pt-3">
+        <div v-if="coupon" class="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm">
+          <span class="font-semibold text-emerald-800">✔ {{ coupon.code }} applied</span>
+          <button type="button" class="text-xs font-semibold text-emerald-800 underline underline-offset-2" @click="removeCoupon">
+            Remove
+          </button>
+        </div>
+        <template v-else>
+          <label :for="ids.coupon" class="mb-1.5 block text-xs font-semibold tracking-wide text-brand-800 uppercase">
+            Discount code
+          </label>
+          <div class="flex gap-2">
+            <input
+              :id="ids.coupon"
+              v-model="couponInput"
+              maxlength="30"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              placeholder="Enter code"
+              class="h-10 min-w-0 flex-1 rounded-xl border border-brand-100 bg-white px-3 text-sm uppercase outline-none placeholder:normal-case focus:border-brand-400 focus:ring-4 focus:ring-brand-300/30"
+              @keydown.enter.prevent="applyCoupon"
+            />
+            <button
+              type="button"
+              class="h-10 rounded-xl border border-brand-200 px-4 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
+              :disabled="!couponInput.trim() || applyingCoupon"
+              @click="applyCoupon"
+            >
+              {{ applyingCoupon ? 'Checking…' : 'Apply' }}
+            </button>
+          </div>
+          <p v-if="couponError" role="alert" class="mt-1.5 text-xs font-medium text-accent-600">{{ couponError }}</p>
+        </template>
+      </div>
+
+      <dl v-if="coupon" class="mt-3 space-y-1 text-sm">
+        <div class="flex justify-between gap-3">
+          <dt class="text-brand-900/60">Subtotal</dt>
+          <dd class="font-medium">{{ formatUsd(option.price) }}</dd>
+        </div>
+        <div class="flex justify-between gap-3 text-emerald-700">
+          <dt>Discount ({{ coupon.code }})</dt>
+          <dd class="font-semibold">−{{ formatUsd(discount) }}</dd>
+        </div>
+      </dl>
+
       <div class="mt-4 flex items-baseline justify-between border-t border-brand-100 pt-3">
         <span class="text-sm font-semibold">Total</span>
-        <span class="font-display text-3xl font-bold">{{ formatUsd(option.price) }}</span>
+        <span class="font-display text-3xl font-bold">{{ formatUsd(finalTotal) }}</span>
       </div>
       <p class="text-right text-xs text-brand-900/60">
         USD · {{ quote.tripType === 'ROUND_TRIP' ? 'round trip' : 'one way' }}, per vehicle

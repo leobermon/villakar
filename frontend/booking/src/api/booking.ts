@@ -120,6 +120,18 @@ export interface CreateReservationRequest extends QuoteRequest {
   customer: { firstName: string; lastName: string; email: string; phone: string; phoneCountry: string };
   legs: LegDetails[];
   specialRequests?: string;
+  /** Código de descuento; el servidor lo valida otra vez y calcula el monto. */
+  couponCode?: string;
+}
+
+export interface CouponPreview {
+  code: string;
+  /** Descuento en USD para este tipo de viaje (el total nunca baja de 0). */
+  discount: number;
+}
+
+export function validateCoupon(payload: { code: string; tripType: TripType; email?: string }): Promise<CouponPreview> {
+  return apiRequest('/coupons/validate', { method: 'POST', json: payload });
 }
 
 export interface ReservationSummary {
@@ -130,6 +142,10 @@ export interface ReservationSummary {
   routeType: RouteType;
   vehicleName: string;
   passengers: number;
+  /** Precio antes del cupón; total = subtotal − discount. */
+  subtotal: number;
+  discount: number;
+  couponCode: string | null;
   total: number;
   currency: 'USD';
   customer: { firstName: string; lastName: string; email: string; phone: string | null };

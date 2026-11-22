@@ -40,6 +40,11 @@ defineProps<{ name: NavItem['icon'] }>();
       <path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z" />
       <circle cx="8.5" cy="8.5" r="1.5" />
     </template>
+    <!-- Cupones: boleto con corte -->
+    <template v-else-if="name === 'coupons'">
+      <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5V10a2 2 0 0 0 0 4v1.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5V14a2 2 0 0 0 0-4V8.5Z" />
+      <path d="M14 7v2M14 11v2M14 15v2" />
+    </template>
     <!-- Vehículos: camioneta -->
     <template v-else-if="name === 'vehicles'">
       <path d="M3 16V9a2 2 0 0 1 2-2h9l4 4h1a2 2 0 0 1 2 2v3h-2M3 16h2M9 16h6" />

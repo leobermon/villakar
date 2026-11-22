@@ -331,6 +331,9 @@ const inputClass =
             <div>
               <dt class="text-xs text-brand-900/60">{{ paymentLabel }}</dt>
               <dd class="font-medium">{{ formatUsd(reservation.total) }} USD</dd>
+              <dd v-if="reservation.discount > 0" class="text-xs font-medium text-emerald-700">
+                Includes {{ reservation.couponCode }} discount (−{{ formatUsd(reservation.discount) }})
+              </dd>
             </div>
             <div class="sm:col-span-3">
               <dt class="text-xs text-brand-900/60">Lead passenger</dt>

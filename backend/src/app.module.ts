@@ -11,6 +11,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContactRequestsModule } from './modules/contact-requests/contact-requests.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
 import { PlacesModule } from './modules/places/places.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PricingModule } from './modules/pricing/pricing.module';
@@ -37,6 +38,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PlacesModule,
     ZonesModule,
     PricingModule,
+    CouponsModule,
     ContactRequestsModule,
     ReservationsModule,
     PaymentsModule,

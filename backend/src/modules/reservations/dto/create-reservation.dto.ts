@@ -96,4 +96,10 @@ export class CreateReservationDto extends QuoteDto {
   @IsString()
   @MaxLength(1000)
   specialRequests?: string;
+
+  /** Código de descuento opcional; el servidor lo valida y calcula el descuento. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  couponCode?: string;
 }
