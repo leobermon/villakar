@@ -32,6 +32,19 @@
   --color-sidebar: #0b2a55;
 }
 
+/* Exportar a PDF (Imprimir → Guardar como PDF): hoja Carta, con los colores y barras tal cual. */
+@page {
+  size: letter;
+  margin: 12mm;
+}
+@media print {
+  body {
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 @layer base {
   body {
     @apply bg-fog-50 font-sans text-brand-950 antialiased;

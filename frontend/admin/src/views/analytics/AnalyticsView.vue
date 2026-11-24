@@ -189,10 +189,25 @@ const maxCountry = computed(() => Math.max(1, ...(stats.value?.countries ?? []).
 const maxDaily = computed(() => Math.max(1, ...(stats.value?.daily ?? []).map((d) => d.visits)));
 const fieldsSorted = computed(() => [...(stats.value?.fields ?? [])].sort((a, b) => b.visitors - a.visitors));
 
+/**
+ * Exporta el reporte a PDF con el diálogo de impresión del navegador ("Guardar como PDF"): sale con texto
+ * seleccionable y las barras en vector. El nombre del archivo sale del título de la página, así que se
+ * cambia mientras se imprime.
+ */
+function exportPdf() {
+  if (!stats.value) return;
+  const previous = document.title;
+  document.title = `Analitica VillaKar ${stats.value.from} a ${stats.value.to}`;
+  window.addEventListener('afterprint', () => (document.title = previous), { once: true });
+  window.print();
+}
+
+const generatedAt = computed(() => (stats.value ? `${cancunTime(new Date().toISOString())} (hora de Cancún)` : ''));
+
 const fieldClass =
-  'h-10 w-full rounded-lg border border-fog-200 bg-white px-3 text-sm text-brand-950 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-300/25';
-const labelClass = 'mb-1 block text-xs font-semibold text-brand-900/70';
-const cardClass = 'rounded-xl border border-fog-200 bg-white p-4 sm:p-5';
+  'h-7 w-32 rounded-md border border-fog-200 bg-white px-2 text-xs text-brand-950 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-300/25';
+const labelClass = 'mb-0.5 block text-[10px] font-semibold text-brand-900/70';
+const cardClass = 'rounded-xl border border-fog-200 bg-white p-4 sm:p-5 print:break-inside-avoid';
 const h2Class = 'text-sm font-semibold text-brand-950';
 const hintClass = 'mt-0.5 text-xs text-brand-900/60';
 </script>
@@ -201,17 +216,19 @@ const hintClass = 'mt-0.5 text-xs text-brand-900/60';
   <div class="mx-auto max-w-[90rem] space-y-4">
     <LoadErrorBanner :message="loadError" @retry="load" />
 
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-      <p class="max-w-2xl text-xs text-brand-900/65">
-        Lo que hacen los visitantes del sitio de reservas. Es anónimo: no guarda nombres, correos ni IP, y cuenta también a quien rechaza las cookies.
-        Quien activa "No rastrear" en su navegador no aparece.
+    <div class="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
+      <p
+        class="min-w-0 text-[11px] leading-tight text-brand-900/65 xl:truncate print:hidden"
+        title="Lo que hacen los visitantes del sitio de reservas. Es anónimo: no guarda nombres, correos ni IP, y cuenta también a quien rechaza las cookies. Quien activa &quot;No rastrear&quot; en su navegador no aparece."
+      >
+        Lo que hacen los visitantes del sitio de reservas. Anónimo: sin nombres, correos ni IP; cuenta a quien rechaza cookies, no a quien activa "No rastrear".
       </p>
-      <div class="flex flex-wrap items-end gap-2">
+      <div class="flex shrink-0 flex-wrap items-end gap-1.5 xl:flex-nowrap print:hidden">
         <button
           v-for="days in [7, 30, 90]"
           :key="days"
           type="button"
-          class="h-10 rounded-lg border border-fog-200 bg-white px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"
+          class="h-7 rounded-md border border-fog-200 bg-white px-2 text-xs font-semibold text-brand-700 hover:bg-brand-50"
           @click="setDays(days)"
         >
           {{ days }} días
@@ -224,10 +241,29 @@ const hintClass = 'mt-0.5 text-xs text-brand-900/60';
           <label :for="ids.to" :class="labelClass">Hasta</label>
           <input :id="ids.to" v-model="range.to" type="date" :class="fieldClass" @change="load" />
         </div>
-        <button type="button" class="h-10 rounded-lg border border-brand-300 bg-white px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50" @click="load">
-          Actualizar
-        </button>
+        <!-- Juntos y sin partirse: Exportar PDF siempre queda pegado a Actualizar. -->
+        <div class="flex items-end gap-2">
+          <button type="button" class="h-7 rounded-md border border-brand-300 bg-white px-2.5 text-xs font-semibold text-brand-700 hover:bg-brand-50" @click="load">
+            Actualizar
+          </button>
+          <button
+            type="button"
+            :disabled="!stats"
+            class="h-7 rounded-md bg-brand-600 px-2.5 text-xs font-semibold whitespace-nowrap text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+            @click="exportPdf"
+          >
+            Exportar PDF
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- Encabezado del reporte: solo aparece en el PDF. -->
+    <div v-if="stats" class="hidden border-b border-fog-200 pb-3 print:block">
+      <h1 class="text-xl font-bold text-brand-950">VillaKar Transfers · Reporte de analítica</h1>
+      <p class="mt-1 text-sm text-brand-900/70">
+        Periodo: {{ shortDate(stats.from) }} al {{ shortDate(stats.to) }} · Generado: {{ generatedAt }}
+      </p>
     </div>
 
     <p v-if="loading && !stats" class="py-10 text-center text-sm text-brand-900/60">Cargando…</p>
@@ -437,7 +473,7 @@ const hintClass = 'mt-0.5 text-xs text-brand-900/60';
         <h2 :class="h2Class">Últimas cotizaciones</h2>
         <p :class="hintClass">Hora de Cancún. "Zona" es la zona horaria del navegador del visitante.</p>
         <div class="mt-3 overflow-x-auto">
-          <table class="w-full min-w-[56rem] text-left text-sm">
+          <table class="w-full min-w-[56rem] text-left text-sm print:min-w-0 print:text-xs">
             <thead class="text-xs text-brand-900/60">
               <tr>
                 <th class="py-2 pr-3 font-semibold">Cuándo</th>
@@ -478,7 +514,7 @@ const hintClass = 'mt-0.5 text-xs text-brand-900/60';
         <h2 :class="h2Class">Hoteles más buscados</h2>
         <p :class="hintClass">Por número de cotizaciones. "Sin precio" son búsquedas que terminaron en el formulario de contacto.</p>
         <div class="mt-3 overflow-x-auto">
-          <table class="w-full min-w-[40rem] text-left text-sm">
+          <table class="w-full min-w-[40rem] text-left text-sm print:min-w-0 print:text-xs">
             <thead class="text-xs text-brand-900/60">
               <tr>
                 <th class="py-2 pr-3 font-semibold">Hotel</th>
@@ -559,7 +595,7 @@ const hintClass = 'mt-0.5 text-xs text-brand-900/60';
       <!-- Por día -->
       <section :class="cardClass">
         <h2 :class="h2Class">Por día</h2>
-        <div class="mt-3 max-h-80 overflow-y-auto">
+        <div class="mt-3 max-h-80 overflow-y-auto print:max-h-none print:overflow-visible">
           <table class="w-full text-left text-sm">
             <thead class="sticky top-0 bg-white text-xs text-brand-900/60">
               <tr>
